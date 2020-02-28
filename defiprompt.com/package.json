@@ -1,0 +1,25 @@
+{
+  "name": "react-defi-widget-example",
+  "homepage": "https://pisuthd.github.io/react-defi-widget",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "bootstrap": "^4.4.1",
+    "ethers": "^4.0.45",
+    "prop-types": "^15.6.2",
+    "react": "file:../node_modules/react",
+    "react-defi-widget": "file:..",
+    "react-dom": "file:../node_modules/react-dom",
+    "react-scripts": "^1.1.4",
+    "reactstrap": "^8.4.1",
+    "styled-components": "^5.0.1",
+    "web3-react": "^5.0.5"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
