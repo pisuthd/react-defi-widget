@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import styled from "styled-components";
 import { useDefi } from "../../contexts/defi";
 import bancorLogo from "../../../assets/bnt.png";
@@ -6,7 +6,7 @@ import bancorLogo from "../../../assets/bnt.png";
 const StakePage = (props) => {
 
     const { width, height, web3context } = props;
-    const { listBancorPools, loading, loadReserve, getTokenName, listReverses, loadRatio } = useDefi(web3context);
+    const { listBancorPools, loading, loadReserve, getTokenName, listReverses, loadRatio, fund } = useDefi(web3context);
     const [internalLoading, setInternalLoading] = useState(false);
 
     const [contracts, setContracts] = useState([]);
@@ -61,7 +61,7 @@ const StakePage = (props) => {
                                         <th width="35%">Reserves </th>
                                         <th width="20%">Ratios </th>
                                         <th ></th>
-                                        <th width="10%"></th>
+                                        <th width="20%">Fund</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -77,6 +77,7 @@ const StakePage = (props) => {
                                                 listReverses={listReverses}
                                                 loadReserve={loadReserve}
                                                 loadRatio={loadRatio}
+                                                fund={fund}
                                             />
 
                                         )
@@ -97,18 +98,20 @@ const StakePage = (props) => {
 
 const PoolItem = (props) => {
 
-    const { contract, getTokenName, listReverses, loadReserve, loadRatio } = props;
+    const { contract, getTokenName, listReverses, loadReserve, loadRatio, fund } = props;
 
     const [poolName, setPoolName] = useState("Loading...");
     const [totalReserves, setTotalReserves] = useState(0);
-    const [ ratio, setRatio ] = useState("");
+    const [ratio, setRatio] = useState("");
     const [token1, setToken1] = useState({
         name: "",
-        balance: ""
+        balance: "",
+        address: ""
     });
     const [token2, setToken2] = useState({
         name: "",
-        balance: ""
+        balance: "",
+        address: ""
     });
 
 
@@ -151,26 +154,26 @@ const PoolItem = (props) => {
                 ids.push(loadReserve(contract.converterAddress, count))
             }
             Promise.all(ids).then(results => {
-                
+
                 if (results.length > 0) {
                     // Get symbol name of revese tokens
                     Promise.all(results.map(item => {
                         return getTokenName(item.address)
                     })).then(
                         names => {
-                            console.log("reseveAddresses : ",names, results)
+                            console.log("reseveAddresses : ", names, results)
                             if (names[0]) {
                                 setToken1({
                                     name: names[0],
                                     balance: results[0].balance,
-                                    address :results[0].address
+                                    address: results[0].address
                                 })
                             }
                             if (names[1]) {
                                 setToken2({
                                     name: names[1],
                                     balance: results[1].balance,
-                                    address :results[1].address
+                                    address: results[1].address
                                 })
                             }
                         }
@@ -185,13 +188,34 @@ const PoolItem = (props) => {
         }
     }, [contract, totalReserves])
 
+    const fundToken1 = useCallback((e) => {
+        if (token1.address) {
+            fund(contract.converterAddress, token1.address).then(
+                result => {
+                    console.log("Done.")
+                }
+            )
+        }
+    }, [token1, contract])
+
+    const fundToken2 = useCallback((e) => {
+
+        if (token2.address) {
+            fund(contract.converterAddress, token2.address).then(
+                result => {
+                    console.log("Done.")
+                }
+            )
+        }
+    }, [token2, contract])
+
     useEffect(() => {
-        if (totalReserves !==0 && token1.address && token2.address) {
-          
+        if (totalReserves !== 0 && token1.address && token2.address) {
+
             Promise.all([loadRatio(contract.converterAddress, token1.address), loadRatio(contract.converterAddress, token2.address)]).then(
                 ratios => {
                     console.log("ratios : ", ratios)
-                    setRatio(`${Math.round(ratios[0]/10000)}% / ${Math.round(ratios[1]/10000)}%`);
+                    setRatio(`${Math.round(ratios[0] / 10000)}% / ${Math.round(ratios[1] / 10000)}%`);
                 }
             )
         }
@@ -207,18 +231,29 @@ const PoolItem = (props) => {
             <td>
                 {token1.balance !== "" &&
                     <div>
-                        {Number(token1.balance).toFixed(6)}{` `}{token1.name}
+                        {Number(token1.balance).toFixed(8)}{` `}{token1.name}
                         {` `}/{` `}
-                        {Number(token2.balance).toFixed(6)}{` `}{token2.name}
+                        {Number(token2.balance).toFixed(8)}{` `}{token2.name}
                     </div>
 
                 }
             </td>
             <td>
                 {ratio}
-    
+
             </td>
             <td>
+
+            </td>
+            <td>
+                {token1.name &&
+                    (
+                        <div>
+                            {` `}<a style={{ cursor: "pointer" }} onClick={fundToken1}>0.1 {token1.name}</a>{` `}|{` `}<a style={{ cursor: "pointer" }} onClick={fundToken2}>0.1 {token2.name}</a>
+                        </div>
+                    )
+
+                }
 
             </td>
         </tr>

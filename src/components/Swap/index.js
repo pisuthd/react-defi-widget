@@ -5,8 +5,9 @@ import { useDefi } from "../../contexts/defi";
 const SwapPage = (props) => {
 
     const { width, height, web3context } = props;
-    const { loading, getTokenName, listConversionTokens, getERC20Balance, generatePath } = useDefi(web3context);
+    const { loading, getTokenName, bancorConvert, listConversionTokens, getERC20Balance, generatePath, calculateRateFromPaths } = useDefi(web3context);
     const [availableTokens, setAvailableTokens] = useState([])
+    const [path, setPath] = useState([]);
     const [internalLoading, setInternalLoading] = useState(false);
     const [source, setSource] = useState("");
     const [sourceAmount, setSourceAmount] = useState(0);
@@ -14,9 +15,9 @@ const SwapPage = (props) => {
     const [destination, setDestination] = useState("");
     const [destinationTotal, setDestinationTotal] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
+    const [ converting, setConverting ] = useState(false);
+    const [convertPairs, setConvertPairs] = useState([]);
 
-
-    
 
     useEffect(() => {
 
@@ -69,6 +70,32 @@ const SwapPage = (props) => {
 
     }, [loading])
 
+    const [timer, setTimer ] = useState();
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimer(new Date().getTime());
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [])
+
+    useEffect(() => {
+        if (timer) {
+            updateRate();
+        }
+    }, [timer])
+
+    const updateRate = useCallback(() => {
+        console.log("Update rate...", source, destination, sourceAmount);
+
+        if (source && destination && Number(sourceAmount) > 0) {
+            updateSummary(source, destination, sourceAmount)
+        }
+
+
+    },[source, destination, sourceAmount])
+
     const handleTokenChange = useCallback((e) => {
 
         const checkBalance = (symbol, updateTotal) => {
@@ -92,12 +119,12 @@ const SwapPage = (props) => {
         if (e.target.id === "sourceToken") {
             setSource(e.target.value);
             checkBalance(e.target.value, setSourceTotal)
-            updateSummary(e.target.value, destination , sourceAmount)
+            // updateSummary(e.target.value, destination , sourceAmount)
 
         } else if (e.target.id === "destinationToken") {
             setDestination(e.target.value);
             checkBalance(e.target.value, setDestinationTotal)
-            updateSummary(source, e.target.value, sourceAmount )
+            // updateSummary(source, e.target.value, sourceAmount )
 
         }
     }, [availableTokens, destination, source, sourceAmount])
@@ -106,31 +133,63 @@ const SwapPage = (props) => {
     const handleAmount = useCallback((e) => {
         if (e.target.id === "sourceAmount") {
             setSourceAmount(Number(e.target.value));
-            updateSummary(source, destination, Number(e.target.value) );
+            // updateSummary(source, destination, Number(e.target.value) );
         } else if (e.target.id === "destinationAmount") {
             setDestinationAmount(Number(e.target.value))
         }
-    },[source, destination])
+    }, [source, destination])
 
     const updateSummary = useCallback((source, destination, amount) => {
 
-        console.log("SOURE, DESTINATION, SOURCE_AMOUNT")
-        console.log(source, destination, amount)
 
+        if (Number(amount) === 0) return;
         const sourceAddress = availableTokens.find(item => item.symbol === source).address
         const destinationAddress = availableTokens.find(item => item.symbol === destination).address
 
-        console.log("sourceAddress : ", sourceAddress, destinationAddress)
-
+        console.log("sourceAddress /  destinationAddress : ", sourceAddress, destinationAddress)
+        // setInternalLoading(true)
         generatePath(sourceAddress, destinationAddress).then(
             path => {
                 console.log("PATH : ", path)
+                setPath(path);
+                calculateRateFromPaths(path, amount).then(
+                    ({amount, convertPairs }) => {
+                        console.log("RATE : ", amount,convertPairs )
+                        setDestinationAmount(Number(amount))
+                        setConvertPairs(convertPairs);
+                    }
+                )
             }
         ).catch(error => {
             console.log("error : ", error)
         })
 
     }, [availableTokens])
+
+    const onConvert = useCallback((e) => {
+        e.preventDefault();
+        console.log('convert...', path, sourceAmount, destinationAmount)
+        if (path.length > 0 && convertPairs.length > 0 && Number(sourceAmount) > 0) {
+            setConverting(true);
+            const converterAddress = convertPairs[0].converterBlockchainId;
+            const fromToken = convertPairs[0].fromToken;
+
+            bancorConvert( converterAddress, path,  sourceAmount, destinationAmount , fromToken ).then(
+                result => {
+                    console.log("result : ", result)
+                }
+            ).catch(error => {
+                console.log("error : ", error)
+            }).finally(
+                () => {
+                    setConverting(false)
+                }
+                
+            )
+        }   
+
+
+    },[path, sourceAmount , path, destinationAmount,  convertPairs, availableTokens])
 
     return (
         <div>
@@ -178,7 +237,7 @@ const SwapPage = (props) => {
 
                                 </TokenInput>
                                 <TokenAvailable>
-                                    <p>Available{` `}:{` `}{sourceTotal.toFixed(6)}{` `}{source}</p>
+                                    <p>Available{` `}:{` `}{sourceTotal.toFixed(8)}{` `}{source}</p>
                                 </TokenAvailable>
 
 
@@ -210,7 +269,7 @@ const SwapPage = (props) => {
 
                                 </TokenInput>
                                 <TokenAvailable>
-                                    <p>Available{` `}:{` `}{destinationTotal.toFixed(6)}{` `}{destination}</p>
+                                    <p>Available{` `}:{` `}{destinationTotal.toFixed(8)}{` `}{destination}</p>
                                 </TokenAvailable>
 
                             </div>
@@ -244,7 +303,7 @@ const SwapPage = (props) => {
                                     </tbody>
                                 </table>
                                 <div style={{ paddingTop: "10px" }} className="text-center">
-                                    <Button onClick={() => console.log("hello")}>
+                                    <Button loading={internalLoading || converting || Number(destinationAmount) <= 0} onClick={onConvert}>
                                         Convert
                                     </Button>
                                 </div>
@@ -404,6 +463,7 @@ const Button = styled.button`
     background-color:  blue;
     color: white;
     padding: 10px;
+    ${props => props.loading && "opacity: 0.6;"}
     font-size: 16px;
     cursor: pointer;
     margin: 10px;

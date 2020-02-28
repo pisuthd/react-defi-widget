@@ -10,8 +10,9 @@ import { SmartTokenAbi } from "../contracts/bancor/SmartToken";
 import { BancorConverterRegistryDataAbi } from "../contracts/bancor/BancorConverterRegistryData";
 import { ERC20TokenAbi } from "../contracts/bancor/ERC20Token";
 import { EtherTokenAbi } from "../contracts/bancor/EtherToken";
+import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 
-
+const GAS_LIMIT = 100000;
 
 const DefiContext = createContext();
 
@@ -189,7 +190,7 @@ export const useDefi = (web3context) => {
 
     const { networkId } = web3context;
 
-    // const [pools, setPools] = useState([]);
+    const [pools, setPools] = useState([]);
 
     const {
         processingTx,
@@ -352,13 +353,13 @@ export const useDefi = (web3context) => {
 
 
         }
-        /*
+
         listBancorPools().then(
             pools => {
                 setPools(pools)
             }
         )
-        */
+
 
 
 
@@ -425,7 +426,7 @@ export const useDefi = (web3context) => {
             const signer = web3context.library.getSigner();
             const contract = getContract(converterAddress, BancorConverterAbi, signer);
 
-            contract.reserveTokenCount().then(
+            contract.connectorTokenCount().then(
                 total => {
                     resolve(total.toString());
                 }
@@ -440,14 +441,26 @@ export const useDefi = (web3context) => {
         return new Promise((resolve, reject) => {
             const signer = web3context.library.getSigner();
             const contract = getContract(converterAddress, BancorConverterAbi, signer);
-            contract.getReserveRatio(reserveAddress).then(
-                ratio => {
+            try {
+                contract.getConnectorRatio(reserveAddress).then(
+                    ratio => {
 
-                    resolve(ratio.toString());
-                }
-            ).catch(error => {
-                reject(error)
-            })
+                        resolve(ratio.toString());
+                    }
+                ).catch(error => {
+                    reject(error)
+                })
+            } catch (err) {
+                contract.getReserveRatio(reserveAddress).then(
+                    ratio => {
+
+                        resolve(ratio.toString());
+                    }
+                ).catch(error => {
+                    reject(error)
+                })
+            }
+
         })
     }, [web3context])
 
@@ -455,30 +468,15 @@ export const useDefi = (web3context) => {
         return new Promise((resolve, reject) => {
             const signer = web3context.library.getSigner();
             const contract = getContract(converterAddress, BancorConverterAbi, signer);
-            contract.reserveTokens(index).then(
+            contract.connectorTokens(index).then(
                 reserveAddress => {
 
-                    contract.getReserveBalance(reserveAddress).then(
+                    contract.getConnectorBalance(reserveAddress).then(
                         balance => {
                             resolve({
                                 address: reserveAddress,
                                 balance: ethers.utils.formatEther(balance.toString()).toString()
                             })
-                            /*
-                            contract.getReserveRatio(reserveAddress).then(
-                                ratio => {
-
-                                    resolve({
-                                        address: reserveAddress,
-                                        balance: ethers.utils.formatEther(balance.toString()).toString(),
-                                        ratio : ratio.toString()
-                                    })
-
-                                }
-                            )
-                            */
-
-
 
                         }
                     )
@@ -491,133 +489,217 @@ export const useDefi = (web3context) => {
     }, [web3context])
 
 
-    const generatePath = useCallback(async () => {
-        const test = new Promise((resolve) => {
-            setTimeout(() => {
-                console.log("done...")
-            },3000)
-        })
-        await test();
-        return "hello"
-    })
+    const generatePath = useCallback(async (sourceAddress, destinationAddress) => {
+        const signer = web3context.library.getSigner();
 
-    const generatePathOld = useCallback((sourceAddress, destinationAddress) => {
+        const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
 
-        return new Promise((resolve, reject) => {
-         
-            resolve("hello")
-            
-            
-    
-            /*
-            const signer = web3context.library.getSigner();
-            const getPath = (token, anchorToken) => {
-                return new Promise(resolve => {
-                    if (token == anchorToken) {
-                        resolve([token]);
-                    }
-                    const converterRegistryContract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
-                    converterRegistryContract.isSmartToken(token).then(
-                        isSmartToken => {
+        const getPath = async (token, anchorToken) => {
 
-                            const getSmartTokens = (token) => {
-                                return new Promise(resolve => {
-                                    if (isSmartToken) {
-                                        const smartTokens = [token];
-                                        resolve(smartTokens)
-                                    } else {
-                                        converterRegistryContract.getConvertibleTokenSmartTokens(token).then(
-                                            convertibleTokenSmartTokens => {
-                                                resolve(convertibleTokenSmartTokens)
-                                            }
-                                        )
-                                    }
-                                })
-                            }
+            if (token == anchorToken)
+                return [token];
 
+            const isSmartToken = await converterRegistry.isSmartToken(token);
+            const smartTokens = isSmartToken ? [token] : await converterRegistry.getConvertibleTokenSmartTokens(token);
+            for (const smartToken of smartTokens) {
+                const pool = pools.find(item => item.smartTokenAddress === smartToken)
 
-                            getSmartTokens(token).then(
-                                smartTokens => {
-                                    console.log("smartTokens : ", smartTokens)
-                                    console.log("pools : ", pools)
-                                    Promise.all(smartTokens.map(smartToken => new Promise((resolve, reject) => {
-                                        const item = pools.find(item => item.smartTokenAddress === smartToken)
-                                        if (!item ) {
-                                            resolve(undefined)
-                                        }
-
-                                        const { converterAddress } = item;
-                                        listReverses(converterAddress).then(
-                                            reversesCount => {
-
-                                                if (reversesCount === "2") {
-                                                    Promise.all([loadReserve(converterAddress,0),loadReserve(converterAddress,1)]).then(
-                                                        addresses => {
-                                                            console.log("addresses : ", addresses);
-                                                            const filtered = addresses.filter(item => item.address !== token);
-                                                            console.log("filtered: ", filtered);
-                                                            if (filtered[0]) {
-                                                                getPath(filtered[0].address, BNTAddress).then(
-                                                                    path => {
-                                                                        console.log("final path : ", path, token, smartToken  );
-                                                                       
-                                                                        if (path.length > 0) {
-                                                                            resolve([token, smartToken, ...path])
-                                                                        }
-                                                                    }
-                                                                )
-                                                            } else {
-                                                                resolve(undefined)
-                                                            }
-
-                                                            
-                                                        }
-                                                    )
-                                                } else {
-                                                    resolve(undefined)
-                                                }
-                                            }
-                                        )
-
-                                        
-                                    }))).then(
-                                        results => {
-                                            console.log("RESULTS : ", results)
-                                            resolve(["test1", "test2"]);
-                                        }
-                                    )
-                                   
-
-
-
-                                }
-                            )
-
+                if (pool.converterAddress) {
+                    const connectorTokenCount = await listReverses(pool.converterAddress);
+                    for (let i = 0; i < Number(connectorTokenCount); i++) {
+                        const connectorToken = await loadReserve(pool.converterAddress, i);
+                        if (connectorToken && (connectorToken.address != token)) {
+                            const path = await getPath(connectorToken.address, anchorToken);
+                            if (path.length > 0)
+                                return [token, smartToken, ...path];
                         }
-                    )
-                })
-
+                    }
+                    return [];
+                }
 
             }
 
+            return [];
+        }
 
-            const BNTAddress = web3context.networkId === 3 ? TOKEN_CONTRACTS.ROPSTEN.BNT : TOKEN_CONTRACTS.MAINNET.BNT
 
-            console.log("before getPath")
-            // Use BNT as an Anchor Token
-            getPath(sourceAddress, BNTAddress).then(
-                path => {
-                    console.log("path : ", path);
-                    resolve("hello path")
+        const getShortestPath = (sourcePath, targetPath) => {
+            if (sourcePath.length > 0 && targetPath.length > 0) {
+                let i = sourcePath.length - 1;
+                let j = targetPath.length - 1;
+                while (i >= 0 && j >= 0 && sourcePath[i] == targetPath[j]) {
+                    i--;
+                    j--;
                 }
-            ).catch(error => {
-                reject(error)
-            })
-            */
+
+                const path = [];
+                for (let m = 0; m <= i + 1; m++)
+                    path.push(sourcePath[m]);
+                for (let n = j; n >= 0; n--)
+                    path.push(targetPath[n]);
+
+                let length = 0;
+                for (let p = 0; p < path.length; p += 1) {
+                    for (let q = p + 2; q < path.length - p % 2; q += 2) {
+                        if (path[p] == path[q])
+                            p = q;
+                    }
+                    path[length++] = path[p];
+                }
+
+                return path.slice(0, length);
+            }
+
+            return [];
+        }
+
+        // Use BNT as an anchor token
+        const BNTAddress = web3context.networkId === 3 ? TOKEN_CONTRACTS.ROPSTEN.BNT : TOKEN_CONTRACTS.MAINNET.BNT
+        const sourcePath = await getPath(sourceAddress, BNTAddress);
+        const targetPath = await getPath(destinationAddress, BNTAddress);
+        console.log("sourcePath / targetPath : ", sourcePath, targetPath)
+        return getShortestPath(sourcePath, targetPath);
+
+    }, [web3context, bancorContractBancorConverterRegistry, pools])
 
 
-        })
-    }, [web3context, bancorContractBancorConverterRegistry])
+
+
+    const calculateRateFromPaths = useCallback(async (paths, amount) => {
+
+        const signer = web3context.library.getSigner();
+
+        const getConversionReturn = async (converterPair, amount) => {
+            const converterContract = getContract(converterPair.converterBlockchainId, BancorConverterAbi, signer);
+            const returnAmount = await converterContract.getReturn(converterPair.fromToken, converterPair.toToken, amount);
+
+            return returnAmount
+        }
+
+        const getConverterBlockchainId = async (blockchainId) => {
+            const tokenContract = getContract(blockchainId, SmartTokenAbi, signer);
+            return await tokenContract.owner()
+        };
+
+        const getConverterPairs = async (path) => {
+            let pairs = [];
+            for (let i = 0; i < path.length - 1; i += 2) {
+                let converterBlockchainId = await getConverterBlockchainId(path[i + 1]);
+                pairs.push({ converterBlockchainId: converterBlockchainId, fromToken: (path[i]), toToken: (path[i + 2]) });
+            }
+
+            return pairs;
+        }
+
+        const getAmountInTokenWei = async (tokenAddress, amount) => {
+            const tokenContract = getContract(tokenAddress, ERC20TokenAbi, signer);
+            const decimals = await tokenContract.decimals();
+            return ethers.utils.parseUnits(`${amount}`, Number(decimals));
+        }
+
+        const getPathStepRate = async (converterPair, amount) => {
+            console.log("converterPair : ", converterPair)
+            let amountInTokenWei = await getAmountInTokenWei(converterPair.fromToken, amount);
+            const returnAmount = await getConversionReturn(converterPair, amountInTokenWei);
+            amountInTokenWei = returnAmount['0'];
+            return ethers.utils.formatEther(amountInTokenWei.toString()).toString() || "0";
+        }
+
+        const convertPairs = await getConverterPairs(paths);
+
+        let i = 0;
+        while (i < convertPairs.length) {
+            amount = await getPathStepRate(convertPairs[i], amount);
+            i += 1;
+        }
+
+
+        return {
+            amount: amount,
+            convertPairs: convertPairs
+
+        }
+
+    }, [web3context, bancorContractBancorConverterRegistry, pools])
+
+    const fund = useCallback(async (converterAddress, tokenAddress) => {
+        const amountWei = ethers.utils.parseEther("0.1");
+        
+        const signer = web3context.library.getSigner();
+
+        const options = {
+            gasLimit: GAS_LIMIT,
+            gasPrice: ethers.utils.parseEther("0.0000004")
+        };
+
+        const tokenContract = getContract(tokenAddress, ERC20TokenAbi, signer);
+
+        const transfer = await tokenContract.transfer(converterAddress, amountWei, options);
+
+        console.log("waiting for confirmation : ", transfer)
+
+        try {
+            await transfer.wait();
+        } catch (error) {
+            console.log("error:", error)
+        }
+
+        const tx = await tokenContract.approve(converterAddress , amountWei , options);
+        console.log("waiting for confirmation : ", tx)
+        try {
+            await tx.wait();
+        } catch (error) {
+            console.log("error:", error)
+        }
+
+        
+        return "ok"
+        // const converterContract = getContract(converterAddress, BancorConverterAbi, signer);
+
+
+    })
+
+    const bancorConvert = useCallback(async (converterAddress, path, sourceAmount, destinationAmount, fromAddress) => {
+
+
+
+
+        console.log("bancorContractBancorNetwork : ", bancorContractBancorNetwork)
+        const sourceAmountWei = ethers.utils.parseEther(`${sourceAmount}`);
+        
+        const destinationAmountWei = ethers.utils.parseEther(`${destinationAmount}`);
+       
+        const signer = web3context.library.getSigner();
+   
+        const tokenContract = getContract(fromAddress, SmartTokenAbi, signer)
+        const options = {
+            gasLimit: GAS_LIMIT,
+            gasPrice: ethers.utils.parseEther("0.0000004")
+        };
+
+        const tx = await tokenContract.approve(bancorContractBancorNetwork , sourceAmountWei , options);
+        console.log("waiting for confirmation : ", tx)
+        try {
+            await tx.wait();
+        } catch (error) {
+            console.log("error:", error)
+        }
+   
+    
+        const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
+
+        // console.log("path : ", path, sourceAmountWei.toNumber(), destinationAmountWei.toNumber())
+        let response = await networkContract.convert(path, sourceAmountWei , destinationAmountWei , options);
+        // let response = await networkContract.quickConvert(path, sourceAmountWei, destinationAmountWei, options);
+        console.log("response : ", response);
+        try {
+            await response.wait();
+        } catch (error) {
+            console.log("error:", error)
+        }
+
+        return "ok"
+    }, [web3context, bancorContractBancorNetwork])
 
     return {
         processingTx,
@@ -632,8 +714,10 @@ export const useDefi = (web3context) => {
         listConversionTokens,
         getERC20Balance,
         loadRatio,
-        generatePath
-
+        generatePath,
+        calculateRateFromPaths,
+        bancorConvert,
+        fund
     }
 }
 

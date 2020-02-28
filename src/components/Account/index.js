@@ -82,10 +82,13 @@ const AccountPage = (props) => {
                                                 Bancor's ERC20-compliant wrapped ETH allowing funding of liquidity pools
                                             </TokenDescription>
                                         </td>
-                                        <td>{totalBancorEther.toFixed(3)}{` `}ETH</td>
+                                        <td>{totalBancorEther.toFixed(4)}{` `}ETH</td>
                                     
                                         <td>
+                                            {/*
                                             <a href="">Wrap</a>{` `}<a href="">Unwrap</a>
+                                            */}
+                                            
                                         </td>
 
                                     </tr>
@@ -103,7 +106,7 @@ const AccountPage = (props) => {
                                                 A token underpinning the Bancor decentralized exchange system.
                                             </TokenDescription>
                                         </td>
-                                        <td>{totalBancorToken.toFixed(3)}{` `}BNT</td>
+                                        <td>{totalBancorToken.toFixed(4)}{` `}BNT</td>
                                         
                                         <td>
 
