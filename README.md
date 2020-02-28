@@ -1,4 +1,4 @@
-# react-defi-widget
+# React DeFi Widget
 
 > Ethereum Defi widget for React apps
 
