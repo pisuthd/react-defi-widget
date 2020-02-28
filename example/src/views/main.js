@@ -24,7 +24,7 @@ const MainPage = (props) => {
 
     const context = useWeb3Context();
 
-    const [ widgetPage, setWidgetPage ] = useState(AvailablePages.SWAP);
+    const [ widgetPage, setWidgetPage ] = useState(AvailablePages.STAKE);
 
     useEffect(() => {
         context.setFirstValidConnector(['MetaMask'])
@@ -67,6 +67,7 @@ const MainPage = (props) => {
                 </Col>
             </Row>
             {/* Available Protocols */}
+            {/*
             <Row>
                 <Col sm="12">
                     <h3>Available Protocols</h3>
@@ -87,14 +88,15 @@ const MainPage = (props) => {
                                 <Badge color="primary">Token Swap</Badge>
                             </div>
                         </CardBody>
-                        {/*
-                         <CardFooter>Footer</CardFooter>
-                        */}
+                       \
                        
                     </Card>
                 </Col>
             </Row>
             <br />
+            */}
+            
+
         </Fragment>
 
     )

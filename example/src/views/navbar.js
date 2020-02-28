@@ -19,7 +19,7 @@ const NavBar = (props) => {
                 
                 <NavbarBrand href="/">
                     <BrandHeader>
-                        DeFi Prompt.com
+                        React DeFi Widget
                     </BrandHeader>
                     
                 </NavbarBrand>
