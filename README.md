@@ -4,10 +4,7 @@
 
 [![NPM](https://img.shields.io/npm/v/react-defi-widget.svg)](https://www.npmjs.com/package/react-defi-widget) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
-<video controls="controls">
-  <source type="video/webm" src="demo.webm"></source>
-  <p>Your browser does not support the video element.</p>
-</video>
+![Screenshot](https://raw.githubusercontent.com/pisuthd/react-defi-widget/master/demo.gif)
 
 ## Install
 
