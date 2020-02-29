@@ -14,6 +14,16 @@ Before embedded into your webapp, please ensure that you've installed `web3-reac
 
 (This project is under heavy development, please not use it on Ethereum mainnet at the moment)
 
+## Submission for Sustain Web3 Hackathon
+
+[Live Demo](http://13.233.107.61:3000/)
+
+### Features
+
+* List liquidity pools on Bancor
+* Provide fixed amount of tokens to Bancor's liquidity pools
+* Exchange a token on Bancor (Not functional well on Ropsten)
+
 ## Install
 
 ```bash
@@ -73,6 +83,10 @@ npm start
 
 * Bancor - Stake ERC20 tokens on its liquidity pools & on-chain token conversion (with affiliate program)
 
+## Roadmap
+
+* Support other liqudity protocol such as Kyber or Uniswap 
+* A backend host cached data instead of list everything on-chain
 
 ## License
 
