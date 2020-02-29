@@ -20,9 +20,14 @@ Before embedded into your webapp, please ensure that you've installed `web3-reac
 
 ### Features
 
-* List liquidity pools on Bancor
-* Provide fixed amount of tokens to Bancor's liquidity pools
-* Exchange a token on Bancor (Not functional well on Ropsten)
+* List liquidity pools on Bancor from smart contracts
+* Provide fixed amount of tokens to Bancor's liquidity pools from smart contracts
+* Exchange a token on Bancor from smart contracts
+
+### Known Bugs
+
+* Can't make a build on example app
+* Transaction failure on the token conversion
 
 ## Install
 
@@ -72,9 +77,7 @@ npm install
 npm start
 ```
 
-## Local Development
-
-### Properties
+## Properties
 
 * web3ReactContext: (PropTypes.object | PropTypes.func).isRequired,
 * currentPage: PropTypes.string
