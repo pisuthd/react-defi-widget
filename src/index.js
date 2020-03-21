@@ -1,7 +1,8 @@
-import ConnectedWidget from "./widget";
-import { PAGES } from "./constants"
+import ConnectedWidget, { TokenConversionWidget, LiquidityPoolsWidget, StablecoinsWidget } from "./widget";
 
 export {
   ConnectedWidget as Widget,
-  PAGES as AvailablePages
+  TokenConversionWidget,
+  LiquidityPoolsWidget,
+  StablecoinsWidget
 };

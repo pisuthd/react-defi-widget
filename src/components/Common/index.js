@@ -5,8 +5,6 @@ import "../../scss/common.scss";
 
 
 export const Container = styled.div`
-    
-    
     min-height: 400px;
     color: rgba(0, 0, 0, 0.7);
     
@@ -19,6 +17,7 @@ export const Card = styled.div`
     min-height: 400px;
     position: relative;
     padding: 10px;
+    color: rgba(0, 0, 0, 0.7);
     
 `
 

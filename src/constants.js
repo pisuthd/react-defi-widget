@@ -1,3 +1,4 @@
+
 export const COLORS = {
     green1: "#35e65d",
     grey0: "#808080",
@@ -15,10 +16,10 @@ export const COLORS = {
 } 
 
 export const PAGES = {
-    DEFAULT: "ACCOUNT",
+    DEFAULT: "SWAP",
     SWAP: "SWAP",
-    STAKE: "STAKE",
-    ACCOUNT: "ACCOUNT"
+    POOLS: "POOLS",
+    STABLECOINS: "STABLECOINS"
 }
 
 export const BANCOR_CONTRACTS = {
@@ -48,3 +49,51 @@ export const NETWORKS = {
     MAINNET : 1,
     ROPSTEN : 3
 }
+
+export const HEADLINES = {
+    HEADER : {
+        SWAP : "Simple & Easy Token Swap"
+    },
+    TEXT : {
+        SWAP : "You can swap your ERC20 tokens for other tokens within this widget"
+    },
+    DISCLAIMER : {
+        SWAP : "DISCLAIMER : This feature this feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision."
+    }
+}
+
+/*
+export const TOKEN_LIST = [
+    {
+        icon: bancorLogo,
+        symbol: "BNT",
+        name: "Bancor"
+    },
+    {
+        icon: ethLogo,
+        symbol: "ETH",
+        name: "Ethereum"
+    },
+    {
+        icon: batLogo,
+        symbol: "BAT",
+        name: "Basic Attention Token"
+    },
+    {
+        icon: enjLogo,
+        symbol: "ENJ",
+        name: "Enjin"
+    },
+    {
+        icon: kncLogo,
+        symbol: "KNC",
+        name: "Kyber Network"
+    },
+    {
+        icon: omgLogo,
+        symbol: "OMG",
+        name: "OmiseGo"
+    }
+    
+]
+*/

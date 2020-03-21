@@ -15,59 +15,54 @@ import {
     CardTitle,
     CardSubtitle
 } from "reactstrap";
-import { useWeb3Context } from 'web3-react';
-import { Widget, AvailablePages } from 'react-defi-widget'
+
+import { TokenConversionWidget } from 'react-defi-widget'
 import styled from "styled-components"
 import BancorImg from "../assets/bancor.png"
 
+import WidgetVersionSection from "../components/shared/widgetVersion";
+
 const MainPage = (props) => {
 
-    const context = useWeb3Context();
+    const { web3context } = props;
 
-    const [ widgetPage, setWidgetPage ] = useState(AvailablePages.STAKE);
-
-    useEffect(() => {
-        context.setFirstValidConnector(['MetaMask'])
-    }, [])
-
-    console.log("AvailablePages : ", AvailablePages)
-
-    const navigateTo = (pageName) => {
-        setWidgetPage(pageName);
-    }
 
     return (
         <Fragment>
-            {/* Defi Widget */}
             <Row>
                 <Col sm="12">
                     <StyledJumbotron>
-                        <Widget
-                            web3ReactContext={context}
-                            currentPage={widgetPage}  
-
+                        <TokenConversionWidget
+                            web3ReactContext={web3context}
                         />
+
+                        {/*
                         <Headline>
                             <div className="version">
-                                <span>React DeFi Widget v.0.1.0</span>{` `}
+                                <span>React DeFi Widget v.0.1.3</span>{` `}
                                 |{` `}
                                 <a target="_blank" href="https://github.com/pisuthd/react-defi-widget">Github</a>{` `}
-                                |{` `}
-                                <a onClick={() => navigateTo(AvailablePages.ACCOUNT)}>Account</a>{` `}
-                                |{` `}
-                                <a onClick={() => navigateTo(AvailablePages.STAKE)}>Stake</a>{` `}
-                                |{` `}
-                                <a onClick={() => navigateTo(AvailablePages.SWAP)}>Token Conversion</a>{` `}
+                                
+                                    |{` `}
+                                    <a onClick={() => navigateTo(AvailablePages.ACCOUNT)}>Account</a>{` `}
+                                    |{` `}
+                                    <a onClick={() => navigateTo(AvailablePages.STAKE)}>Stake</a>{` `}
+                                    |{` `}
+                                    <a onClick={() => navigateTo(AvailablePages.SWAP)}>Token Conversion</a>{` `}
                             </div>
-                            <h2 className="display-4">Towards Inclusive Finance</h2>
-                            <p className="lead">We provide toolkits & resources to allow your website visitors access DeFi & turn your traffic into crypto affiliate fees</p>
-                          
                         </Headline>
+                        */}
                     </StyledJumbotron>
                 </Col>
             </Row>
+            
             {/* Available Protocols */}
             {/*
+            <Row>
+                <Col sm="12">
+                    <WidgetVersionSection/>
+                </Col>
+            </Row>
             <Row>
                 <Col sm="12">
                     <h3>Available Protocols</h3>
@@ -95,7 +90,7 @@ const MainPage = (props) => {
             </Row>
             <br />
             */}
-            
+
 
         </Fragment>
 
@@ -106,8 +101,10 @@ const StyledJumbotron = styled(Jumbotron)`
     background-image: linear-gradient(to bottom, #5bc0de, #0275d8);  
     border-radius: 10px;
     color: white;
+    height: 550px;
 `;
 
+/*
 const Headline = styled.div`
     text-align: center;
     margin-top: 20px;
@@ -127,5 +124,6 @@ const Headline = styled.div`
     }
     
 `;
+*/
 
 export default MainPage;

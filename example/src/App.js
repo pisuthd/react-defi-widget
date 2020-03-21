@@ -1,30 +1,45 @@
 import React, { Component, useEffect } from 'react'
-// import Web3Provider, { useWeb3Context } from 'web3-react'
-// import { Widget } from 'react-defi-widget'
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch
+} from "react-router-dom";
+
+import { useWeb3Context } from 'web3-react';
+
 import MainLayout from "./layouts/main";
 import MainPage from "./views/main";
+import LiquidityPage from "./views/liquidityPool";
+import StablecoinPage from "./views/stablecoin";
 
 const App = () => {
-  /*
-  const context = useWeb3Context()
+
+  const web3context = useWeb3Context();
 
   useEffect(() => {
-    context.setFirstValidConnector(['MetaMask'])
+    web3context.setFirstValidConnector(['MetaMask'])
   }, [])
-  */
 
   return (
-    <MainLayout>
-      <MainPage/>
-    </MainLayout>
+    <Router>
+      <MainLayout>
+        <Switch>
+          <Route exact path="/">
+            <MainPage web3context={web3context} />
+          </Route>
+          <Route exact path="/pools">
+            <LiquidityPage web3context={web3context} />
+          </Route>
+          <Route exact path="/stablecoins">
+            <StablecoinPage web3context={web3context} />
+          </Route>
+
+        </Switch>
+
+      </MainLayout>
+    </Router>
   )
-  /*
-  return (
-      <Widget 
-        web3ReactContext={context}
-      />
-  )
-  */
+
 }
 
 export default App;

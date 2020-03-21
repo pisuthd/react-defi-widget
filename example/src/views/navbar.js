@@ -1,5 +1,7 @@
 import React, { Component, useEffect } from 'react'
-
+import {
+    Link
+} from "react-router-dom";
 import {
     Navbar,
     NavbarToggler,
@@ -14,25 +16,40 @@ import styled from "styled-components"
 
 const NavBar = (props) => {
     return (
-        <StyledNavbar style={{marginBottom: "20px"}} color="light" expand="md">
+        <StyledNavbar style={{ marginBottom: "20px" }} color="light" expand="md">
             <Container>
-                
-                <NavbarBrand href="/">
+
+                <NavbarBrand>
                     <BrandHeader>
-                        React DeFi Widget
+                        <Link to="/">
+                            Defiprompt.com
+                        </Link>
                     </BrandHeader>
-                    
+
                 </NavbarBrand>
                 <Nav className="ml-auto" navbar>
+
                     <NavbarText>
-                        <NavLink href="/">Home</NavLink>
+                        <Link to="/">
+                            <NavLink>Swap</NavLink>
+                        </Link>
+                    </NavbarText>
+                    <NavbarText>
+                        <Link to="/pools">
+                            <NavLink>Liquidity Pools</NavLink>
+                        </Link>
+                    </NavbarText>
+                    <NavbarText>
+                        <Link to="/stablecoins">
+                            <NavLink>Stablecoins</NavLink>
+                        </Link>
                     </NavbarText>
                     {/*
                     <NavbarText>
                         <NavLink href="https://github.com/reactstrap/reactstrap">GitHub</NavLink>
                     </NavbarText>
                     */}
-                    
+
                 </Nav>
 
             </Container>
