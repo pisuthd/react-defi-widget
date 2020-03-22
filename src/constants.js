@@ -58,7 +58,7 @@ export const HEADLINES = {
         SWAP : "You can swap your ERC20 tokens for other tokens within this widget"
     },
     DISCLAIMER : {
-        SWAP : "DISCLAIMER : This feature this feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision."
+        SWAP : "DISCLAIMER : This feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision."
     }
 }
 
