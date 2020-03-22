@@ -12,10 +12,11 @@ import { ERC20TokenAbi } from "../contracts/bancor/ERC20Token";
 import { EtherTokenAbi } from "../contracts/bancor/EtherToken";
 import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 
-export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB","USDC"]
+
+export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB", "USDC"]
 
 // Not sure whether BNB stills ERC-20, removal of low-volume tokens
-export const EXCLUDE_TOKENS = ["BNB", "AIX", "ATS", "BCS", "MNTP", "TBX", "TRST", "WAND", "HOT", "WLK", "ABX", "ESZ", "ZINC", "J8T", "LDC", "ONG", "RVT", "STAC", "BETR", "UP", "AUC", "DAN", "DTRC", "FKX" ,"FTX", "GES", "MAD", "MORPH", "MRG", "POA20", "REPUX", "SCL", "SIG", "TNS", "X8X", "XBP", "XNK", "PAT", "BBO", "SHP", "FLIXX", "CMCT", "AGRI" , "EVO", "LOCI", "PEG:USD", "REAL", "SPD", "TIX", "COT", "EFOOD", "EMCO", "SXL", "RST100", "PRTL", "ELET", "SYB7", "PKG", "MGT", "sUSD", "GRIG", "ACD", "CBIX7", "DZAR", "JRT", "XIO", "UPT", "STX", "USD", "OMNIS", "TBC", "sXAU", "IGA", "eXAU", "COMM", "cUSD", "AUTO", "FTH", "pBTC", "EST", "BFZ", "ANK" ];
+export const EXCLUDE_TOKENS = ["BNB", "AIX", "ATS", "BCS", "MNTP", "TBX", "TRST", "WAND", "HOT", "WLK", "ABX", "ESZ", "ZINC", "J8T", "LDC", "ONG", "RVT", "STAC", "BETR", "UP", "AUC", "DAN", "DTRC", "FKX", "FTX", "GES", "MAD", "MORPH", "MRG", "POA20", "REPUX", "SCL", "SIG", "TNS", "X8X", "XBP", "XNK", "PAT", "BBO", "SHP", "FLIXX", "CMCT", "AGRI", "EVO", "LOCI", "PEG:USD", "REAL", "SPD", "TIX", "COT", "EFOOD", "EMCO", "SXL", "RST100", "PRTL", "ELET", "SYB7", "PKG", "MGT", "sUSD", "GRIG", "ACD", "CBIX7", "DZAR", "JRT", "XIO", "UPT", "STX", "USD", "OMNIS", "TBC", "sXAU", "IGA", "eXAU", "COMM", "cUSD", "AUTO", "FTH", "pBTC", "EST", "BFZ", "ANK"];
 
 const BancorContext = createContext();
 
@@ -25,8 +26,7 @@ const useBancorContext = () => {
 
 const ACTIONS = {
     UPDATE_PROCESSING_TX: "UPDATE_PROCESSING_TX",
-    UPDATE_BANCOR_CONTRACTS: "UPDATE_BANCOR_CONTRACTS",
-    UPDATE_BALANCE: "UPDATE_BALANCE"
+    UPDATE_BANCOR_CONTRACTS: "UPDATE_BANCOR_CONTRACTS"
 }
 
 const reducer = (state, { type, payload }) => {
@@ -39,16 +39,7 @@ const reducer = (state, { type, payload }) => {
                 processingTx: processingTx
             }
         }
-        case ACTIONS.UPDATE_BALANCE: {
-            const { bancorEther, bancorToken, bancorUsd } = payload;
-            return {
-                ...state,
-                totalBancorEther: bancorEther,
-                totalBancorToken: bancorToken,
-                totalBancorUsd: bancorUsd
 
-            }
-        }
         case ACTIONS.UPDATE_BANCOR_CONTRACTS: {
             const {
                 bancorContractContractRegistry,
@@ -111,10 +102,7 @@ const provider = ({ children }) => {
         bancorContractBNTConverter: "",
         bancorContractBancorX: "",
         bancorContractNonStandardTokenRegistry: "",
-        bancorContractEtherToken: "",
-        totalBancorEther: 0, //fixme: use BigNumber
-        totalBancorToken: 0, //fixme: use BigNumber
-        totalBancorUsd: 0 //fixme: use BigNumber
+        bancorContractEtherToken: ""
     })
 
     const updateProcessingTx = useCallback((processingTx) => {
@@ -212,10 +200,7 @@ export const useBancor = (web3context) => {
         bancorContractBNTConverter,
         bancorContractBancorX,
         bancorContractNonStandardTokenRegistry,
-        bancorContractEtherToken,
-        totalBancorEther,
-        totalBancorToken,
-        totalBancorUsd
+        bancorContractEtherToken
     } = state;
 
     useEffect(() => {
@@ -304,95 +289,35 @@ export const useBancor = (web3context) => {
 
 
 
-    useEffect(() => {
-        /*
-
-        const signer = web3context.library.getSigner();
-
-
-        const queryERC20Balance = (tokenAddress, abi) => {
-
-            return new Promise((resolve, reject) => {
-                const contract = getContract(tokenAddress, abi, signer);
-                contract.balanceOf(web3context.account).then(
-                    balance => {
-                        resolve(ethers.utils.formatEther(balance.toString()).toString() || "0")
-                    }
-                )
-            })
-        }
-
-        
-        if (networkId === 3) {
-            console.log("Updating token balance for Ropsten")
-            const bancorEtherAddress = TOKEN_CONTRACTS.ROPSTEN.BANCOR_ETHER;
-            const bancorTokenAddress = TOKEN_CONTRACTS.ROPSTEN.BNT;
-            const bancorUsdAddress = TOKEN_CONTRACTS.ROPSTEN.BUSD;
-            Promise.all([queryERC20Balance(bancorEtherAddress, EtherTokenAbi), queryERC20Balance(bancorTokenAddress, ERC20TokenAbi), queryERC20Balance(bancorUsdAddress, ERC20TokenAbi)]).then(values => {
-                const balances = { bancorEther: Number(values[0]), bancorToken: Number(values[1]), bancorUsd: Number(values[2]) }
-                console.log("Balance : ", balances)
-                updateBalance(balances)
-            })
-        }
-        
-        if (bancorContractEtherToken && bancorContractBNTToken) {
-            console.log("Updating token balance");
-            const bancorUsdAddress = TOKEN_CONTRACTS.MAINNET.BUSD;
-            Promise.all([queryERC20Balance(bancorContractEtherToken, EtherTokenAbi), queryERC20Balance(bancorContractBNTToken, ERC20TokenAbi), queryERC20Balance(bancorUsdAddress, ERC20TokenAbi)]).then(values => {
-
-                const balances = { bancorEther: Number(values[0]), bancorToken: Number(values[1]), bancorUsd: Number(values[2]) }
-                console.log("Balance : ", balances)
-                updateBalance(balances)
-            })
-
-
-        }
-        */
-
-
-
-
-
-
-    }, [bancorContractEtherToken, bancorContractBNTToken, networkId, web3context])
-
-    /*
-    const listConversionTokens = useCallback(() => {
-        return new Promise((resolve, reject) => {
-            const signer = web3context.library.getSigner();
-            const contract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
-
-            contract.getConvertibleTokens().then(
-                tokens => {
-                    console.log("tokens : ", tokens)
-                    resolve(tokens)
-
-
-                }
-            )
-
-        })
-    }, [bancorContractBancorConverterRegistry, web3context])
-    */
 
     const getTokenName = useCallback(async (address) => {
         try {
             const signer = web3context.library.getSigner();
             const contract = getContract(address, SmartTokenAbi, signer);
             const name = await contract.symbol();
-            return [ name, address ];
+            return [name, address];
         } catch (error) {
 
-            switch(address.toLowerCase()) {
+            switch (address.toLowerCase()) {
                 case ('0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2').toLowerCase():
-                    return ["MKR", address ];
+                    return ["MKR", address];
                 default:
-                    return ["NAME_ERROR", address ];
+                    return ["NAME_ERROR", address];
             }
 
         }
 
     }, [web3context])
+
+    const listLiquidityPools = useCallback(async () => {
+
+        const signer = web3context.library.getSigner();
+        const contract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
+        const pools = await contract.getLiquidityPools();
+        const converters = await contract.getConvertersBySmartTokens(pools);
+        return pools.map((item, index) => { return { smartTokenAddress: item, converterAddress: converters[index] } });
+
+    }, [bancorContractBancorConverterRegistry, web3context])
 
 
     const listConversionTokens = useCallback(async () => {
@@ -409,6 +334,33 @@ export const useBancor = (web3context) => {
     }, [bancorContractBancorConverterRegistry, web3context])
 
 
+    const loadReserve = useCallback(async (converterAddress, index) => {
+
+        const signer = web3context.library.getSigner();
+        const contract = getContract(converterAddress, BancorConverterAbi, signer);
+        const reserveAddress = await contract.connectorTokens(index);
+
+        const balance = await contract.getConnectorBalance(reserveAddress);
+
+        return {
+            address: reserveAddress,
+            balance: ethers.utils.formatEther(balance.toString()).toString()
+        }
+
+
+
+    }, [web3context])
+
+    const getConnectorTokenCount = useCallback(async (converterAddress) => {
+
+        const signer = web3context.library.getSigner();
+        const contract = getContract(converterAddress, BancorConverterAbi, signer);
+        const total = await contract.connectorTokenCount();
+
+        return Number(total.toString());
+
+    }, [web3context])
+
     const getTokenBalance = useCallback(async (tokenAddress) => {
 
         const signer = web3context.library.getSigner();
@@ -423,12 +375,121 @@ export const useBancor = (web3context) => {
 
     }, [web3context])
 
+    const getTokenDecimal = useCallback(async (tokenAddress) => {
+
+        const signer = web3context.library.getSigner();
+        const contract = getContract(tokenAddress, ERC20TokenAbi, signer);
+        const decimal = await contract.decimals();
+
+        return decimal;
+    }, [web3context])
+
+    const parseToken = useCallback((amount, decimal) => {
+        return ethers.utils.formatUnits(amount, decimal) || "0.0";
+    }, [])
+
+    const generatePath = useCallback(async (sourceAddress, destinationAddress, pools, anchor = "BNT") => {
+
+        const signer = web3context.library.getSigner();
+        const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
+
+        const getPath = async (token, anchorToken) => {
+            if (token == anchorToken)
+                return [token];
+
+            const isSmartToken = await converterRegistry.isSmartToken(token);
+            const smartTokens = isSmartToken ? [token] : await converterRegistry.getConvertibleTokenSmartTokens(token);
+            for (const smartToken of smartTokens) {
+                const pool = pools.find(item => item.smartTokenAddress === smartToken)
+
+                if (pool.converterAddress) {
+                    const connectorTokenCount = await getConnectorTokenCount(pool.converterAddress);
+
+                    for (let i = 0; i < Number(connectorTokenCount); i++) {
+                        const connectorToken = await loadReserve(pool.converterAddress, i);
+                        if (connectorToken && (connectorToken.address != token)) {
+                            const path = await getPath(connectorToken.address, anchorToken);
+                            if (path.length > 0)
+                                return [token, smartToken, ...path];
+                        }
+                    }
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        const getShortestPath = (sourcePath, targetPath) => {
+            if (sourcePath.length > 0 && targetPath.length > 0) {
+                let i = sourcePath.length - 1;
+                let j = targetPath.length - 1;
+                while (i >= 0 && j >= 0 && sourcePath[i] == targetPath[j]) {
+                    i--;
+                    j--;
+                }
+
+                const path = [];
+                for (let m = 0; m <= i + 1; m++)
+                    path.push(sourcePath[m]);
+                for (let n = j; n >= 0; n--)
+                    path.push(targetPath[n]);
+
+                let length = 0;
+                for (let p = 0; p < path.length; p += 1) {
+                    for (let q = p + 2; q < path.length - p % 2; q += 2) {
+                        if (path[p] == path[q])
+                            p = q;
+                    }
+                    path[length++] = path[p];
+                }
+
+                return path.slice(0, length);
+            }
+
+            return [];
+        }
+
+        let anchorTokenAddress = "";
+        switch (anchor) {
+            case 'BNT':
+                anchorTokenAddress = web3context.networkId === 3 ? TOKEN_CONTRACTS.ROPSTEN.BNT : TOKEN_CONTRACTS.MAINNET.BNT;
+                break;
+        }
+
+        if (anchorTokenAddress === "") {
+            throw new Error('Invalid Anchor Token Address');
+        }
+
+        const sourcePath = await getPath(sourceAddress, anchorTokenAddress);
+        const targetPath = await getPath(destinationAddress, anchorTokenAddress);
+        console.log("sourcePath / targetPath : ", sourcePath, targetPath)
+        return getShortestPath(sourcePath, targetPath);
+
+
+    }, [web3context, bancorContractBancorConverterRegistry])
+
+
+    const getRate = useCallback(async (path, amount, decimal = 18) => {
+
+        const signer = web3context.library.getSigner();
+        const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
+
+        const ret = await networkContract.getReturnByPath(path, ethers.utils.parseUnits(amount, decimal));
+        return ret[0];
+
+    }, [web3context, bancorContractBancorNetwork])
+
     return {
         loading,
         getTokenName,
         listConversionTokens,
+        listLiquidityPools,
+        generatePath,
+        getRate,
         loadingErrorMessage,
-        getTokenBalance
+        getTokenBalance,
+        getTokenDecimal,
+        parseToken
     }
 }
 
