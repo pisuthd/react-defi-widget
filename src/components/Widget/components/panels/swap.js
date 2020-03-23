@@ -10,7 +10,7 @@ import loadingIcon from "../../../../../assets/loading.gif"
 
 const SwapPanel = (props) => {
 
-    const { web3ReactContext } = props;
+    const { web3ReactContext, handleProcessing, clickCount } = props;
 
     const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token)]));
 
@@ -28,6 +28,13 @@ const SwapPanel = (props) => {
 
     const [sourceAmount, setSourceAmount] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
+
+    
+
+    useEffect(() => {
+        // Handle click event on Parent Component
+        console.log("do something...")
+    }, [clickCount])
 
     useEffect(() => {
 
@@ -87,6 +94,16 @@ const SwapPanel = (props) => {
         setDestination(newDestination);
 
     }, [source])
+
+    useEffect(() => {
+
+        if (!isLoadingBalance && !isLoadingRate) {
+            handleProcessing(false)
+        } else if (isLoadingBalance || isLoadingRate) {
+            handleProcessing(true)
+        }  
+
+    },[isLoadingBalance, isLoadingRate])
 
     useEffect(() => {
 

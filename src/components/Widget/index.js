@@ -19,6 +19,10 @@ const Widget = ({ web3ReactContext, currentPage }) => {
 
     const disclaimer = HEADLINES.DISCLAIMER[currentPage];
 
+    const [ processing, setProcessing ] = useState(false);
+
+    const [ clickCount, setClickCount ] = useState(0);
+
     useEffect(() => {
 
         if (loading) {
@@ -43,7 +47,17 @@ const Widget = ({ web3ReactContext, currentPage }) => {
     }, [web3ReactContext.error, web3ReactContext.active, loading])
 
 
-    const disabled = errorMessage || !web3ReactContext.active || loading ;
+    const handleProcessing = (status) => {
+        setProcessing(status);
+    }
+
+    const handleClick = useCallback((e) => {
+        e.preventDefault();
+        setClickCount(clickCount+1)
+
+    },[clickCount])
+
+    const disabled = errorMessage || !web3ReactContext.active || loading || processing ;
 
     return (
         <ContainerDimensions>
@@ -66,12 +80,12 @@ const Widget = ({ web3ReactContext, currentPage }) => {
                         width={width}
                         height={height}
                     >
-                        {currentPage === PAGES.SWAP && <SwapPanel web3ReactContext={web3ReactContext} />}
+                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} />}
                     </Body>
 
                     <Footer>
 
-                        <ActionButton disabled={disabled}>
+                        <ActionButton  onClick={handleClick} disabled={disabled}>
                             Swap
                         </ActionButton>
                         <StatusPanel
