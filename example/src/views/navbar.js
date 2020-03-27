@@ -22,7 +22,7 @@ const NavBar = (props) => {
                 <NavbarBrand>
                     <BrandHeader>
                         <Link to="/">
-                            Defiprompt.com
+                            StakingDojo.com
                         </Link>
                     </BrandHeader>
 
