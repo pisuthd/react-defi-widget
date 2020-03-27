@@ -17,11 +17,12 @@ const Widget = ({ web3ReactContext, currentPage }) => {
 
     const { loading, listConversionTokens, getTokenName, loadingErrorMessage } = useBancor(web3ReactContext);
 
-    const disclaimer = HEADLINES.DISCLAIMER[currentPage];
 
     const [ processing, setProcessing ] = useState(false);
 
     const [ clickCount, setClickCount ] = useState(0);
+
+    const [ disclaimer, setDisclaimer ] = useState(HEADLINES.DISCLAIMER[currentPage]);
 
     useEffect(() => {
         if (loadingErrorMessage) {
@@ -86,7 +87,7 @@ const Widget = ({ web3ReactContext, currentPage }) => {
                         width={width}
                         height={height}
                     >
-                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} halt={errorMessage} />}
+                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleTextStatus={setDisclaimer} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} halt={errorMessage} />}
                     </Body>
 
                     <Footer>
