@@ -194,6 +194,7 @@ const SwapPanel = (props) => {
         
         const newAmount = Number(amount)*percent;
         setSourceAmount(newAmount);
+        setDestinationAmount(newAmount*Number(rate));
 
     }, [rate])
 
