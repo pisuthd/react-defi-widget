@@ -15,13 +15,19 @@ const Widget = ({ web3ReactContext, currentPage }) => {
 
     const [errorMessage, setErrorMessage] = useState();
 
-    const { loading, listConversionTokens, getTokenName } = useBancor(web3ReactContext);
+    const { loading, listConversionTokens, getTokenName, loadingErrorMessage } = useBancor(web3ReactContext);
 
     const disclaimer = HEADLINES.DISCLAIMER[currentPage];
 
     const [ processing, setProcessing ] = useState(false);
 
     const [ clickCount, setClickCount ] = useState(0);
+
+    useEffect(() => {
+        if (loadingErrorMessage) {
+            setErrorMessage(loadingErrorMessage);
+        }
+    }, [loadingErrorMessage])
 
     useEffect(() => {
 
@@ -80,7 +86,7 @@ const Widget = ({ web3ReactContext, currentPage }) => {
                         width={width}
                         height={height}
                     >
-                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} />}
+                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} halt={errorMessage} />}
                     </Body>
 
                     <Footer>
@@ -93,7 +99,7 @@ const Widget = ({ web3ReactContext, currentPage }) => {
                         >
                             {errorMessage
                                 ?
-                                (<ErrorMessage>{`Error : ${web3ReactContext.error.message}` || "Error : An unknown error occurred."}</ErrorMessage>)
+                                (<ErrorMessage>{`Error : ${errorMessage}` || "Error : An unknown error occurred."}</ErrorMessage>)
                                 :
                                 <span>{disclaimer}</span>
                             }

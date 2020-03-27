@@ -29,6 +29,9 @@ const ACTIONS = {
     UPDATE_BANCOR_CONTRACTS: "UPDATE_BANCOR_CONTRACTS"
 }
 
+const GAS_LIMIT = 1000000;
+
+
 const reducer = (state, { type, payload }) => {
     switch (type) {
         case ACTIONS.UPDATE_PROCESSING_TX: {
@@ -479,6 +482,45 @@ export const useBancor = (web3context) => {
 
     }, [web3context, bancorContractBancorNetwork])
 
+
+    const convert = useCallback(async (path, sourceTokenAddress,  sourceAmount, destinationAmount, ) => {
+
+        
+        try {
+            const sourceAmountWei = ethers.utils.parseEther(`${sourceAmount}`);
+            // const destinationAmountWei = ethers.utils.parseEther(`${destinationAmount*0.9}`);
+            const destinationAmountWei = destinationAmount;
+            const signer = web3context.library.getSigner();
+
+            const options = {
+                gasLimit: GAS_LIMIT,
+                gasPrice: ethers.utils.parseEther("0.000000005") // 5 Gwei
+            };
+        
+            const tokenContract = getContract(sourceTokenAddress, SmartTokenAbi, signer);
+            const allowance = await tokenContract.allowance(web3context.account, bancorContractBancorNetwork);
+            console.log("allowance : ", allowance.toString());
+            
+            const approvalTx = await tokenContract.approve(bancorContractBancorNetwork , sourceAmountWei , options);
+            console.log("waiting for confirmation : ", approvalTx)
+            // await approvalTx.wait();
+            
+
+            const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
+            const convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
+
+            console.log("convertTx : ", convertTx);
+            // await convertTx.wait();
+            
+
+
+        } catch (error) {
+            throw new Error(error.message || error);
+        }
+
+
+    }, [web3context, bancorContractBancorNetwork])
+
     return {
         loading,
         getTokenName,
@@ -489,7 +531,8 @@ export const useBancor = (web3context) => {
         loadingErrorMessage,
         getTokenBalance,
         getTokenDecimal,
-        parseToken
+        parseToken,
+        convert
     }
 }
 

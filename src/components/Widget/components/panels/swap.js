@@ -10,31 +10,60 @@ import loadingIcon from "../../../../../assets/loading.gif"
 
 const SwapPanel = (props) => {
 
-    const { web3ReactContext, handleProcessing, clickCount } = props;
+    const { web3ReactContext, handleProcessing, clickCount, halt } = props;
 
     const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token)]));
 
     const [liquidityPools, setLiquidityPools] = useState([]);
 
-    const { loading, parseToken, listConversionTokens, getRate, getTokenDecimal, listLiquidityPools, getTokenBalance, generatePath } = useBancor(web3ReactContext);
+    const { loading, parseToken, convert, listConversionTokens, getRate, getTokenDecimal, listLiquidityPools, getTokenBalance, generatePath } = useBancor(web3ReactContext);
 
-    const [source, setSource] = useState(tokens[0]);
-    const [destination, setDestination] = useState(tokens[1]);
+    const [source, setSource] = useState(tokens[2]);
+    const [destination, setDestination] = useState(tokens[0]);
 
     const [sourceBalance, setSourceBalance] = useState("0.0");
     const [isLoadingBalance, setLoadingBalance] = useState(true);
     const [rate, setRate] = useState("1");
+    const [path, setPath ] = useState([]);
     const [isLoadingRate, setLoadingRate] = useState(true);
 
     const [sourceAmount, setSourceAmount] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
 
-    
+    useEffect(() => {
+        if (halt!==undefined) {
+            setLoadingBalance(false);
+            setLoadingRate(false);
+        } 
+    }, [halt])
 
     useEffect(() => {
         // Handle click event on Parent Component
-        console.log("do something...")
+        console.log("do something...");
+        onConvert();
     }, [clickCount])
+
+
+    const onConvert = useCallback(async () => {
+
+        if ((source[1]!=="") && (path.length > 0) && (sourceAmount!==0)) {
+            handleProcessing(true);
+            console.log("start convert...", source, path,sourceAmount );
+            try {
+
+                const sourceDecimal = await getTokenDecimal(source[1]);
+                const detinationAmount = await getRate(path, sourceAmount , sourceDecimal);
+                
+                convert(path, source[1], sourceAmount,detinationAmount );
+            } catch (error) {
+                console.log("onConvert error : ", error)
+            }
+            
+            handleProcessing(false);
+
+        }
+
+    }, [sourceAmount, source, path])
 
     useEffect(() => {
 
@@ -66,13 +95,6 @@ const SwapPanel = (props) => {
 
     }, [loading])
 
-    useEffect(() => {
-
-        const result = (Number(sourceAmount)*Number(rate)).toFixed(6);
-
-        setDestinationAmount(result);
-
-    }, [sourceAmount, rate])
 
     const onSourceChange = useCallback((newSource) => {
 
@@ -140,6 +162,7 @@ const SwapPanel = (props) => {
                     const destinationDecimal = await getTokenDecimal(destination[1]);
                     const finalRate = parseToken(rate, destinationDecimal);
                     setRate(`${Number(finalRate).toFixed(6)}`);
+                    setPath(path);
 
                 } catch (error) {
                     console.log("Find a shortest path error : ", error);
@@ -153,8 +176,19 @@ const SwapPanel = (props) => {
 
     const handleChange = useCallback((e) => {
         e.preventDefault();
-        setSourceAmount(e.target.value);
-    }, [])
+        if (e.target.id === 'sourceInput') {
+            setSourceAmount(e.target.value);
+            const result = (Number(e.target.value)*Number(rate)).toFixed(6);
+            setDestinationAmount(result);
+        } else {
+            setDestinationAmount(e.target.value);
+            const result = (Number(e.target.value)*Number(rate)).toFixed(6);
+            setSourceAmount(result);
+
+        }
+        
+        
+    }, [rate])
 
     return (
         <Fragment>
@@ -192,7 +226,7 @@ const SwapPanel = (props) => {
                         </div>
                     </InputGroupDropdown>
                     <InputGroupArea>
-                        <input value={sourceAmount} onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
+                        <input value={sourceAmount} id="sourceInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
                     </InputGroupArea>
                 </InputGroup>
                 <AccountSection>
@@ -236,7 +270,7 @@ const SwapPanel = (props) => {
                         </div>
                     </InputGroupDropdown>
                     <InputGroupArea>
-                        <input value={destinationAmount} type="text" placeholder="0" />
+                        <input value={destinationAmount} id="destinationInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
                     </InputGroupArea>
                 </InputGroup>
                 <AccountSection>
