@@ -5,12 +5,14 @@ import styled from "styled-components";
 import { useBancor, INITIAL_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress } from "../../../../utils/token";
 
+import { HEADLINES , PAGES } from "../../../../constants";
+
 import loadingIcon from "../../../../../assets/loading.gif"
 
 
 const SwapPanel = (props) => {
 
-    const { web3ReactContext, handleProcessing, clickCount, halt } = props;
+    const { web3ReactContext, handleProcessing, clickCount, halt, handleTextStatus } = props;
 
     const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token)]));
 
@@ -29,6 +31,8 @@ const SwapPanel = (props) => {
 
     const [sourceAmount, setSourceAmount] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
+
+    const [ processingTx , setProcessingTx ] = useState();
 
     useEffect(() => {
         if (halt!==undefined) {
@@ -49,16 +53,25 @@ const SwapPanel = (props) => {
         if ((source[1]!=="") && (path.length > 0) && (sourceAmount!==0)) {
             handleProcessing(true);
             console.log("start convert...", source, path,sourceAmount );
+            
             try {
                 const sourceDecimal = await getTokenDecimal(source[1]);
                 const detinationAmount = await getRate(path, `${sourceAmount}` , sourceDecimal);
                 
-                const success = convert(path, source[1], `${sourceAmount}` ,detinationAmount );
+                const tx = await convert(path, source[1], `${sourceAmount}` ,detinationAmount );
                 
+                const { hash } = tx;
+                setProcessingTx(hash);
+                handleTextStatus(`YOUR TRANSACTION ${hash} IS BEING PROCESSED.`);
+                
+                await tx.wait(); // shows an error if it's failed
+                setProcessingTx();
+                console.log("done...")
+
             } catch (error) {
                 console.log("onConvert error : ", error)
             }
-            
+            handleTextStatus(HEADLINES.DISCLAIMER[PAGES.SWAP]);
             handleProcessing(false);
 
         }

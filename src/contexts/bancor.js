@@ -488,7 +488,7 @@ export const useBancor = (web3context) => {
         
         try {
             const sourceAmountWei = ethers.utils.parseEther(`${sourceAmount}`);
-            // const destinationAmountWei = ethers.utils.parseEther(`${destinationAmount*0.9}`);
+            
             const destinationAmountWei = destinationAmount;
             const signer = web3context.library.getSigner();
 
@@ -499,23 +499,32 @@ export const useBancor = (web3context) => {
         
             const tokenContract = getContract(sourceTokenAddress, SmartTokenAbi, signer);
             const allowance = await tokenContract.allowance(web3context.account, bancorContractBancorNetwork);
-            console.log("allowance : ", allowance.toString());
+
+            const diff = sourceAmountWei.sub(allowance);
+
+            if (diff > 0) {
+                console.log("diff : ", diff.toString());
+                const approvalTx = await tokenContract.approve(bancorContractBancorNetwork , diff , options);
+                console.log("waiting for confirmation : ", approvalTx)
+            }
+
             
-            const approvalTx = await tokenContract.approve(bancorContractBancorNetwork , sourceAmountWei , options);
-            console.log("waiting for confirmation : ", approvalTx)
             // await approvalTx.wait();
             
-
+            
             const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
             const convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
-
+            
             console.log("convertTx : ", convertTx);
+            
             // await convertTx.wait();
             
-
+            return convertTx;
 
         } catch (error) {
-            throw new Error(error.message || error);
+            // throw new Error(error);
+            console.log("error : ", error);
+            return undefined;
         }
 
 
