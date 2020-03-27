@@ -50,11 +50,11 @@ const SwapPanel = (props) => {
             handleProcessing(true);
             console.log("start convert...", source, path,sourceAmount );
             try {
-
                 const sourceDecimal = await getTokenDecimal(source[1]);
-                const detinationAmount = await getRate(path, sourceAmount , sourceDecimal);
+                const detinationAmount = await getRate(path, `${sourceAmount}` , sourceDecimal);
                 
-                convert(path, source[1], sourceAmount,detinationAmount );
+                const success = convert(path, source[1], `${sourceAmount}` ,detinationAmount );
+                
             } catch (error) {
                 console.log("onConvert error : ", error)
             }
