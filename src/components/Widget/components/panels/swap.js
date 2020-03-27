@@ -190,6 +190,13 @@ const SwapPanel = (props) => {
         
     }, [rate])
 
+    const setSourceAmountByPercentage = useCallback((percent, amount)=>{
+        
+        const newAmount = Number(amount)*percent;
+        setSourceAmount(newAmount);
+
+    }, [rate])
+
     return (
         <Fragment>
             <Column>
@@ -231,10 +238,16 @@ const SwapPanel = (props) => {
                 </InputGroup>
                 <AccountSection>
                     <AccountLeft>
-                        BALANCE {sourceBalance}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
+                        BALANCE {sourceBalance == "0.0" ? sourceBalance : <Percentage onClick={()=>setSourceAmountByPercentage(1, sourceBalance)} >{sourceBalance}</Percentage>}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
                     </AccountLeft>
                     <AccountRight>
-
+                        { sourceBalance !== "0.0" && (
+                            <span>
+                                <Percentage onClick={()=>setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
+                                <Percentage onClick={()=>setSourceAmountByPercentage(0.5, sourceBalance)}>50%</Percentage>{` `}
+                                <Percentage onClick={()=>setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
+                            </span>
+                        )}
                     </AccountRight>
                 </AccountSection>
             </Column>
@@ -311,6 +324,15 @@ const AccountRight = styled(AccountLeft)`
     
     
     
+`;
+
+const Percentage = styled.a`
+    cursor: pointer;
+
+    :hover {
+        font-weight: 600;
+    }
+
 `;
 
 const InputGroup = styled.div`
