@@ -378,6 +378,15 @@ export const useBancor = (web3context) => {
 
     }, [web3context])
 
+
+    const getETHBalance = useCallback(async () => {
+
+        const signer = web3context.library.getSigner();
+        const balance = await signer.provider.getBalance(web3context.account);
+        return ethers.utils.formatEther(balance);
+
+    },[web3context])
+
     const getTokenDecimal = useCallback(async (tokenAddress) => {
 
         const signer = web3context.library.getSigner();
@@ -541,7 +550,8 @@ export const useBancor = (web3context) => {
         getTokenBalance,
         getTokenDecimal,
         parseToken,
-        convert
+        convert,
+        getETHBalance
     }
 }
 

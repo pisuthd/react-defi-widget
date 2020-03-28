@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { useBancor, INITIAL_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress } from "../../../../utils/token";
 
-import { HEADLINES , PAGES } from "../../../../constants";
+import { HEADLINES, PAGES } from "../../../../constants";
 
 import loadingIcon from "../../../../../assets/loading.gif"
 
@@ -18,27 +18,27 @@ const SwapPanel = (props) => {
 
     const [liquidityPools, setLiquidityPools] = useState([]);
 
-    const { loading, parseToken, convert, listConversionTokens, getRate, getTokenDecimal, listLiquidityPools, getTokenBalance, generatePath } = useBancor(web3ReactContext);
+    const { loading, parseToken, convert, listConversionTokens, getRate, getTokenDecimal, getETHBalance, listLiquidityPools, getTokenBalance, generatePath } = useBancor(web3ReactContext);
 
-    const [source, setSource] = useState(tokens[2]);
+    const [source, setSource] = useState(tokens[1]);
     const [destination, setDestination] = useState(tokens[0]);
 
     const [sourceBalance, setSourceBalance] = useState("0.0");
     const [isLoadingBalance, setLoadingBalance] = useState(true);
     const [rate, setRate] = useState("1");
-    const [path, setPath ] = useState([]);
+    const [path, setPath] = useState([]);
     const [isLoadingRate, setLoadingRate] = useState(true);
 
     const [sourceAmount, setSourceAmount] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
 
-    const [ processingTx , setProcessingTx ] = useState();
+    const [processingTx, setProcessingTx] = useState();
 
     useEffect(() => {
-        if (halt!==undefined) {
+        if (halt !== undefined) {
             setLoadingBalance(false);
             setLoadingRate(false);
-        } 
+        }
     }, [halt])
 
     useEffect(() => {
@@ -50,23 +50,29 @@ const SwapPanel = (props) => {
 
     const onConvert = useCallback(async () => {
 
-        if ((source[1]!=="") && (path.length > 0) && (sourceAmount!==0)) {
+        if ((source[1] !== "") && (path.length > 0) && (sourceAmount !== 0)) {
             handleProcessing(true);
-            console.log("start convert...", source, path,sourceAmount );
-            
+            console.log("start convert...", source, path, sourceAmount);
+
             try {
                 const sourceDecimal = await getTokenDecimal(source[1]);
-                const detinationAmount = await getRate(path, `${sourceAmount}` , sourceDecimal);
-                
-                const tx = await convert(path, source[1], `${sourceAmount}` ,detinationAmount );
-                
-                const { hash } = tx;
-                setProcessingTx(hash);
-                handleTextStatus(`YOUR TRANSACTION ${hash} IS BEING PROCESSED.`);
-                
-                await tx.wait(); // shows an error if it's failed
-                setProcessingTx();
-                console.log("done...")
+                const detinationAmount = await getRate(path, `${sourceAmount}`, sourceDecimal);
+
+                const tx = await convert(path, source[1], `${sourceAmount}`, detinationAmount);
+
+                if (tx.hash) {
+                    const { hash } = tx;
+                    setProcessingTx(hash);
+                    handleTextStatus(`YOUR TRANSACTION ${hash} IS BEING PROCESSED.`);
+
+                    await tx.wait(); // shows an error if it's failed
+                    setProcessingTx();
+                    console.log("done...");
+
+                }
+
+
+
 
             } catch (error) {
                 console.log("onConvert error : ", error)
@@ -76,7 +82,7 @@ const SwapPanel = (props) => {
 
         }
 
-    }, [sourceAmount, source, path])
+    }, [sourceAmount, source, path, web3ReactContext])
 
     useEffect(() => {
 
@@ -136,30 +142,45 @@ const SwapPanel = (props) => {
             handleProcessing(false)
         } else if (isLoadingBalance || isLoadingRate) {
             handleProcessing(true)
-        }  
+        }
 
-    },[isLoadingBalance, isLoadingRate])
+    }, [isLoadingBalance, isLoadingRate])
 
     useEffect(() => {
 
         if (source[1] !== '' && !loading) {
-            console.log("checking balance of : ", source[1]);
             (async () => {
-                setLoadingBalance(true);
-
-                try {
-                    const result = await getTokenBalance(source[1]);
-                    setSourceBalance(result);
-                } catch (error) {
-                    console.log("loading rate error  ;", error);
-                }
-
-
-                setLoadingBalance(false);
+                await updateBalance(source);
             })();
 
         }
     }, [source, loading])
+
+    const updateBalance = useCallback(async (source) => {
+
+        console.log("checking balance of : ", source[1]);
+        setLoadingBalance(true);
+
+        try {
+
+            if (source[0] === "ETH") {
+                console.log("Check native ETH...");
+                const result = await getETHBalance();
+                setSourceBalance(result);
+            } else {
+                const result = await getTokenBalance(source[1]);
+                setSourceBalance(result);
+            }
+
+
+        } catch (error) {
+            console.log("loading rate error  ;", error);
+        }
+
+
+        setLoadingBalance(false);
+
+    }, [web3ReactContext])
 
     useEffect(() => {
 
@@ -191,23 +212,23 @@ const SwapPanel = (props) => {
         e.preventDefault();
         if (e.target.id === 'sourceInput') {
             setSourceAmount(e.target.value);
-            const result = (Number(e.target.value)*Number(rate)).toFixed(6);
+            const result = (Number(e.target.value) * Number(rate)).toFixed(6);
             setDestinationAmount(result);
         } else {
             setDestinationAmount(e.target.value);
-            const result = (Number(e.target.value)*Number(rate)).toFixed(6);
+            const result = (Number(e.target.value) * Number(rate)).toFixed(6);
             setSourceAmount(result);
 
         }
-        
-        
+
+
     }, [rate])
 
-    const setSourceAmountByPercentage = useCallback((percent, amount)=>{
-        
-        const newAmount = Number(amount)*percent;
+    const setSourceAmountByPercentage = useCallback((percent, amount) => {
+
+        const newAmount = Number(amount) * percent;
         setSourceAmount(newAmount);
-        setDestinationAmount(newAmount*Number(rate));
+        setDestinationAmount(newAmount * Number(rate));
 
     }, [rate])
 
@@ -252,14 +273,14 @@ const SwapPanel = (props) => {
                 </InputGroup>
                 <AccountSection>
                     <AccountLeft>
-                        BALANCE {sourceBalance == "0.0" ? sourceBalance : <Percentage onClick={()=>setSourceAmountByPercentage(1, sourceBalance)} >{sourceBalance}</Percentage>}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
+                        BALANCE {sourceBalance == "0.0" ? sourceBalance : <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)} >{sourceBalance}</Percentage>}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
                     </AccountLeft>
                     <AccountRight>
-                        { sourceBalance !== "0.0" && (
+                        {sourceBalance !== "0.0" && (
                             <span>
-                                <Percentage onClick={()=>setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
-                                <Percentage onClick={()=>setSourceAmountByPercentage(0.5, sourceBalance)}>50%</Percentage>{` `}
-                                <Percentage onClick={()=>setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
+                                <Percentage onClick={() => setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
+                                <Percentage onClick={() => setSourceAmountByPercentage(0.5, sourceBalance)}>50%</Percentage>{` `}
+                                <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
                             </span>
                         )}
                     </AccountRight>
