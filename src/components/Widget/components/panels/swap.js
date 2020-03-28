@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { useBancor, INITIAL_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress } from "../../../../utils/token";
 
-import { HEADLINES, PAGES } from "../../../../constants";
+import { HEADLINES, PAGES, SLIPPAGE_RATE } from "../../../../constants";
 
 import loadingIcon from "../../../../../assets/loading.gif"
 
@@ -59,7 +59,7 @@ const SwapPanel = (props) => {
                 const rateResult = await getRate(path, `${sourceAmount}`, sourceDecimal);
                 const detinationAmount = rateResult[0];
                 // const feeAmount = rateResult[1];
-                const slipRate = 30000; // 3%
+                const slipRate = SLIPPAGE_RATE; // 3%
                 console.log("detinationAmount : ", detinationAmount.toString());
 
                 const tx = await convert(path, source[1], `${sourceAmount}`, sourceDecimal, detinationAmount, slipRate, source[0] === "ETH", destination[0] === "ETH");

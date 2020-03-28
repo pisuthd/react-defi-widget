@@ -62,6 +62,8 @@ export const HEADLINES = {
     }
 }
 
+export const SLIPPAGE_RATE =  30000;// 3%
+
 /*
 export const TOKEN_LIST = [
     {
