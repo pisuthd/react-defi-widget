@@ -380,8 +380,8 @@ const SwapPanel = (props) => {
                                                         </td>
                                                         <td>
                                                             {item[0]}
-                                                            <ReservePoolAmount>
-                                                                RESERVE{` `}:{` `}{item[2]}{` `}{item[0]}
+                                                            <ReservePoolAmount inactive={item[2]===0}>
+                                                                SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
                                                             </ReservePoolAmount>
                                                         </td>
                                                     </tr>
@@ -438,8 +438,8 @@ const SwapPanel = (props) => {
                                                     </td>
                                                     <td>
                                                         {item[0]}
-                                                        <ReservePoolAmount>
-                                                            RESERVE{` `}:{` `}{item[2]}{` `}{item[0]}
+                                                        <ReservePoolAmount inactive={item[2]===0}>
+                                                            SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
                                                         </ReservePoolAmount>
                                                     </td>
                                                 </tr>
@@ -486,6 +486,12 @@ const ReservePoolAmount = styled.div`
     font-weight: 500;
     word-wrap: break-word;
     padding: 4px;
+    ${ props => props.inactive &&
+        (`
+            background-color: pink;
+        `)
+
+    }
 `;
 
 const AccountLeft = styled.div`
