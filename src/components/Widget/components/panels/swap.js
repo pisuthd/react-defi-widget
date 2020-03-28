@@ -375,13 +375,11 @@ const SwapPanel = (props) => {
 
                                                 return (
                                                     <tr onClick={() => onSourceChange(item)} key={index}>
-                                                        <td width="20%">
+                                                        <td width="25%">
                                                             <TokenLogo src={getIcon(item[0])} alt={item[0]} />
                                                         </td>
-                                                        <td width="25%">
-                                                            {item[0]}
-                                                        </td>
                                                         <td>
+                                                            {item[0]}
                                                             <ReservePoolAmount>
                                                                 RESERVE{` `}:{` `}{item[2]}{` `}{item[0]}
                                                             </ReservePoolAmount>
@@ -435,17 +433,14 @@ const SwapPanel = (props) => {
                                         {tokens.map((item, index) => {
                                             return (
                                                 <tr onClick={() => onDestinationChange(item)} key={index}>
-                                                    <td width="20%">
+                                                    <td width="25%">
                                                         <TokenLogo src={getIcon(item[0])} alt={item[0]} />
                                                     </td>
-                                                    <td width="25%">
-                                                        {item[0]}
-                                                    </td>
                                                     <td>
+                                                        {item[0]}
                                                         <ReservePoolAmount>
                                                             RESERVE{` `}:{` `}{item[2]}{` `}{item[0]}
                                                         </ReservePoolAmount>
-
                                                     </td>
                                                 </tr>
                                             )
@@ -486,10 +481,11 @@ const AccountSection = styled.div`
     display: flex;
 `;
 
-const ReservePoolAmount = styled.span`
+const ReservePoolAmount = styled.div`
     font-size: 10px;
     font-weight: 500;
     word-wrap: break-word;
+    padding: 4px;
 `;
 
 const AccountLeft = styled.div`
@@ -554,7 +550,7 @@ const InputGroupDropdown = styled.div`
         display: none;
         position: absolute;
         background-color: #f9f9f9;
-        min-width: 300px;
+        min-width: 220px;
         box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
         z-index: 1;
         height: 250px;
