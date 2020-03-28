@@ -385,7 +385,7 @@ export const useBancor = (web3context) => {
         const balance = await signer.provider.getBalance(web3context.account);
         return ethers.utils.formatEther(balance);
 
-    },[web3context])
+    }, [web3context])
 
     const getTokenDecimal = useCallback(async (tokenAddress) => {
 
@@ -487,48 +487,92 @@ export const useBancor = (web3context) => {
         const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
 
         const ret = await networkContract.getReturnByPath(path, ethers.utils.parseUnits(amount, decimal));
-        return ret[0];
+
+        for (let r of ret) {
+            console.log("getRate : ", ethers.utils.formatUnits(r, decimal).toString());
+        }
+
+        return [ret[0], ret[1]];
 
     }, [web3context, bancorContractBancorNetwork])
 
 
-    const convert = useCallback(async (path, sourceTokenAddress,  sourceAmount, destinationAmount, ) => {
+    const convert = useCallback(async (path, sourceTokenAddress, sourceAmount, sourceDecimal, destinationAmount, slipRate, fromETH = false, toETH = false) => {
 
-        
+
         try {
-            const sourceAmountWei = ethers.utils.parseEther(`${sourceAmount}`);
             
-            const destinationAmountWei = destinationAmount;
+            const sourceAmountWei = ethers.utils.parseUnits(`${sourceAmount}`, sourceDecimal);
+            // const allowanceAmount = ethers.utils.parseUnits(`${Math.ceil(Number(sourceAmount))}`, sourceDecimal);
+            const slipAmount = (destinationAmount.mul(ethers.utils.bigNumberify(slipRate))).div(ethers.utils.bigNumberify(1000000));
+            // console.log("slipAmount -> ", slipAmount.toString());
+            const destinationAmountWei = destinationAmount.sub(slipAmount);
+            // const destinationAmountWei = destinationAmount;
+            console.log("source : ", ethers.utils.formatUnits(sourceAmountWei, sourceDecimal), " dest : ", ethers.utils.formatEther(destinationAmountWei).toString());
+            // console.log("min : ", ethers.utils.formatEther(destinationAmountWei).toString(), "max : ", ethers.utils.formatEther(destinationAmount).toString() )
             const signer = web3context.library.getSigner();
 
-            const options = {
+            let options = {
                 gasLimit: GAS_LIMIT,
                 gasPrice: ethers.utils.parseEther("0.000000005") // 5 Gwei
             };
-        
+
             const tokenContract = getContract(sourceTokenAddress, SmartTokenAbi, signer);
             const allowance = await tokenContract.allowance(web3context.account, bancorContractBancorNetwork);
+            console.log("allowance : ", allowance.toString());
 
             const diff = sourceAmountWei.sub(allowance);
 
             if (diff > 0) {
                 console.log("diff : ", diff.toString());
-                const approvalTx = await tokenContract.approve(bancorContractBancorNetwork , diff , options);
+
+                if (allowance > 0) {
+                    console.log("allowance is not zero need to clear it first...");
+                    const clearTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
+                    await clearTx.wait();
+                }
+
+                const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, sourceAmountWei, options);
                 console.log("waiting for confirmation : ", approvalTx)
+                await approvalTx.wait(); // <-- can't remove
             }
 
-            
+            if (fromETH) {
+                options = {
+                    ...options,
+                    value: sourceAmountWei
+                }
+            }
+            console.log("isETH : ", fromETH, options);
             // await approvalTx.wait();
-            
-            
+
+
             const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
-            const convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
-            
+
+            let convertTx;
+            /*
+            if ( toETH ) {
+                convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
+            } else {
+                convertTx = await networkContract.convert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
+            } 
+            */
+            if (!fromETH) {
+                convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei, destinationAmountWei, "0x0000000000000000000000000000000000000000", "0", options);
+            } else {
+                convertTx = await networkContract.convert2(path, sourceAmountWei, destinationAmountWei, "0x0000000000000000000000000000000000000000", "0", options);
+            }
+
+
+            // convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei  ,"0x0000000000000000000000000000000000000000", "0", options);
+            // convertTx = await networkContract.convert2(path, sourceAmountWei , 1 ,"0x0000000000000000000000000000000000000000", "0", options);
+
             console.log("convertTx : ", convertTx);
-            
-            // await convertTx.wait();
-            
+
+
+
             return convertTx;
+
 
         } catch (error) {
             // throw new Error(error);

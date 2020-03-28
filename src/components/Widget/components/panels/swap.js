@@ -26,6 +26,7 @@ const SwapPanel = (props) => {
     const [sourceBalance, setSourceBalance] = useState("0.0");
     const [isLoadingBalance, setLoadingBalance] = useState(true);
     const [rate, setRate] = useState("1");
+    const [fee, setFee] = useState(0);
     const [path, setPath] = useState([]);
     const [isLoadingRate, setLoadingRate] = useState(true);
 
@@ -47,7 +48,6 @@ const SwapPanel = (props) => {
         onConvert();
     }, [clickCount])
 
-
     const onConvert = useCallback(async () => {
 
         if ((source[1] !== "") && (path.length > 0) && (sourceAmount !== 0)) {
@@ -56,14 +56,18 @@ const SwapPanel = (props) => {
 
             try {
                 const sourceDecimal = await getTokenDecimal(source[1]);
-                const detinationAmount = await getRate(path, `${sourceAmount}`, sourceDecimal);
+                const rateResult = await getRate(path, `${sourceAmount}`, sourceDecimal);
+                const detinationAmount = rateResult[0];
+                // const feeAmount = rateResult[1];
+                const slipRate = 30000; // 3%
+                console.log("detinationAmount : ", detinationAmount.toString());
 
-                const tx = await convert(path, source[1], `${sourceAmount}`, detinationAmount);
+                const tx = await convert(path, source[1], `${sourceAmount}`, sourceDecimal, detinationAmount, slipRate, source[0] === "ETH", destination[0] === "ETH");
 
                 if (tx.hash) {
                     const { hash } = tx;
                     setProcessingTx(hash);
-                    handleTextStatus(`YOUR TRANSACTION ${hash} IS BEING PROCESSED.`);
+                    handleTextStatus(`Your transaction ${hash} is being processed.`);
 
                     await tx.wait(); // shows an error if it's failed
                     setProcessingTx();
@@ -79,10 +83,14 @@ const SwapPanel = (props) => {
             }
             handleTextStatus(HEADLINES.DISCLAIMER[PAGES.SWAP]);
             handleProcessing(false);
+            setTimeout(async () => {
+                await updateBalance(source);
+            }, 5000)
+
 
         }
 
-    }, [sourceAmount, source, path, web3ReactContext])
+    }, [sourceAmount, source, destination, path, web3ReactContext])
 
     useEffect(() => {
 
@@ -166,10 +174,12 @@ const SwapPanel = (props) => {
             if (source[0] === "ETH") {
                 console.log("Check native ETH...");
                 const result = await getETHBalance();
-                setSourceBalance(result);
+                console.log(result.toString());
+                setSourceBalance(`${Number(result).toFixed(4)}`);
             } else {
                 const result = await getTokenBalance(source[1]);
-                setSourceBalance(result);
+                console.log(result.toString());
+                setSourceBalance(`${Number(result).toFixed(4)}`);
             }
 
 
@@ -190,13 +200,19 @@ const SwapPanel = (props) => {
                 setLoadingRate(true);
                 try {
                     const path = await generatePath(source[1], destination[1], liquidityPools);
-                    // console.log("path : ", path);
+                    console.log("path : ", path);
                     const sourceDecimal = await getTokenDecimal(source[1]);
-                    const rate = await getRate(path, "1", sourceDecimal);
+                    const rateResult = await getRate(path, "1", sourceDecimal);
+                    const rate = rateResult[0];
+                    const fee = rateResult[1];
                     const destinationDecimal = await getTokenDecimal(destination[1]);
                     const finalRate = parseToken(rate, destinationDecimal);
+                    const finalFee = parseToken(fee, destinationDecimal);
                     setRate(`${Number(finalRate).toFixed(6)}`);
+                    setFee(Number((100 * Number(finalFee)) / Number(finalRate)));
                     setPath(path);
+
+                    updateDestinationAmount(finalRate);
 
                 } catch (error) {
                     console.log("Find a shortest path error : ", error);
@@ -210,27 +226,51 @@ const SwapPanel = (props) => {
 
     const handleChange = useCallback((e) => {
         e.preventDefault();
+
+        if (isLoadingRate) {
+            return;
+        }
+        const regexp = /^[0-9]*(\.[0-9]{0,4})?$/;
+        
         if (e.target.id === 'sourceInput') {
-            setSourceAmount(e.target.value);
-            const result = (Number(e.target.value) * Number(rate)).toFixed(6);
+            const value = regexp.test(e.target.value) ? (e.target.value) : sourceAmount;
+            setSourceAmount(value);
+            const result = (Number(value) * Number(rate)).toFixed(4);
             setDestinationAmount(result);
         } else {
-            setDestinationAmount(e.target.value);
-            const result = (Number(e.target.value) * Number(rate)).toFixed(6);
+            const value = regexp.test(e.target.value) ? (e.target.value) : destinationAmount;
+            setDestinationAmount(value);
+            const result = (Number(value) * Number(rate)).toFixed(4);
             setSourceAmount(result);
 
         }
 
 
-    }, [rate])
+
+
+
+    }, [rate, isLoadingRate, sourceAmount, destinationAmount])
+
+    const updateDestinationAmount = useCallback((rate) => {
+
+        if (Number(destinationAmount) !== 0) {
+            const result = (Number(sourceAmount) * Number(rate)).toFixed(4);
+            setDestinationAmount(result);
+        }
+
+    }, [sourceAmount, destinationAmount]);
 
     const setSourceAmountByPercentage = useCallback((percent, amount) => {
 
-        const newAmount = Number(amount) * percent;
-        setSourceAmount(newAmount);
-        setDestinationAmount(newAmount * Number(rate));
+        if (isLoadingRate) {
+            return;
+        }
 
-    }, [rate])
+        const newAmount = (Number(amount) * percent).toFixed(4);
+        setSourceAmount(newAmount);
+        setDestinationAmount((newAmount * Number(rate)).toFixed(4));
+
+    }, [rate, isLoadingRate])
 
     return (
         <Fragment>
@@ -246,6 +286,31 @@ const SwapPanel = (props) => {
                         <span>
                             {source[0]}&#9660;
                         </span>
+                        {(!isLoadingBalance && !isLoadingRate) &&
+                            (
+                                <div className="dropdown-content">
+                                    <table>
+                                        <tbody>
+                                            {tokens.map((item, index) => {
+                                                return (
+                                                    <tr onClick={() => onSourceChange(item)} key={index}>
+                                                        <td width="35%">
+                                                            <TokenLogo src={getIcon(item[0])} alt={item[0]} />
+                                                        </td>
+                                                        <td>
+                                                            {item[0]}
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )
+
+                        }
                         <div className="dropdown-content">
                             <table>
                                 <tbody>
@@ -296,26 +361,29 @@ const SwapPanel = (props) => {
                     </InputGroupIcon>
                     <InputGroupDropdown>
                         <span>{destination[0]}&#9660;</span>
-                        <div className="dropdown-content">
-                            <table>
-                                <tbody>
-                                    {tokens.map((item, index) => {
-                                        return (
-                                            <tr onClick={() => onDestinationChange(item)} key={index}>
-                                                <td width="35%">
-                                                    <TokenLogo src={getIcon(item[0])} alt={item[0]} />
-                                                </td>
-                                                <td>
-                                                    {item[0]}
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
+                        {(!isLoadingBalance && !isLoadingRate) && (
+                            <div className="dropdown-content">
+                                <table>
+                                    <tbody>
+                                        {tokens.map((item, index) => {
+                                            return (
+                                                <tr onClick={() => onDestinationChange(item)} key={index}>
+                                                    <td width="35%">
+                                                        <TokenLogo src={getIcon(item[0])} alt={item[0]} />
+                                                    </td>
+                                                    <td>
+                                                        {item[0]}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
 
 
-                                </tbody>
-                            </table>
-                        </div>
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
                     </InputGroupDropdown>
                     <InputGroupArea>
                         <input value={destinationAmount} id="destinationInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
@@ -323,7 +391,7 @@ const SwapPanel = (props) => {
                 </InputGroup>
                 <AccountSection>
                     <AccountLeft>
-
+                        FEE {fee.toFixed(1)} %
                     </AccountLeft>
                     <AccountRight>
                         {isLoadingRate && (<img src={loadingIcon} width="12px" height="12px" />)}{` `}{`1 ${source[0].toUpperCase()} = ${rate} ${destination[0].toUpperCase()}`}
