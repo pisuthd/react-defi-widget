@@ -14,11 +14,24 @@ const SwapPanel = (props) => {
 
     const { web3ReactContext, handleProcessing, clickCount, halt, handleTextStatus } = props;
 
-    const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token)]));
+    const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0]));
 
     const [liquidityPools, setLiquidityPools] = useState([]);
 
-    const { loading, parseToken, convert, listConversionTokens, getRate, getTokenDecimal, getETHBalance, listLiquidityPools, getTokenBalance, generatePath } = useBancor(web3ReactContext);
+    const {
+        loading,
+        parseToken,
+        convert,
+        listConversionTokens,
+        getRate,
+        getTokenDecimal,
+        getETHBalance,
+        listLiquidityPools,
+        getLiquidityPool,
+        getTokenName,
+        getTokenBalance,
+        generatePath
+    } = useBancor(web3ReactContext);
 
     const [source, setSource] = useState(tokens[1]);
     const [destination, setDestination] = useState(tokens[0]);
@@ -44,6 +57,104 @@ const SwapPanel = (props) => {
         // Handle click event from Parent Component
         onConvert();
     }, [clickCount])
+
+    useEffect(() => {
+
+        (async () => {
+            if (!loading) {
+                // List all available tokens to trade
+                let tokenList = [];
+                try {
+                    const available = await listConversionTokens();
+                    const finalList = INITIAL_TOKENS.map(name => available.find(item => item[0] === name));
+
+                    for (let token of available) {
+                        if ((finalList.find(item => item[0] === token[0]) === undefined) && (token[0] !== "NAME_ERROR") && (EXCLUDE_TOKENS.indexOf(token[0]) === -1)) {
+                            finalList.push(token);
+                        }
+                    }
+                    console.log("final token list : ", finalList);
+                    setTokens(finalList.map(item => [item[0], item[1], 0]));
+                    tokenList = finalList;
+                } catch (error) {
+                    console.log("list tokens error : ", error);
+                }
+                // List all liquidity pools
+                const poolList = await listLiquidityPools();
+                setLiquidityPools(poolList);
+
+                // Load reserves balance
+                console.log("Find a liquidity depth on all tokens");
+                let poolPromises = [];
+                for (let pool of poolList) {
+                    poolPromises.push(getLiquidityPool(pool.converterAddress));
+                }
+
+                Promise.all(poolPromises).then(
+                    poolResult => {
+
+                        let listWithReserveBalance = [];
+
+                        for (let token of tokenList) {
+                            const tokenAddress = token[1];
+                            const filtered = poolResult.reduce((array, items) => {
+                                for (let item of items) {
+                                    if (item[1] === tokenAddress) {
+                                        array.push(item)
+                                    }
+                                }
+                                return array;
+                            }, []);
+
+                            const totalReserves = filtered.reduce((result, items) => {
+                                result = result + Number(items[0]);
+
+                                return result;
+                            }, 0)
+                            listWithReserveBalance.push([token[0], token[1], Math.round(totalReserves)]);
+                            // reserves[token[0]] = totalReserves;
+
+                        }
+                        setTokens(listWithReserveBalance);
+
+
+
+
+                    }
+                )
+
+                /*
+                let tokenNamePromise = [];
+                for (let pool of poolList) {
+                    tokenNamePromise.push(getTokenName(pool.smartTokenAddress))
+                }
+
+                Promise.all(tokenNamePromise).then(
+                    tokenNameResult => {
+                        console.log("tokenNameResult : ", tokenNameResult);
+                        let reservePromise = [];
+                        
+                        for (let pool of poolList) {
+                            reservePromise.push(getLiquidityPool(pool.converterAddress));
+                        }
+                        Promise.all(reservePromise).then(
+                            poolResult => {
+                                console.log("poolResult : ", poolResult);
+                            }
+                        )
+                    }
+                )
+                */
+
+
+
+
+            }
+        })()
+
+
+
+    }, [loading])
 
     const onConvert = useCallback(async () => {
 
@@ -87,40 +198,13 @@ const SwapPanel = (props) => {
 
     }, [sourceAmount, source, destination, path, web3ReactContext])
 
-    useEffect(() => {
 
-        (async () => {
-            if (!loading) {
-                // List all available tokens to trade
-                try {
-                    const available = await listConversionTokens();
-                    const finalList = INITIAL_TOKENS.map(name => available.find(item => item[0] === name));
-
-                    for (let token of available) {
-                        if ((finalList.find(item => item[0] === token[0]) === undefined) && (token[0] !== "NAME_ERROR") && (EXCLUDE_TOKENS.indexOf(token[0]) === -1)) {
-                            finalList.push(token);
-                        }
-                    }
-                    console.log("final token list : ", finalList);
-                    setTokens(finalList);
-                } catch (error) {
-                    console.log("list tokens error : ", error);
-                }
-                // List all liquidity pools
-                const poolList = await listLiquidityPools();
-                setLiquidityPools(poolList);
-
-            }
-        })()
-
-
-
-    }, [loading])
 
 
     const onSourceChange = useCallback((newSource) => {
 
         if (newSource[0] === destination[0]) {
+            alert("Can't choose the same token")
             return;
         }
 
@@ -132,6 +216,7 @@ const SwapPanel = (props) => {
     const onDestinationChange = useCallback((newDestination) => {
 
         if (newDestination[0] === source[0]) {
+            alert("Can't choose the same token")
             return;
         }
 
@@ -226,7 +311,7 @@ const SwapPanel = (props) => {
             return;
         }
         const regexp = /^[0-9]*(\.[0-9]{0,4})?$/;
-        
+
         if (e.target.id === 'sourceInput') {
             const value = regexp.test(e.target.value) ? (e.target.value) : sourceAmount;
             setSourceAmount(value);
@@ -287,13 +372,19 @@ const SwapPanel = (props) => {
                                     <table>
                                         <tbody>
                                             {tokens.map((item, index) => {
+
                                                 return (
                                                     <tr onClick={() => onSourceChange(item)} key={index}>
-                                                        <td width="35%">
+                                                        <td width="20%">
                                                             <TokenLogo src={getIcon(item[0])} alt={item[0]} />
                                                         </td>
-                                                        <td>
+                                                        <td width="25%">
                                                             {item[0]}
+                                                        </td>
+                                                        <td>
+                                                            <ReservePoolAmount>
+                                                                RESERVE{` `}:{` `}{item[2]}{` `}{item[0]}
+                                                            </ReservePoolAmount>
                                                         </td>
                                                     </tr>
                                                 )
@@ -306,26 +397,7 @@ const SwapPanel = (props) => {
                             )
 
                         }
-                        <div className="dropdown-content">
-                            <table>
-                                <tbody>
-                                    {tokens.map((item, index) => {
-                                        return (
-                                            <tr onClick={() => onSourceChange(item)} key={index}>
-                                                <td width="35%">
-                                                    <TokenLogo src={getIcon(item[0])} alt={item[0]} />
-                                                </td>
-                                                <td>
-                                                    {item[0]}
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
 
-
-                                </tbody>
-                            </table>
-                        </div>
                     </InputGroupDropdown>
                     <InputGroupArea>
                         <input value={sourceAmount} id="sourceInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
@@ -363,17 +435,21 @@ const SwapPanel = (props) => {
                                         {tokens.map((item, index) => {
                                             return (
                                                 <tr onClick={() => onDestinationChange(item)} key={index}>
-                                                    <td width="35%">
+                                                    <td width="20%">
                                                         <TokenLogo src={getIcon(item[0])} alt={item[0]} />
                                                     </td>
-                                                    <td>
+                                                    <td width="25%">
                                                         {item[0]}
+                                                    </td>
+                                                    <td>
+                                                        <ReservePoolAmount>
+                                                            RESERVE{` `}:{` `}{item[2]}{` `}{item[0]}
+                                                        </ReservePoolAmount>
+
                                                     </td>
                                                 </tr>
                                             )
                                         })}
-
-
                                     </tbody>
                                 </table>
                             </div>
@@ -408,6 +484,12 @@ const Column = styled.div`
 
 const AccountSection = styled.div`
     display: flex;
+`;
+
+const ReservePoolAmount = styled.span`
+    font-size: 10px;
+    font-weight: 500;
+    word-wrap: break-word;
 `;
 
 const AccountLeft = styled.div`
@@ -472,7 +554,7 @@ const InputGroupDropdown = styled.div`
         display: none;
         position: absolute;
         background-color: #f9f9f9;
-        min-width: 200px;
+        min-width: 300px;
         box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
         z-index: 1;
         height: 250px;

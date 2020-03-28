@@ -291,7 +291,55 @@ export const useBancor = (web3context) => {
     }, [web3context])
 
 
+    const loadReserve = useCallback(async (converterAddress, index) => {
 
+        const signer = web3context.library.getSigner();
+        const contract = getContract(converterAddress, BancorConverterAbi, signer);
+        const reserveAddress = await contract.connectorTokens(index);
+
+        const balance = await contract.getConnectorBalance(reserveAddress);
+
+        return {
+            address: reserveAddress,
+            balance: ethers.utils.formatEther(balance.toString()).toString()
+        }
+
+
+
+    }, [web3context])
+
+
+    const getLiquidityPool = useCallback(async (address) => {
+        try {
+            const signer = web3context.library.getSigner();
+            const contract = getContract(address, BancorConverterAbi, signer);
+
+            const connectorTokenCount = await getConnectorTokenCount(address);
+
+            let result = []
+
+            for (let i = 0; i < Number(connectorTokenCount); i++) {
+                let row = [];
+                const reserveAddress = await contract.connectorTokens(i);
+                
+                const balance = await contract.getConnectorBalance(reserveAddress);
+                row.push(ethers.utils.formatEther(balance.toString()).toString());
+                row.push(reserveAddress);
+                result.push(row);
+            }
+
+            return result;
+        } catch (error) {
+            console.log("error : ", error)
+            switch (address.toLowerCase()) {
+                default:
+                    return [];
+            }
+
+        }
+
+
+    }, [web3context])
 
     const getTokenName = useCallback(async (address) => {
         try {
@@ -337,22 +385,7 @@ export const useBancor = (web3context) => {
     }, [bancorContractBancorConverterRegistry, web3context])
 
 
-    const loadReserve = useCallback(async (converterAddress, index) => {
 
-        const signer = web3context.library.getSigner();
-        const contract = getContract(converterAddress, BancorConverterAbi, signer);
-        const reserveAddress = await contract.connectorTokens(index);
-
-        const balance = await contract.getConnectorBalance(reserveAddress);
-
-        return {
-            address: reserveAddress,
-            balance: ethers.utils.formatEther(balance.toString()).toString()
-        }
-
-
-
-    }, [web3context])
 
     const getConnectorTokenCount = useCallback(async (converterAddress) => {
 
@@ -501,7 +534,7 @@ export const useBancor = (web3context) => {
 
 
         try {
-            
+
             const sourceAmountWei = ethers.utils.parseUnits(`${sourceAmount}`, sourceDecimal);
             // const allowanceAmount = ethers.utils.parseUnits(`${Math.ceil(Number(sourceAmount))}`, sourceDecimal);
             const slipAmount = (destinationAmount.mul(ethers.utils.bigNumberify(slipRate))).div(ethers.utils.bigNumberify(1000000));
@@ -589,6 +622,7 @@ export const useBancor = (web3context) => {
         listConversionTokens,
         listLiquidityPools,
         generatePath,
+        getLiquidityPool,
         getRate,
         loadingErrorMessage,
         getTokenBalance,
