@@ -18,6 +18,9 @@ const SwapPanel = (props) => {
 
     const [liquidityPools, setLiquidityPools] = useState([]);
 
+    const [isSourceModalOpen, setSourceModal] = useState(false);
+    const [isDestinationModalOpen, setDestinationModal] = useState(false);
+
     const {
         loading,
         parseToken,
@@ -244,6 +247,16 @@ const SwapPanel = (props) => {
         }
     }, [source, loading])
 
+    const toggleSourceModal = useCallback(() => {
+        setSourceModal(!isSourceModalOpen);
+
+    }, [isSourceModalOpen]);
+
+    const toggleDestinationModal = useCallback(() => {
+        setDestinationModal(!isDestinationModalOpen);
+
+    }, [isDestinationModalOpen])
+
     const updateBalance = useCallback(async (source) => {
 
         console.log("checking balance of : ", source[1]);
@@ -361,40 +374,40 @@ const SwapPanel = (props) => {
                     <InputGroupIcon>
                         <TokenLogo src={getIcon(source[0])} alt={source[0]} />
                     </InputGroupIcon>
-                    <InputGroupDropdown>
+                    <InputGroupDropdown onClick={() => toggleSourceModal()} active={isSourceModalOpen}>
 
                         <span>
                             {source[0]}&#9660;
                         </span>
-                        {(!isLoadingBalance && !isLoadingRate) &&
-                            (
-                                <div className="dropdown-content">
-                                    <table>
-                                        <tbody>
-                                            {tokens.map((item, index) => {
-
-                                                return (
-                                                    <tr onClick={() => onSourceChange(item)} key={index}>
-                                                        <td width="25%">
-                                                            <TokenLogo src={getIcon(item[0])} alt={item[0]} />
-                                                        </td>
-                                                        <td>
-                                                            {item[0]}
-                                                            <ReservePoolAmount inactive={item[2]===0}>
-                                                                SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
-                                                            </ReservePoolAmount>
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            })}
 
 
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )
+                        <div className="dropdown-content">
+                            <table>
+                                <tbody>
+                                    {tokens.map((item, index) => {
 
-                        }
+                                        return (
+                                            <tr onClick={() => onSourceChange(item)} key={index}>
+                                                <td width="25%">
+                                                    <TokenLogo src={getIcon(item[0])} alt={item[0]} />
+                                                </td>
+                                                <td>
+                                                    {item[0]}
+                                                    <ReservePoolAmount inactive={item[2] === 0}>
+                                                        SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
+                                                    </ReservePoolAmount>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+
+
+                                </tbody>
+                            </table>
+                        </div>
+
+
+
 
                     </InputGroupDropdown>
                     <InputGroupArea>
@@ -424,31 +437,31 @@ const SwapPanel = (props) => {
                     <InputGroupIcon>
                         <TokenLogo src={getIcon(destination[0])} alt={destination[0]} />
                     </InputGroupIcon>
-                    <InputGroupDropdown>
+                    <InputGroupDropdown onClick={() => toggleDestinationModal()} active={isDestinationModalOpen}>
                         <span>{destination[0]}&#9660;</span>
-                        {(!isLoadingBalance && !isLoadingRate) && (
-                            <div className="dropdown-content">
-                                <table>
-                                    <tbody>
-                                        {tokens.map((item, index) => {
-                                            return (
-                                                <tr onClick={() => onDestinationChange(item)} key={index}>
-                                                    <td width="25%">
-                                                        <TokenLogo src={getIcon(item[0])} alt={item[0]} />
-                                                    </td>
-                                                    <td>
-                                                        {item[0]}
-                                                        <ReservePoolAmount inactive={item[2]===0}>
-                                                            SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
-                                                        </ReservePoolAmount>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+
+                        <div className="dropdown-content">
+                            <table>
+                                <tbody>
+                                    {tokens.map((item, index) => {
+                                        return (
+                                            <tr onClick={() => onDestinationChange(item)} key={index}>
+                                                <td width="25%">
+                                                    <TokenLogo src={getIcon(item[0])} alt={item[0]} />
+                                                </td>
+                                                <td>
+                                                    {item[0]}
+                                                    <ReservePoolAmount inactive={item[2] === 0}>
+                                                        SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
+                                                    </ReservePoolAmount>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
 
                     </InputGroupDropdown>
                     <InputGroupArea>
@@ -588,10 +601,13 @@ const InputGroupDropdown = styled.div`
 
     }
 
-    :hover .dropdown-content {
-        display: block;
-        
-    }
+    ${props => props.active && (
+        `
+        .dropdown-content {
+            display: block;
+        }
+        `
+    )}
 
 `
 const InputGroupIcon = styled.div`
