@@ -33,8 +33,6 @@ const SwapPanel = (props) => {
     const [sourceAmount, setSourceAmount] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
 
-    const [processingTx, setProcessingTx] = useState();
-
     useEffect(() => {
         if (halt !== undefined) {
             setLoadingBalance(false);
@@ -43,8 +41,7 @@ const SwapPanel = (props) => {
     }, [halt])
 
     useEffect(() => {
-        // Handle click event on Parent Component
-        console.log("do something...");
+        // Handle click event from Parent Component
         onConvert();
     }, [clickCount])
 
@@ -66,11 +63,9 @@ const SwapPanel = (props) => {
 
                 if (tx.hash) {
                     const { hash } = tx;
-                    setProcessingTx(hash);
                     handleTextStatus(`Your transaction ${hash} is being processed.`);
 
                     await tx.wait(); // shows an error if it's failed
-                    setProcessingTx();
                     console.log("done...");
 
                 }
