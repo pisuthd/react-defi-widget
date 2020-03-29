@@ -33,6 +33,8 @@ const SwapPanel = (props) => {
     const defaultAffiliateFee = affiliateFee ? parseFee(affiliateFee) : "0";
     
 
+    const networkId = web3ReactContext.networkId;
+
     const getDefaultCurrency = (currency, list, fallback) => {
         for (let item of list) {
             if (item[0] === currency) {
@@ -100,6 +102,21 @@ const SwapPanel = (props) => {
                 let tokenList = [];
                 try {
                     const available = await listConversionTokens();
+
+                    let finalList;
+
+                    if (networkId === 1) {
+                        finalList = INITIAL_TOKENS.map(name => available.find(item => item[0] === name));
+                        for (let token of available) {
+                            if ((finalList.find(item => item[0] === token[0]) === undefined) && (token[0] !== "NAME_ERROR") && (EXCLUDE_TOKENS.indexOf(token[0]) === -1)) {
+                                finalList.push(token);
+                            }
+                        }
+                    } else {
+                        finalList = available;
+                    }
+ 
+                    /*
                     const finalList = INITIAL_TOKENS.map(name => available.find(item => item[0] === name));
 
                     for (let token of available) {
@@ -107,6 +124,8 @@ const SwapPanel = (props) => {
                             finalList.push(token);
                         }
                     }
+                    */
+                    
                     console.log("final token list : ", finalList);
                     setTokens(finalList.map(item => [item[0], item[1], 0]));
                     tokenList = finalList;
@@ -188,7 +207,7 @@ const SwapPanel = (props) => {
 
 
 
-    }, [loading])
+    }, [loading, networkId])
 
     const onConvert = useCallback(async () => {
 
