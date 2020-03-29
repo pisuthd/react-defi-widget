@@ -26,6 +26,8 @@ npm install --save react-defi-widget
 
 ## Usage
 
+### Token Conversion Widget
+
 Basic Usage
 
 ```jsx
@@ -83,6 +85,10 @@ const MainPage = (props) => {
   )
 }
 ```
+
+### Liquidity Pools Exploerer Widget
+
+TBD
 
 
 ## Local Development
