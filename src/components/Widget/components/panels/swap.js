@@ -13,9 +13,34 @@ import SearchIcon from "../../../../../assets/search.svg";
 
 const SwapPanel = (props) => {
 
-    const { web3ReactContext, handleProcessing, clickCount, halt, handleTextStatus, textDescription } = props;
+    const { 
+        web3ReactContext, 
+        handleProcessing, 
+        clickCount, 
+        halt, 
+        handleTextStatus, 
+        textDescription,
+        baseCurrency,
+        pairCurrency
+    } = props;
 
-    const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0]));
+    const initialList =  INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0])
+
+    
+
+    const getDefaultCurrency = (currency, list, fallback) => {
+        for (let item of list) {
+            if (item[0] === currency.toUpperCase()) {
+                return item
+            }
+        }
+        return fallback;
+    }
+
+    const defaultBaseCurrency = getDefaultCurrency(baseCurrency, initialList, initialList[1] );
+    const defaultPairCurrency = getDefaultCurrency(pairCurrency, initialList, initialList[0]);
+
+    const [tokens, setTokens] = useState(initialList);
 
     const [liquidityPools, setLiquidityPools] = useState([]);
 
@@ -37,8 +62,8 @@ const SwapPanel = (props) => {
         generatePath
     } = useBancor(web3ReactContext);
 
-    const [source, setSource] = useState(tokens[1]);
-    const [destination, setDestination] = useState(tokens[0]);
+    const [source, setSource] = useState(defaultBaseCurrency);
+    const [destination, setDestination] = useState(defaultPairCurrency);
 
     const [sourceBalance, setSourceBalance] = useState("0.0");
     const [isLoadingBalance, setLoadingBalance] = useState(true);

@@ -25,7 +25,10 @@ const ConnectedWidget = (props) => {
         currentPage ,
         title, 
         subtitle, 
-        description
+        description,
+        color,
+        baseCurrency,
+        pairCurrency
     } = props;
 
     return (
@@ -36,6 +39,9 @@ const ConnectedWidget = (props) => {
                 title={title}
                 subtitle={subtitle}
                 description={description}
+                color={color}
+                baseCurrency={baseCurrency}
+                pairCurrency={pairCurrency}
             />  
         </ContextProviders>
     )
@@ -46,7 +52,10 @@ ConnectedWidget.propTypes = {
     currentPage: PropTypes.string,
     title: PropTypes.string,
     subtitle : PropTypes.string,
-    description : PropTypes.string
+    description : PropTypes.string,
+    color : PropTypes.string,
+    baseCurrency :  PropTypes.string,
+    pairCurrency :  PropTypes.string
 };
 
 
@@ -57,6 +66,9 @@ export const TokenConversionWidget = (props) => {
         title, 
         subtitle, 
         description,
+        color,
+        baseCurrency,
+        pairCurrency
     } = props;
 
     return <ConnectedWidget
@@ -65,6 +77,9 @@ export const TokenConversionWidget = (props) => {
                 title={title}
                 subtitle={subtitle}
                 description={description}
+                color={color}
+                baseCurrency={baseCurrency}
+                pairCurrency={pairCurrency}
             />
 }
 
@@ -73,7 +88,11 @@ TokenConversionWidget.propTypes = {
     currentPage: PropTypes.string,
     title: PropTypes.string,
     subtitle : PropTypes.string,
-    description : PropTypes.string
+    description : PropTypes.string,
+    color : PropTypes.string,
+    baseCurrency :  PropTypes.string,
+    pairCurrency :  PropTypes.string
+
 };
 
 

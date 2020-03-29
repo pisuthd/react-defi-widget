@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import WidgetLayout from "./layout";
 
-import { PAGES, HEADLINES } from "../../constants";
+import { PAGES, HEADLINES, COLORS } from "../../constants";
 
 import SwapPanel from "./components/panels/swap";
 
@@ -19,12 +19,16 @@ const Widget = (props) => {
         currentPage,
         title,
         subtitle,
-        description
+        description,
+        color,
+        baseCurrency,
+        pairCurrency
     } = props;
 
     const widgetTitle = title || HEADLINES.HEADER[currentPage];
     const widgetSubtitle = subtitle || HEADLINES.TEXT[currentPage];
     const widgetDescription = description || HEADLINES.DISCLAIMER[currentPage];
+    const widgetColor = color || COLORS.default;
 
     const [errorMessage, setErrorMessage] = useState();
 
@@ -100,12 +104,24 @@ const Widget = (props) => {
                         width={width}
                         height={height}
                     >
-                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleTextStatus={setDisclaimer} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} halt={errorMessage} textDescription={widgetDescription} />}
+                        {currentPage === PAGES.SWAP && 
+                        (
+                        <SwapPanel 
+                            clickCount={clickCount} 
+                            handleTextStatus={setDisclaimer} 
+                            handleProcessing={handleProcessing} 
+                            web3ReactContext={web3ReactContext} 
+                            halt={errorMessage} 
+                            textDescription={widgetDescription}
+                            baseCurrency={baseCurrency}
+                            pairCurrency={pairCurrency} 
+                        />
+                        )}
                     </Body>
 
                     <Footer>
 
-                        <ActionButton  onClick={handleClick} disabled={disabled}>
+                        <ActionButton color={widgetColor}  onClick={handleClick} disabled={disabled}>
                             Swap
                         </ActionButton>
                         <StatusPanel
@@ -131,7 +147,7 @@ const Widget = (props) => {
 
 
 const ActionButton = styled.button`
-    background-color: #0275d8; 
+    background-color: ${props => props.color && `${props.color}`}; 
     border: none;
     color: white;
     padding: 15px 32px;
