@@ -27,6 +27,9 @@ const App = () => {
           <Route exact path="/">
             <MainPage web3context={web3context} />
           </Route>
+          {/*
+            Reserve pools management & stablecoin issuerance are not yet available on v.0.1.X
+          */}
           <Route exact path="/pools">
             <LiquidityPage web3context={web3context} />
           </Route>
