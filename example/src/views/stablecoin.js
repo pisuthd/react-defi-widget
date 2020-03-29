@@ -18,8 +18,6 @@ import {
 } from "reactstrap";
 import styled from "styled-components"
 
-import WidgetVersionSection from "../components/shared/widgetVersion";
-
 const Stablecoin = (props) => {
 
     const { web3context } = props;

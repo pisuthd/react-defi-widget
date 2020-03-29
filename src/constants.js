@@ -64,38 +64,3 @@ export const HEADLINES = {
 
 export const SLIPPAGE_RATE =  30000;// 3%
 
-/*
-export const TOKEN_LIST = [
-    {
-        icon: bancorLogo,
-        symbol: "BNT",
-        name: "Bancor"
-    },
-    {
-        icon: ethLogo,
-        symbol: "ETH",
-        name: "Ethereum"
-    },
-    {
-        icon: batLogo,
-        symbol: "BAT",
-        name: "Basic Attention Token"
-    },
-    {
-        icon: enjLogo,
-        symbol: "ENJ",
-        name: "Enjin"
-    },
-    {
-        icon: kncLogo,
-        symbol: "KNC",
-        name: "Kyber Network"
-    },
-    {
-        icon: omgLogo,
-        symbol: "OMG",
-        name: "OmiseGo"
-    }
-    
-]
-*/
