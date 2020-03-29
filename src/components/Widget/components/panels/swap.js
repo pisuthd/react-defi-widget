@@ -13,7 +13,7 @@ import SearchIcon from "../../../../../assets/search.svg";
 
 const SwapPanel = (props) => {
 
-    const { web3ReactContext, handleProcessing, clickCount, halt, handleTextStatus } = props;
+    const { web3ReactContext, handleProcessing, clickCount, halt, handleTextStatus, textDescription } = props;
 
     const [tokens, setTokens] = useState(INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0]));
 
@@ -191,7 +191,7 @@ const SwapPanel = (props) => {
             } catch (error) {
                 console.log("onConvert error : ", error)
             }
-            handleTextStatus(HEADLINES.DISCLAIMER[PAGES.SWAP]);
+            handleTextStatus(textDescription);
             handleProcessing(false);
             setTimeout(async () => {
                 await updateBalance(source);

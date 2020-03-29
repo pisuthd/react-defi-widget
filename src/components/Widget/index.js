@@ -11,7 +11,20 @@ import styled from "styled-components"
 import ContainerDimensions from 'react-container-dimensions'
 import { useBancor } from "../../contexts/bancor";
 
-const Widget = ({ web3ReactContext, currentPage }) => {
+
+const Widget = (props) => {
+
+    const { 
+        web3ReactContext,
+        currentPage,
+        title,
+        subtitle,
+        description
+    } = props;
+
+    const widgetTitle = title || HEADLINES.HEADER[currentPage];
+    const widgetSubtitle = subtitle || HEADLINES.TEXT[currentPage];
+    const widgetDescription = description || HEADLINES.DISCLAIMER[currentPage];
 
     const [errorMessage, setErrorMessage] = useState();
 
@@ -22,7 +35,7 @@ const Widget = ({ web3ReactContext, currentPage }) => {
 
     const [ clickCount, setClickCount ] = useState(0);
 
-    const [ disclaimer, setDisclaimer ] = useState(HEADLINES.DISCLAIMER[currentPage]);
+    const [ disclaimer, setDisclaimer ] = useState(widgetDescription);
 
     useEffect(() => {
         if (loadingErrorMessage) {
@@ -75,10 +88,10 @@ const Widget = ({ web3ReactContext, currentPage }) => {
                         height={height}
                     >
                         <h3>
-                            {HEADLINES.HEADER[currentPage]}
+                            {widgetTitle}
                         </h3>
                         <p>
-                            {HEADLINES.TEXT[currentPage]}
+                            {widgetSubtitle}
                         </p>
 
                     </Header>
@@ -87,7 +100,7 @@ const Widget = ({ web3ReactContext, currentPage }) => {
                         width={width}
                         height={height}
                     >
-                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleTextStatus={setDisclaimer} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} halt={errorMessage} />}
+                        {currentPage === PAGES.SWAP && <SwapPanel clickCount={clickCount} handleTextStatus={setDisclaimer} handleProcessing={handleProcessing} web3ReactContext={web3ReactContext} halt={errorMessage} textDescription={widgetDescription} />}
                     </Body>
 
                     <Footer>
@@ -118,7 +131,7 @@ const Widget = ({ web3ReactContext, currentPage }) => {
 
 
 const ActionButton = styled.button`
-    background-color: #0275d8; // TODO: Provides custom color
+    background-color: #0275d8; 
     border: none;
     color: white;
     padding: 15px 32px;
