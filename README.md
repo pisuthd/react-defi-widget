@@ -86,7 +86,7 @@ const MainPage = (props) => {
 }
 ```
 
-### Liquidity Pools Exploerer Widget
+### Liquidity Pools Explorer Widget
 
 TBD
 
