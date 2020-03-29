@@ -31,9 +31,10 @@ const NavBar = (props) => {
 
                     <NavbarText>
                         <Link to="/">
-                            <NavLink>Swap</NavLink>
+                            <NavLink>Home</NavLink>
                         </Link>
                     </NavbarText>
+                    {/*
                     <NavbarText>
                         <Link to="/pools">
                             <NavLink>Liquidity Pools</NavLink>
@@ -44,7 +45,6 @@ const NavBar = (props) => {
                             <NavLink>Stablecoins</NavLink>
                         </Link>
                     </NavbarText>
-                    {/*
                     <NavbarText>
                         <NavLink href="https://github.com/reactstrap/reactstrap">GitHub</NavLink>
                     </NavbarText>
