@@ -110,7 +110,7 @@ npm start
 |**title**|PropTypes.string|NO||Title of the widget|
 |**subtitle**|PropTypes.string|NO||Subtitle of the widget|
 |**description**|PropTypes.string|NO||Long description at the bottom of the widget|
-|**color**|PropTypes.string|NO|#0275d8|Long description at the bottom of the widget|
+|**color**|PropTypes.string|NO|#0275d8|Color of the widget|
 |**baseCurrency**|PropTypes.string|NO|ETH|Default base currency in a symbol format*|
 |**pairCurrency**|PropTypes.string|NO|BNT|Default pair currency in a symbol format*|
 |**affiliateAccount**|PropTypes.string|NO|None|The recipient account that collects the fee from the transaction|
