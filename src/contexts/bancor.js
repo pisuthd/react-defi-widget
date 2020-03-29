@@ -530,7 +530,7 @@ export const useBancor = (web3context) => {
     }, [web3context, bancorContractBancorNetwork])
 
 
-    const convert = useCallback(async (path, sourceTokenAddress, sourceAmount, sourceDecimal, destinationAmount, slipRate, fromETH = false, toETH = false) => {
+    const convert = useCallback(async (path, sourceTokenAddress, sourceAmount, sourceDecimal, destinationAmount, slipRate, fromETH, toETH, affiliateAccount="0x0000000000000000000000000000000000000000",  affiliateFee="0") => {
 
 
         try {
@@ -591,9 +591,9 @@ export const useBancor = (web3context) => {
             } 
             */
             if (!fromETH) {
-                convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei, destinationAmountWei, "0x0000000000000000000000000000000000000000", "0", options);
+                convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount, affiliateFee, options);
             } else {
-                convertTx = await networkContract.convert2(path, sourceAmountWei, destinationAmountWei, "0x0000000000000000000000000000000000000000", "0", options);
+                convertTx = await networkContract.convert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount , affiliateFee , options);
             }
 
 

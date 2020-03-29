@@ -28,7 +28,9 @@ const ConnectedWidget = (props) => {
         description,
         color,
         baseCurrency,
-        pairCurrency
+        pairCurrency,
+        affiliateAccount,
+        affiliateFee
     } = props;
 
     return (
@@ -42,6 +44,8 @@ const ConnectedWidget = (props) => {
                 color={color}
                 baseCurrency={baseCurrency}
                 pairCurrency={pairCurrency}
+                affiliateAccount={affiliateAccount}
+                affiliateFee={affiliateFee}
             />  
         </ContextProviders>
     )
@@ -55,7 +59,9 @@ ConnectedWidget.propTypes = {
     description : PropTypes.string,
     color : PropTypes.string,
     baseCurrency :  PropTypes.string,
-    pairCurrency :  PropTypes.string
+    pairCurrency :  PropTypes.string,
+    affiliateAccount : PropTypes.string,
+    affiliateFee : PropTypes.number,
 };
 
 
@@ -68,7 +74,9 @@ export const TokenConversionWidget = (props) => {
         description,
         color,
         baseCurrency,
-        pairCurrency
+        pairCurrency,
+        affiliateAccount,
+        affiliateFee
     } = props;
 
     return <ConnectedWidget
@@ -80,6 +88,8 @@ export const TokenConversionWidget = (props) => {
                 color={color}
                 baseCurrency={baseCurrency}
                 pairCurrency={pairCurrency}
+                affiliateAccount={affiliateAccount}
+                affiliateFee={affiliateFee}
             />
 }
 
@@ -91,7 +101,9 @@ TokenConversionWidget.propTypes = {
     description : PropTypes.string,
     color : PropTypes.string,
     baseCurrency :  PropTypes.string,
-    pairCurrency :  PropTypes.string
+    pairCurrency :  PropTypes.string,
+    affiliateAccount : PropTypes.string,
+    affiliateFee : PropTypes.number,
 
 };
 

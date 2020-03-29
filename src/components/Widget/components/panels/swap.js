@@ -4,6 +4,7 @@ import styled from "styled-components";
 
 import { useBancor, INITIAL_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress } from "../../../../utils/token";
+import { getAddress, parseFee } from "../../../../utils/account";
 
 import { HEADLINES, PAGES, SLIPPAGE_RATE } from "../../../../constants";
 
@@ -21,16 +22,20 @@ const SwapPanel = (props) => {
         handleTextStatus, 
         textDescription,
         baseCurrency,
-        pairCurrency
+        pairCurrency,
+        affiliateAccount,
+        affiliateFee
     } = props;
 
     const initialList =  INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0])
 
+    const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
+    const defaultAffiliateFee = affiliateFee ? parseFee(affiliateFee) : "0";
     
 
     const getDefaultCurrency = (currency, list, fallback) => {
         for (let item of list) {
-            if (item[0] === currency.toUpperCase()) {
+            if (item[0] === currency) {
                 return item
             }
         }
@@ -195,11 +200,24 @@ const SwapPanel = (props) => {
                 const sourceDecimal = await getTokenDecimal(source[1]);
                 const rateResult = await getRate(path, `${sourceAmount}`, sourceDecimal);
                 const detinationAmount = rateResult[0];
-                // const feeAmount = rateResult[1];
+                
                 const slipRate = SLIPPAGE_RATE; // 3%
                 console.log("detinationAmount : ", detinationAmount.toString());
 
-                const tx = await convert(path, source[1], `${sourceAmount}`, sourceDecimal, detinationAmount, slipRate, source[0] === "ETH", destination[0] === "ETH");
+                console.log("defaultAffiliateAccount : ", defaultAffiliateAccount, " rate : ", defaultAffiliateFee);
+                
+                const tx = await convert(
+                    path, 
+                    source[1], 
+                    `${sourceAmount}`, 
+                    sourceDecimal, 
+                    detinationAmount, 
+                    slipRate, 
+                    source[0] === "ETH", 
+                    destination[0] === "ETH",
+                    defaultAffiliateAccount,
+                    defaultAffiliateFee
+                );
 
                 if (tx.hash) {
                     const { hash } = tx;
@@ -209,6 +227,7 @@ const SwapPanel = (props) => {
                     console.log("done...");
 
                 }
+                
 
 
 

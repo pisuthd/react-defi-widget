@@ -41,8 +41,7 @@ const MainPage = (props) => {
 
     // Receives commission in BNT from each token conversion
     // const affiliateAccount = "0x8fD00f170FDf3772C5ebdCD90bF257316c69BA45";
-    const affiliateAccount = "0x971F6680a20671458d456656081ea8e32102a64e";
-    const affiliateFee = 1.5; // 2.5% Maximum is 3%
+    // const affiliateFee = 1.5; // 2.5% Maximum is 3%
 
     return (
         <Fragment>

@@ -22,7 +22,9 @@ const Widget = (props) => {
         description,
         color,
         baseCurrency,
-        pairCurrency
+        pairCurrency,
+        affiliateAccount,
+        affiliateFee
     } = props;
 
     const widgetTitle = title || HEADLINES.HEADER[currentPage];
@@ -114,7 +116,9 @@ const Widget = (props) => {
                             halt={errorMessage} 
                             textDescription={widgetDescription}
                             baseCurrency={baseCurrency}
-                            pairCurrency={pairCurrency} 
+                            pairCurrency={pairCurrency}
+                            affiliateAccount={affiliateAccount}
+                            affiliateFee={affiliateFee}
                         />
                         )}
                     </Body>
