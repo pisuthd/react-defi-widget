@@ -18,6 +18,21 @@
 * Adding liquidity to a pool within Bancor network and earning fee (Under development)
 * Creating a new liquidity pool within Bancor network (Under development)
 
+## Submission for Sustain Web3 Hackathon
+
+[Live Demo](http://13.233.107.61:3000/)
+
+### Features
+
+* List liquidity pools on Bancor from smart contracts
+* Provide fixed amount of tokens to Bancor's liquidity pools from smart contracts
+* Exchange a token on Bancor from smart contracts
+
+### Known Bugs
+
+* Can't make a build on example app
+* Transaction failure on the token conversion
+
 ## Install
 
 ```bash
@@ -102,9 +117,7 @@ npm install
 npm start
 ```
 
-## Local Development
-
-### Properties
+## Properties
 
 |   |type|required|default value|description|
 |---|--- |---     |---          |---        |
