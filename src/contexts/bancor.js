@@ -376,7 +376,7 @@ export const useBancor = (web3context) => {
         const signer = web3context.library.getSigner();
         const contract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
         const addresses = await contract.getConvertibleTokens();
-
+        
         const results = await Promise.all(addresses.map(address => getTokenName(address)));
 
         return results;
@@ -419,6 +419,12 @@ export const useBancor = (web3context) => {
         return ethers.utils.formatEther(balance);
 
     }, [web3context])
+
+    const getGasPrice = useCallback(async () => {
+        const signer = web3context.library.getSigner();
+        const price = await signer.provider.getGasPrice();
+        return price;
+    })
 
     const getTokenDecimal = useCallback(async (tokenAddress) => {
 
@@ -540,14 +546,19 @@ export const useBancor = (web3context) => {
             const slipAmount = (destinationAmount.mul(ethers.utils.bigNumberify(slipRate))).div(ethers.utils.bigNumberify(1000000));
             // console.log("slipAmount -> ", slipAmount.toString());
             const destinationAmountWei = destinationAmount.sub(slipAmount);
-            // const destinationAmountWei = destinationAmount;
-            console.log("source : ", ethers.utils.formatUnits(sourceAmountWei, sourceDecimal), " dest : ", ethers.utils.formatEther(destinationAmountWei).toString());
-            // console.log("min : ", ethers.utils.formatEther(destinationAmountWei).toString(), "max : ", ethers.utils.formatEther(destinationAmount).toString() )
+
             const signer = web3context.library.getSigner();
+
+            const estimatedGasPrice = await getGasPrice();
+            const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
+
+            const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
+
+            console.log("gasPrice : ", finalGasPrice.toString());
 
             let options = {
                 gasLimit: GAS_LIMIT,
-                gasPrice: ethers.utils.parseEther("0.000000005") // 5 Gwei
+                gasPrice: finalGasPrice, // Minimum 3 Gwei
             };
 
             const tokenContract = getContract(sourceTokenAddress, SmartTokenAbi, signer);
