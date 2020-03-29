@@ -215,9 +215,17 @@ const SwapPanel = (props) => {
             handleProcessing(true);
             console.log("start convert...", source, path, sourceAmount);
 
+            const round = (num) => {    
+                return +(Math.floor(num + "e+3")  + "e-3");
+            }
+
+            const normalizedAmount = `${round(Number(sourceAmount))}`;
+
+            console.log("normalizedAmount : ", normalizedAmount);
+
             try {
                 const sourceDecimal = await getTokenDecimal(source[1]);
-                const rateResult = await getRate(path, `${sourceAmount}`, sourceDecimal);
+                const rateResult = await getRate(path, normalizedAmount, sourceDecimal);
                 const detinationAmount = rateResult[0];
                 
                 const slipRate = SLIPPAGE_RATE; // 3%
@@ -228,7 +236,7 @@ const SwapPanel = (props) => {
                 const tx = await convert(
                     path, 
                     source[1], 
-                    `${sourceAmount}`, 
+                    normalizedAmount, 
                     sourceDecimal, 
                     detinationAmount, 
                     slipRate, 
