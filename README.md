@@ -31,7 +31,7 @@ Basic Usage
 ```jsx
 import React, { Component } from 'react'
 import { useWeb3Context } from 'web3-react';
-import { Widget } from 'react-defi-widget'
+import { TokenConversionWidget } from 'react-defi-widget'
 
 const MainPage = (props) => {
 
@@ -43,7 +43,7 @@ const MainPage = (props) => {
 
   return (
     <Fragment>
-        <Widget
+        <TokenConversionWidget
           web3ReactContext={context}
         />
     </Fragment>
@@ -56,7 +56,7 @@ Advance Usage
 ```jsx
 import React, { Component } from 'react'
 import { useWeb3Context } from 'web3-react';
-import { Widget } from 'react-defi-widget'
+import { TokenConversionWidget } from 'react-defi-widget'
 
 const MainPage = (props) => {
 
@@ -68,7 +68,7 @@ const MainPage = (props) => {
 
   return (
     <Fragment>
-        <Widget
+        <TokenConversionWidget
           web3ReactContext={context}
           title={"YOUR WIDGET TITLE"}
           subtitle={"YOUR WIDGET SUBTITLE"}
