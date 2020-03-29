@@ -213,7 +213,7 @@ const SwapPanel = (props) => {
         }
 
         setSource(newSource);
-        toggleSourceModal();
+        setSourceModal(false);
 
     }, [destination])
 
@@ -226,7 +226,7 @@ const SwapPanel = (props) => {
         }
 
         setDestination(newDestination);
-        toggleDestinationModal();
+        setDestinationModal(false);
 
     }, [source])
 
