@@ -28,7 +28,7 @@ const MainPage = (props) => {
 
     // Custom header, headline and description of the widget
     const widgetTitle = "Simple & Easy Token Swap";
-    const widgetSubtitle = "You can swap your ERC20 tokens for other tokens within this widget";
+    const widgetSubtitle = "You can swap your Ethereum ERC-20 tokens for other tokens within this widget";
     const widgetDescription = "DISCLAIMER : This feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision."
 
     // Widget's button color
