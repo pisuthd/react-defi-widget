@@ -12,8 +12,16 @@
     "react-defi-widget": "file:..",
     "react-dom": "file:../node_modules/react-dom",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "^1.1.4",
+    "react-scripts": "3.4.0",
     "reactstrap": "^8.4.1",
+    "eslint": "^6.6.0",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-config-standard-react": "^6.0.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-node": "^7.0.1",
+    "eslint-plugin-promise": "^4.0.0",
+    "eslint-plugin-react": "^7.10.0",
+    "eslint-plugin-standard": "^3.1.0",
     "styled-components": "^5.0.1",
     "web3-react": "^5.0.5"
   },
@@ -22,5 +30,17 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
