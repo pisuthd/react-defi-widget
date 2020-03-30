@@ -22,7 +22,7 @@ const NavBar = (props) => {
                 <NavbarBrand>
                     <BrandHeader>
                         <Link to="/">
-                            StakingDojo.com
+                            React Defi Widget
                         </Link>
                     </BrandHeader>
 

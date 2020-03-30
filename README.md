@@ -7,7 +7,7 @@
 
 ## Introduction
 
-`react-defi-widget` is a React widget that allow your website visitors to quickly and easily convert tokens within the widget and able to collect fees up to 3% on each transaction (paid in BNT token). You would need `web3-react` imported on your app and passing its context through props to the widget component.
+`react-defi-widget` is a React widget that allows your website visitors to quickly and easily convert tokens from the widget and the website owner can collect a fee from each transaction up to 3% (paid in BNT token). You would need `web3-react` imported on your app and passing its context through props to the widget component.
 
 ## Features
 
