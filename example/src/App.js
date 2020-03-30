@@ -2,7 +2,8 @@ import React, { Component, useEffect } from 'react'
 import {
   BrowserRouter as Router,
   Route,
-  Switch
+  Switch,
+  Redirect
 } from "react-router-dom";
 
 import { useWeb3Context } from 'web3-react';
@@ -36,7 +37,7 @@ const App = () => {
           <Route exact path="/stablecoins">
             <StablecoinPage web3context={web3context} />
           </Route>
-
+          <Redirect to="/" />
         </Switch>
 
       </MainLayout>
