@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from 'react'
+import React, { Component, useEffect, useState } from 'react'
 import {
     Link
 } from "react-router-dom";
@@ -10,13 +10,24 @@ import {
     NavItem,
     NavbarText,
     NavLink,
-    Container
+    DropdownToggle,
+    Container,
+    DropdownItem,
+    DropdownMenu,
+    UncontrolledDropdown,
+    Collapse
+
 } from "reactstrap"
 import styled from "styled-components"
 
 const NavBar = (props) => {
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    const toggle = () => setIsOpen(!isOpen);
+
     return (
-        <StyledNavbar style={{ marginBottom: "20px" }} color="light" expand="md">
+        <StyledNavbar style={{ marginBottom: "20px" }} color="light" light expand="md">
             <Container>
 
                 <NavbarBrand>
@@ -27,30 +38,22 @@ const NavBar = (props) => {
                     </BrandHeader>
 
                 </NavbarBrand>
-                <Nav className="ml-auto" navbar>
+                <NavbarToggler style={{ color: "red" }} onClick={toggle} />
+                <Collapse isOpen={isOpen} navbar>
+                    <Nav className="ml-auto" navbar>
+                        <NavItem>
+                            <Link to="/">
+                                <NavLink>Token Swap</NavLink>
+                            </Link>
+                        </NavItem>
+                        <NavItem>
+                            <Link to="/pools">
+                                <NavLink>Liquidity Pools</NavLink>
+                            </Link>
+                        </NavItem>
+                    </Nav>
 
-                    <NavbarText>
-                        <Link to="/">
-                            <NavLink>Home</NavLink>
-                        </Link>
-                    </NavbarText>
-                    {/*
-                    <NavbarText>
-                        <Link to="/pools">
-                            <NavLink>Liquidity Pools</NavLink>
-                        </Link>
-                    </NavbarText>
-                    <NavbarText>
-                        <Link to="/stablecoins">
-                            <NavLink>Stablecoins</NavLink>
-                        </Link>
-                    </NavbarText>
-                    <NavbarText>
-                        <NavLink href="https://github.com/reactstrap/reactstrap">GitHub</NavLink>
-                    </NavbarText>
-                    */}
-
-                </Nav>
+                </Collapse>
 
             </Container>
 
