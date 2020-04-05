@@ -53,13 +53,20 @@ export const NETWORKS = {
 
 export const HEADLINES = {
     HEADER : {
-        SWAP : "Simple & Easy Token Swap"
+        SWAP : "Simple & Easy Token Swap",
+        POOLS: "POOLS HEADER"
     },
     TEXT : {
-        SWAP : "You can swap your Ethereum ERC-20 tokens for other tokens within this widget"
+        SWAP : "You can swap your Ethereum ERC-20 tokens for other tokens within this widget",
+        POOLS: "TEXT TEXT"
     },
     DISCLAIMER : {
-        SWAP : "DISCLAIMER : This feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision."
+        SWAP : "DISCLAIMER : This feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision.",
+        POOLS : "DISCLAIMER : This feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision."
+    },
+    ACTIONS : {
+        SWAP : "Swap",
+        POOLS : "Ok"
     }
 }
 

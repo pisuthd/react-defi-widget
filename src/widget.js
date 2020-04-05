@@ -108,15 +108,23 @@ TokenConversionWidget.propTypes = {
 };
 
 
-export const LiquidityPoolsWidget = (props) => {
+export const BancorLiquidityPoolsWidget = (props) => {
 
-    const { web3ReactContext } = props;
+    const { web3ReactContext, color } = props;
 
     return <ConnectedWidget
                 web3ReactContext={web3ReactContext}
                 currentPage={PAGES.POOLS}
+                color={color}
             />
 }
+
+
+BancorLiquidityPoolsWidget.propTypes = {
+    web3ReactContext: PropTypes.object.isRequired,
+    color : PropTypes.string
+
+};
 
 export const StablecoinsWidget = (props) => {
     const { web3ReactContext } = props;

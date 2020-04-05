@@ -6,6 +6,7 @@ import WidgetLayout from "./layout";
 import { PAGES, HEADLINES, COLORS } from "../../constants";
 
 import SwapPanel from "./components/panels/swap";
+import LiquidityPoolPanel from "./components/panels/liquidityPool";
 
 import styled from "styled-components"
 import ContainerDimensions from 'react-container-dimensions'
@@ -14,7 +15,7 @@ import { useBancor } from "../../contexts/bancor";
 
 const Widget = (props) => {
 
-    const { 
+    const {
         web3ReactContext,
         currentPage,
         title,
@@ -37,11 +38,11 @@ const Widget = (props) => {
     const { loading, listConversionTokens, getTokenName, loadingErrorMessage } = useBancor(web3ReactContext);
 
 
-    const [ processing, setProcessing ] = useState(false);
+    const [processing, setProcessing] = useState(false);
 
-    const [ clickCount, setClickCount ] = useState(0);
+    const [clickCount, setClickCount] = useState(0);
 
-    const [ disclaimer, setDisclaimer ] = useState(widgetDescription);
+    const [disclaimer, setDisclaimer] = useState(widgetDescription);
 
     useEffect(() => {
         if (loadingErrorMessage) {
@@ -79,11 +80,13 @@ const Widget = (props) => {
 
     const handleClick = useCallback((e) => {
         e.preventDefault();
-        setClickCount(clickCount+1)
+        setClickCount(clickCount + 1)
 
-    },[clickCount])
+    }, [clickCount])
 
-    const disabled = errorMessage || !web3ReactContext.active || loading || processing ;
+    const disabled = errorMessage || !web3ReactContext.active || loading || processing;
+
+    const needTwoColumnBody = currentPage === PAGES.SWAP ? true : false;
 
     return (
         <ContainerDimensions>
@@ -105,29 +108,39 @@ const Widget = (props) => {
                     <Body
                         width={width}
                         height={height}
+                        twoColumn={needTwoColumnBody}
                     >
-                        {currentPage === PAGES.SWAP && 
-                        (
-                        <SwapPanel 
-                            clickCount={clickCount} 
-                            handleTextStatus={setDisclaimer} 
-                            handleProcessing={handleProcessing} 
-                            web3ReactContext={web3ReactContext} 
-                            halt={errorMessage} 
-                            textDescription={widgetDescription}
-                            baseCurrency={baseCurrency}
-                            pairCurrency={pairCurrency}
-                            affiliateAccount={affiliateAccount}
-                            affiliateFee={affiliateFee}
-                        />
-                        )}
+                        {currentPage === PAGES.SWAP &&
+                            (
+                                <SwapPanel
+                                    clickCount={clickCount}
+                                    handleTextStatus={setDisclaimer}
+                                    handleProcessing={handleProcessing}
+                                    web3ReactContext={web3ReactContext}
+                                    halt={errorMessage}
+                                    textDescription={widgetDescription}
+                                    baseCurrency={baseCurrency}
+                                    pairCurrency={pairCurrency}
+                                    affiliateAccount={affiliateAccount}
+                                    affiliateFee={affiliateFee}
+                                />
+                            )}
+                        
+                        {currentPage === PAGES.POOLS &&
+                            (
+                                <LiquidityPoolPanel
+                                    web3ReactContext={web3ReactContext}
+                                />
+                            )}
+
                     </Body>
 
                     <Footer>
-
-                        <ActionButton color={widgetColor}  onClick={handleClick} disabled={disabled}>
-                            Swap
-                        </ActionButton>
+                        {currentPage === PAGES.SWAP &&
+                            (<ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
+                                {HEADLINES.ACTIONS[currentPage]}
+                            </ActionButton>)
+                        }
                         <StatusPanel
                             width={width}
                         >
@@ -219,7 +232,7 @@ const Body = styled.div`
     display: grid;
     grid-gap: 1rem;
     
-    ${ props => props.width > 600 && `
+    ${ props => ((props.width > 600) && (props.twoColumn)) && `
         grid-template-columns: repeat(2, 1fr);
     `}
 

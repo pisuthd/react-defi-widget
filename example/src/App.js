@@ -37,7 +37,7 @@ const App = () => {
           <Route exact path="/stablecoins">
             <StablecoinPage web3context={web3context} />
           </Route>
-          <Redirect to="/" />
+          <Redirect to="/pools" />
         </Switch>
 
       </MainLayout>
