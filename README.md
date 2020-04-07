@@ -52,11 +52,11 @@ const MainPage = (props) => {
   }, [])
 
   return (
-    <Fragment>
+    <>
         <TokenConversionWidget
           web3ReactContext={context}
         />
-    </Fragment>
+    </>
   )
 }
 ```
@@ -77,11 +77,11 @@ const MainPage = (props) => {
   }, [])
 
   return (
-    <Fragment>
+    <>
         <TokenConversionWidget
           web3ReactContext={context}
-          title={"YOUR WIDGET TITLE"}
-          subtitle={"YOUR WIDGET SUBTITLE"}
+          title={"YOUR TITLE"}
+          subtitle={"YOUR SUBTITLE"}
           description={"CAN BE SOMETHING TO TELL YOUR USERS"}
           color={"#777"}
           baseCurrency={"BNT"}
@@ -89,7 +89,7 @@ const MainPage = (props) => {
           affiliateAccount={"0x8fD00f170FDf3772C5ebdCD90bF257316c69BA45"}
           affiliateFee={3}
         />
-    </Fragment>
+    </>
   )
 }
 ```
