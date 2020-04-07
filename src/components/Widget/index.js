@@ -112,8 +112,7 @@ const Widget = (props) => {
                             clickCount={clickCount} 
                             handleTextStatus={setDisclaimer} 
                             handleProcessing={handleProcessing} 
-                            web3ReactContext={web3ReactContext} 
-                            halt={errorMessage} 
+                            web3ReactContext={web3ReactContext}  
                             textDescription={widgetDescription}
                             baseCurrency={baseCurrency}
                             pairCurrency={pairCurrency}
