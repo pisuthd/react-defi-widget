@@ -47,6 +47,31 @@ import nexoLogo from "../../assets/tokens/nexo.png";
 import renLogo from "../../assets/tokens/ren.png";
 import loomLogo from "../../assets/tokens/loom.png";
 import snxLogo from "../../assets/tokens/snx.png";
+import indLogo from "../../assets/tokens/ind.png";
+import aidLogo from "../../assets/tokens/aid.png";
+import catLogo from "../../assets/tokens/cat.png";
+import veeLogo from "../../assets/tokens/vee.png";
+import wingsLogo from "../../assets/tokens/wings.png";
+import amnLogo from "../../assets/tokens/amn.png";
+import instarLogo from "../../assets/tokens/instar.png";
+import mdtLogo from "../../assets/tokens/mdt.png";
+import mfgLogo from "../../assets/tokens/mfg.png";
+import baxLogo from "../../assets/tokens/bax.png";
+import xdceLogo from "../../assets/tokens/xdce.png";
+import boxxLogo from "../../assets/tokens/boxx.png";
+import ceekLogo from "../../assets/tokens/ceek.png";
+import mybLogo from "../../assets/tokens/myb.png";
+import rblxLogo from "../../assets/tokens/rblx.png";
+import ziptLogo from "../../assets/tokens/zipt.png";
+import locLogo from "../../assets/tokens/loc.png";
+import fxcLogo from "../../assets/tokens/fxc.png";
+import qdaoLogo from "../../assets/tokens/qdao.png";
+import c20Logo from "../../assets/tokens/c20.png";
+import nmrLogo from "../../assets/tokens/nmr.png";
+import metLogo from "../../assets/tokens/met.png";
+import mlnLogo from "../../assets/tokens/mln.png";
+import keyLogo from "../../assets/tokens/key.png";
+
 
 export const getIcon = (symbol) => {
     switch(symbol) {
@@ -152,6 +177,56 @@ export const getIcon = (symbol) => {
             return loomLogo;
         case 'SNX':
             return snxLogo;
+        case 'IND':
+            return indLogo;
+        case 'AID':
+            return aidLogo;
+        case 'CAT':
+            return catLogo;
+        case 'VEE':
+            return veeLogo;
+        case 'WINGS':
+            return wingsLogo;
+        case 'AMN':
+            return amnLogo;
+        case 'INSTAR':
+            return instarLogo;
+        case 'MDT':
+            return mdtLogo;
+        case 'MFG':
+            return mfgLogo;
+        case 'BAX':
+            return baxLogo;
+        case 'XDCE':
+            return xdceLogo;
+        case 'BOXX':
+            return boxxLogo;
+        case 'CEEK':
+            return ceekLogo;
+        case 'MYB':
+            return mybLogo;
+        case 'RBLX':
+            return rblxLogo;
+        case 'ZIPT':
+            return ziptLogo;
+        case 'LOC':
+            return locLogo;
+        case 'FXC':
+            return fxcLogo;
+        case 'QDAO':
+            return qdaoLogo;
+        case 'USDQ':
+            return qdaoLogo;
+        case 'C20':
+            return c20Logo;
+        case 'NMR':
+            return nmrLogo;
+        case 'MET':
+            return metLogo;
+        case 'MLN':
+            return mlnLogo;
+        case 'KEY':
+            return keyLogo;
         default:
             return ethLogo;
     }
