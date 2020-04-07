@@ -1,25 +1,25 @@
 import React, { useCallback, useState, useEffect, Fragment } from 'react';
-
 import styled from "styled-components";
+import PropTypes from 'prop-types';
 
-import { useBancor, INITIAL_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
-import { getIcon, getDefaultTokenAddress } from "../../../../utils/token";
+import { useBancor, INITIAL_TOKENS, ROPSTEN_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
+import { getIcon, getDefaultTokenAddress, getRopstenTokenAddress } from "../../../../utils/token";
 import { getAddress, parseFee } from "../../../../utils/account";
-
 import { HEADLINES, PAGES, SLIPPAGE_RATE } from "../../../../constants";
-
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 
+/*
+    Token Swap Panel
+*/
 
 const SwapPanel = (props) => {
 
-    const { 
-        web3ReactContext, 
-        handleProcessing, 
-        clickCount, 
-        halt, 
-        handleTextStatus, 
+    const {
+        web3ReactContext,
+        handleProcessing,
+        clickCount,
+        handleTextStatus,
         textDescription,
         baseCurrency,
         pairCurrency,
@@ -27,11 +27,10 @@ const SwapPanel = (props) => {
         affiliateFee
     } = props;
 
-    const initialList =  INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0])
+    const initialList = INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0])
 
     const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
     const defaultAffiliateFee = affiliateFee ? parseFee(affiliateFee) : "0";
-    
 
     const networkId = web3ReactContext.networkId;
 
@@ -44,7 +43,7 @@ const SwapPanel = (props) => {
         return fallback;
     }
 
-    const defaultBaseCurrency = getDefaultCurrency(baseCurrency, initialList, initialList[1] );
+    const defaultBaseCurrency = getDefaultCurrency(baseCurrency, initialList, initialList[1]);
     const defaultPairCurrency = getDefaultCurrency(pairCurrency, initialList, initialList[0]);
 
     const [tokens, setTokens] = useState(initialList);
@@ -83,13 +82,6 @@ const SwapPanel = (props) => {
     const [destinationAmount, setDestinationAmount] = useState(0);
 
     useEffect(() => {
-        if (halt !== undefined) {
-            setLoadingBalance(false);
-            setLoadingRate(false);
-        }
-    }, [halt])
-
-    useEffect(() => {
         // Handle click event from Parent Component
         onConvert();
     }, [clickCount])
@@ -115,17 +107,7 @@ const SwapPanel = (props) => {
                     } else {
                         finalList = available;
                     }
- 
-                    /*
-                    const finalList = INITIAL_TOKENS.map(name => available.find(item => item[0] === name));
 
-                    for (let token of available) {
-                        if ((finalList.find(item => item[0] === token[0]) === undefined) && (token[0] !== "NAME_ERROR") && (EXCLUDE_TOKENS.indexOf(token[0]) === -1)) {
-                            finalList.push(token);
-                        }
-                    }
-                    */
-                    
                     console.log("final token list : ", finalList);
                     setTokens(finalList.map(item => [item[0], item[1], 0]));
                     tokenList = finalList;
@@ -165,43 +147,12 @@ const SwapPanel = (props) => {
                                 return result;
                             }, 0)
                             listWithReserveBalance.push([token[0], token[1], Math.round(totalReserves)]);
-                            // reserves[token[0]] = totalReserves;
 
                         }
                         setTokens(listWithReserveBalance);
 
-
-
-
                     }
                 )
-
-                /*
-                let tokenNamePromise = [];
-                for (let pool of poolList) {
-                    tokenNamePromise.push(getTokenName(pool.smartTokenAddress))
-                }
-
-                Promise.all(tokenNamePromise).then(
-                    tokenNameResult => {
-                        console.log("tokenNameResult : ", tokenNameResult);
-                        let reservePromise = [];
-                        
-                        for (let pool of poolList) {
-                            reservePromise.push(getLiquidityPool(pool.converterAddress));
-                        }
-                        Promise.all(reservePromise).then(
-                            poolResult => {
-                                console.log("poolResult : ", poolResult);
-                            }
-                        )
-                    }
-                )
-                */
-
-
-
-
             }
         })()
 
@@ -209,14 +160,29 @@ const SwapPanel = (props) => {
 
     }, [loading, networkId])
 
+    useEffect(() => {
+        if (networkId) {
+            // Update default token list for non-mainnet
+            if (networkId === 3) {
+                const ropstenList = ROPSTEN_TOKENS.map(token => [token, getRopstenTokenAddress(token), 0])
+                setTokens(ropstenList);
+                const defaultBaseCurrency = getDefaultCurrency(baseCurrency, ropstenList, ropstenList[1]);
+                const defaultPairCurrency = getDefaultCurrency(pairCurrency, ropstenList, ropstenList[0]);
+                setSource(defaultBaseCurrency);
+                setDestination(defaultPairCurrency);
+            }
+        }
+    }, [networkId, baseCurrency, pairCurrency])
+
+
     const onConvert = useCallback(async () => {
 
         if ((source[1] !== "") && (path.length > 0) && (sourceAmount !== 0)) {
             handleProcessing(true);
-            console.log("start convert...", source, path, sourceAmount);
+            console.log("Convert...", source, path, sourceAmount);
 
-            const round = (num) => {    
-                return +(Math.floor(num + "e+3")  + "e-3");
+            const round = (num) => {
+                return +(Math.floor(num + "e+3") + "e-3");
             }
 
             const normalizedAmount = `${round(Number(sourceAmount))}`;
@@ -227,20 +193,20 @@ const SwapPanel = (props) => {
                 const sourceDecimal = await getTokenDecimal(source[1]);
                 const rateResult = await getRate(path, normalizedAmount, sourceDecimal);
                 const detinationAmount = rateResult[0];
-                
+
                 const slipRate = SLIPPAGE_RATE; // 3%
                 console.log("detinationAmount : ", detinationAmount.toString());
 
                 console.log("defaultAffiliateAccount : ", defaultAffiliateAccount, " rate : ", defaultAffiliateFee);
-                
+
                 const tx = await convert(
-                    path, 
-                    source[1], 
-                    normalizedAmount, 
-                    sourceDecimal, 
-                    detinationAmount, 
-                    slipRate, 
-                    source[0] === "ETH", 
+                    path,
+                    source[1],
+                    normalizedAmount,
+                    sourceDecimal,
+                    detinationAmount,
+                    slipRate,
+                    source[0] === "ETH",
                     destination[0] === "ETH",
                     defaultAffiliateAccount,
                     defaultAffiliateFee
@@ -254,7 +220,7 @@ const SwapPanel = (props) => {
                     console.log("done...");
 
                 }
-                
+
 
 
 
@@ -332,8 +298,6 @@ const SwapPanel = (props) => {
     }, [isDestinationModalOpen])
 
     const updateBalance = useCallback(async (source) => {
-
-        console.log("checking balance of : ", source[1]);
         setLoadingBalance(true);
 
         try {
@@ -349,11 +313,9 @@ const SwapPanel = (props) => {
                 setSourceBalance(`${Number(result).toFixed(4)}`);
             }
 
-
         } catch (error) {
             console.log("loading rate error  ;", error);
         }
-
 
         setLoadingBalance(false);
 
@@ -361,7 +323,7 @@ const SwapPanel = (props) => {
 
     useEffect(() => {
 
-        if (source[1] !== '' && destination[1] !== '' && !loading && liquidityPools.length > 0) {
+        if (source[1] !== '' && destination[1] !== '' && !loading && networkId !== undefined && liquidityPools.length > 0) {
             console.log(`looking for an exchange rate on the pair ${source[0]}/${destination[0]} `);
             (async () => {
                 setLoadingRate(true);
@@ -389,7 +351,7 @@ const SwapPanel = (props) => {
             })();
         }
 
-    }, [source, destination, loading, liquidityPools])
+    }, [source, destination, loading, liquidityPools, networkId])
 
     const handleChange = useCallback((e) => {
         e.preventDefault();
@@ -411,10 +373,6 @@ const SwapPanel = (props) => {
             setSourceAmount(result);
 
         }
-
-
-
-
 
     }, [rate, isLoadingRate, sourceAmount, destinationAmount])
 
@@ -438,6 +396,11 @@ const SwapPanel = (props) => {
         setDestinationAmount((newAmount * Number(rate)).toFixed(4));
 
     }, [rate, isLoadingRate])
+
+
+    if (!networkId) {
+        return <Fragment></Fragment>
+    }
 
     return (
         <Fragment>
@@ -521,6 +484,18 @@ const SwapPanel = (props) => {
     )
 }
 
+SwapPanel.propTypes = {
+    web3ReactContext: PropTypes.object.isRequired,
+    handleProcessing: PropTypes.func.isRequired,
+    clickCount: PropTypes.number.isRequired,
+    handleTextStatus: PropTypes.func.isRequired,
+    textDescription: PropTypes.string,
+    baseCurrency: PropTypes.string,
+    pairCurrency: PropTypes.string,
+    affiliateAccount: PropTypes.string,
+    affiliateFee: PropTypes.number,
+};
+
 export default SwapPanel;
 
 
@@ -530,7 +505,7 @@ const DropdownPanel = (props) => {
 
     const [filtered, setFiltered] = useState(tokens);
 
-    const [searchTerm, setSearchTerm ] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         if (tokens.length > 0) {
@@ -547,7 +522,7 @@ const DropdownPanel = (props) => {
 
         e.preventDefault();
         setSearchTerm(e.target.value);
-    },[tokens])
+    }, [tokens])
 
     return (
         <div className="dropdown-content">
