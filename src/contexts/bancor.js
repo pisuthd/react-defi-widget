@@ -572,15 +572,15 @@ export const useBancor = (web3context) => {
             if (diff > 0) {
                 console.log("diff : ", diff.toString());
 
-                if (allowance > 0) {
+                if ((allowance > 0) && (!fromETH)) {
                     console.log("allowance is not zero need to clear it first...");
                     const clearTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
-                    await clearTx.wait();
+                    // await clearTx.wait();
                 }
 
                 const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, sourceAmountWei, options);
                 console.log("waiting for confirmation : ", approvalTx)
-                await approvalTx.wait(); // <-- can't remove
+                // await approvalTx.wait(); // <-- can't remove
             }
 
             if (fromETH) {
