@@ -14,6 +14,8 @@ import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 
 
 export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB", "USDC"]
+export const ROPSTEN_TOKENS = ["BNT" , "ETH", "XXX", "YYY"]
+
 
 // Not sure whether BNB stills ERC-20, removal of low-volume tokens
 export const EXCLUDE_TOKENS = ["BNB", "AIX", "ATS", "BCS", "MNTP", "TBX", "TRST", "WAND", "HOT", "WLK", "ABX", "ESZ", "ZINC", "J8T", "LDC", "ONG", "RVT", "STAC", "BETR", "UP", "AUC", "DAN", "DTRC", "FKX", "FTX", "GES", "MAD", "MORPH", "MRG", "POA20", "REPUX", "SCL", "SIG", "TNS", "X8X", "XBP", "XNK", "PAT", "BBO", "SHP", "FLIXX", "CMCT", "AGRI", "EVO", "LOCI", "PEG:USD", "REAL", "SPD", "TIX", "COT", "EFOOD", "EMCO", "SXL", "RST100", "PRTL", "ELET", "SYB7", "PKG", "MGT", "sUSD", "GRIG", "ACD", "CBIX7", "DZAR", "JRT", "XIO", "UPT", "STX", "USD", "OMNIS", "TBC", "sXAU", "IGA", "eXAU", "COMM", "cUSD", "AUTO", "FTH", "pBTC", "EST", "BFZ", "ANK"];
@@ -209,10 +211,10 @@ export const useBancor = (web3context) => {
     useEffect(() => {
 
         try {
-            console.log("web3context.networkId : ", web3context.networkId)
+            // console.log("web3context.networkId : ", web3context.networkId)
             const network = ([NETWORKS.MAINNET, NETWORKS.ROPSTEN].indexOf(web3context.networkId) !== -1) ? web3context.networkId : undefined;
             if (web3context && web3context.active && network !== undefined) {
-                console.log(`load bancor's contract for  ${network}`);
+                // console.log(`load bancor's contract for  ${network}`);
                 const signer = web3context.library.getSigner();
                 const getContractRegistryAddress = (network) => {
                     switch (network) {
@@ -570,15 +572,15 @@ export const useBancor = (web3context) => {
             if (diff > 0) {
                 console.log("diff : ", diff.toString());
 
-                if (allowance > 0) {
+                if ((allowance > 0) && (!fromETH)) {
                     console.log("allowance is not zero need to clear it first...");
                     const clearTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
-                    await clearTx.wait();
+                    // await clearTx.wait();
                 }
 
                 const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, sourceAmountWei, options);
                 console.log("waiting for confirmation : ", approvalTx)
-                await approvalTx.wait(); // <-- can't remove
+                // await approvalTx.wait(); // <-- can't remove
             }
 
             if (fromETH) {

@@ -1,6 +1,6 @@
 {
   "name": "react-defi-widget",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "description": "Ethereum Defi widget for React apps",
   "author": "Pisuth D. <pisuth.dae@gmail.com>",
   "license": "MIT",

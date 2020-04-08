@@ -7,7 +7,7 @@ import omgLogo from "../../assets/tokens/omg.png";
 import daiLogo from "../../assets/tokens/dai.png";
 import manaLogo from "../../assets/tokens/mana.png";
 import powrLogo from "../../assets/tokens/powr.png";
-import mkrLogo  from "../../assets/tokens/mkr.png";
+import mkrLogo from "../../assets/tokens/mkr.png";
 import antLogo from "../../assets/tokens/ant.png";
 import gnoLogo from "../../assets/tokens/gno.png";
 import dgdLogo from "../../assets/tokens/dgd.png";
@@ -23,7 +23,7 @@ import gtoLogo from "../../assets/tokens/gto.png";
 import reqLogo from "../../assets/tokens/req.png";
 import rlcLogo from "../../assets/tokens/rlc.png";
 import srnLogo from "../../assets/tokens/srn.png";
-import stormLogo from "../../assets/tokens/storm.png"; 
+import stormLogo from "../../assets/tokens/storm.png";
 import taasLogo from "../../assets/tokens/taas.png";
 import usdcLogo from "../../assets/tokens/usdc.png";
 import tknLogo from "../../assets/tokens/tkn.png";
@@ -74,7 +74,7 @@ import keyLogo from "../../assets/tokens/key.png";
 
 
 export const getIcon = (symbol) => {
-    switch(symbol) {
+    switch (symbol) {
         case 'ETH':
             return ethLogo;
         case 'DAI':
@@ -233,7 +233,7 @@ export const getIcon = (symbol) => {
 }
 
 export const getDefaultTokenAddress = (symbol) => {
-    switch(symbol) {
+    switch (symbol) {
         case 'BNT':
             return "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C";
         case 'ETH':
@@ -268,6 +268,22 @@ export const getDefaultTokenAddress = (symbol) => {
             return "0x309627af60F0926daa6041B8279484312f2bf060";
         case 'USDC':
             return "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+        default:
+            return "";
+    }
+}
+
+
+export const getRopstenTokenAddress = (symbol) => {
+    switch (symbol) {
+        case 'BNT':
+            return "0x62bd9D98d4E188e281D7B78e29334969bbE1053c";
+        case 'ETH':
+            return "0xD368b98d03855835E2923Dc000b3f9c2EBF1b27b";
+        case 'XXX':
+            return "0x8aD24A87B819343679BB2611C093b0F598f7fb3e";
+        case 'YYY':
+            return "0x8beB0728c77bd9258aAC36f8b2d94085f48Aa686";
         default:
             return "";
     }
