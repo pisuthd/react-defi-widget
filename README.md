@@ -39,7 +39,7 @@ npm install --save react-defi-widget
 Basic Usage
 
 ```jsx
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { useWeb3Context } from 'web3-react';
 import { TokenConversionWidget } from 'react-defi-widget'
 
@@ -52,11 +52,11 @@ const MainPage = (props) => {
   }, [])
 
   return (
-    <>
+    <Fragment>
         <TokenConversionWidget
           web3ReactContext={context}
         />
-    </>
+    </Fragment>
   )
 }
 ```
@@ -64,7 +64,7 @@ const MainPage = (props) => {
 Advance Usage
 
 ```jsx
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { useWeb3Context } from 'web3-react';
 import { TokenConversionWidget } from 'react-defi-widget'
 
@@ -77,7 +77,7 @@ const MainPage = (props) => {
   }, [])
 
   return (
-    <>
+    <Fragment>
         <TokenConversionWidget
           web3ReactContext={context}
           title={"YOUR TITLE"}
@@ -89,7 +89,7 @@ const MainPage = (props) => {
           affiliateAccount={"0x8fD00f170FDf3772C5ebdCD90bF257316c69BA45"}
           affiliateFee={3}
         />
-    </>
+    </Fragment>
   )
 }
 ```
