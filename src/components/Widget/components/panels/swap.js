@@ -562,7 +562,7 @@ const DropdownPanel = (props) => {
 
 const SearchPanel = styled.tr`
     td {
-        fonct-size: 14px;
+        font-size: 14px;
 
         :first-child {
             text-align: center;
