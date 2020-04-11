@@ -108,7 +108,7 @@ TokenConversionWidget.propTypes = {
 };
 
 
-export const BancorLiquidityPoolsWidget = (props) => {
+export const LiquidityPoolsWidget = (props) => {
 
     const { web3ReactContext, color } = props;
 
@@ -120,7 +120,7 @@ export const BancorLiquidityPoolsWidget = (props) => {
 }
 
 
-BancorLiquidityPoolsWidget.propTypes = {
+LiquidityPoolsWidget.propTypes = {
     web3ReactContext: PropTypes.object.isRequired,
     color : PropTypes.string
 

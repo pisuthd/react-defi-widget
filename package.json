@@ -71,6 +71,7 @@
   "dependencies": {
     "ethers": "^4.0.45",
     "react-container-dimensions": "^1.4.1",
+    "react-minimal-pie-chart": "^7.1.0",
     "remove": "^0.1.5",
     "styled-components": "^5.0.1"
   }
