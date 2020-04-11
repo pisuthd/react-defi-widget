@@ -64,52 +64,28 @@ const MainPage = (props) => {
                 </Col>
             </Row>
             
-            {/* Available Protocols */}
-            {/*
-            <Row>
-                <Col sm="12">
-                    <WidgetVersionSection/>
-                </Col>
-            </Row>
-            <Row>
-                <Col sm="12">
-                    <h3>Available Protocols</h3>
-                </Col>
-            </Row>
-            <br />
-            <Row>
-                <Col sm="4">
-                    <Card>
-
-                        <img width="100%" src={BancorImg} alt="Bancor" />
-                        <CardBody>
-                            <CardTitle><b>Bancor Protocol</b></CardTitle>
-                            <CardText>Bancor Protocol offers of of conversions in a peer-to-smart contract model against liquidity pools.
-                                <br/><ul><li>Affiliate fees up to 3%</li></ul></CardText>
-                            <div>
-                                <Badge color="warning">Liquidity</Badge>{` `}
-                                <Badge color="primary">Token Swap</Badge>
-                            </div>
-                        </CardBody>
-                       \
-                       
-                    </Card>
-                </Col>
-            </Row>
-            <br />
-            */}
 
 
         </Fragment>
 
     )
 }
-
+/*
 const StyledJumbotron = styled(Jumbotron)`
     background-image: linear-gradient(to bottom, #5bc0de, #0275d8);  
     border-radius: 10px;
     color: white;
     height: 550px;
+`;
+*/
+
+const StyledJumbotron = styled(Jumbotron)`
+    background-image: linear-gradient(to bottom, #5bc0de, #0275d8);  
+    border-radius: 10px;
+    color: white;
+    height: 600px;
+    width: 600px;
+    padding: 40px 20px 40px 20px;
 `;
 
 
