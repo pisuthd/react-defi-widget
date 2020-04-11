@@ -39,10 +39,10 @@ const Widget = (props) => {
 
 
     const [processing, setProcessing] = useState(false);
-
     const [clickCount, setClickCount] = useState(0);
-
     const [disclaimer, setDisclaimer] = useState(widgetDescription);
+    const [actionText, setActionText] = useState("");
+
 
     useEffect(() => {
         if (loadingErrorMessage) {
@@ -78,6 +78,10 @@ const Widget = (props) => {
         setProcessing(status);
     }
 
+    const updateActionText = (text) => {
+        setActionText(text);
+    }
+
     const handleClick = useCallback((e) => {
         e.preventDefault();
         setClickCount(clickCount + 1)
@@ -86,29 +90,28 @@ const Widget = (props) => {
 
     const disabled = errorMessage || !web3ReactContext.active || loading || processing;
 
-    const needTwoColumnBody = currentPage === PAGES.SWAP ? true : false;
-
     return (
         <ContainerDimensions>
             {({ width, height }) =>
                 <Container>
-                    <Header
-                        width={width}
-                        height={height}
-                    >
-                        <h3>
-                            {widgetTitle}
-                        </h3>
-                        <p>
-                            {widgetSubtitle}
-                        </p>
+                    {width > 600 &&
+                        <Header
+                            width={width}
+                            height={height}
+                        >
+                            <h3>
+                                {widgetTitle}
+                            </h3>
+                            <p>
+                                {widgetSubtitle}
+                            </p>
 
-                    </Header>
+                        </Header>
+                    }
 
                     <Body
                         width={width}
                         height={height}
-                        twoColumn={needTwoColumnBody}
                     >
                         {currentPage === PAGES.SWAP &&
                             (
@@ -125,22 +128,22 @@ const Widget = (props) => {
                                     affiliateFee={affiliateFee}
                                 />
                             )}
-                        
+
                         {currentPage === PAGES.POOLS &&
                             (
                                 <LiquidityPoolPanel
                                     web3ReactContext={web3ReactContext}
+                                    width={width}
+                                    updateActionText={updateActionText}
                                 />
                             )}
 
                     </Body>
 
                     <Footer>
-                        {currentPage === PAGES.SWAP &&
-                            (<ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
-                                {HEADLINES.ACTIONS[currentPage]}
-                            </ActionButton>)
-                        }
+                        <ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
+                            {currentPage === PAGES.SWAP ? HEADLINES.ACTIONS[currentPage] : actionText}
+                        </ActionButton>
                         <StatusPanel
                             width={width}
                         >
@@ -231,8 +234,8 @@ const Body = styled.div`
     
     display: grid;
     grid-gap: 1rem;
-    
-    ${ props => ((props.width > 600) && (props.twoColumn)) && `
+
+    ${ props => (props.width > 600) && `
         grid-template-columns: repeat(2, 1fr);
     `}
 

@@ -14,7 +14,7 @@ import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 
 
 export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB", "USDC"]
-export const ROPSTEN_TOKENS = ["BNT" , "ETH", "XXX", "YYY"]
+export const ROPSTEN_TOKENS = ["BNT", "ETH", "XXX", "YYY"]
 
 
 // Not sure whether BNB stills ERC-20, removal of low-volume tokens
@@ -323,7 +323,7 @@ export const useBancor = (web3context) => {
             for (let i = 0; i < Number(connectorTokenCount); i++) {
                 let row = [];
                 const reserveAddress = await contract.connectorTokens(i);
-                
+
                 const balance = await contract.getConnectorBalance(reserveAddress);
                 row.push(ethers.utils.formatEther(balance.toString()).toString());
                 row.push(reserveAddress);
@@ -378,7 +378,7 @@ export const useBancor = (web3context) => {
         const signer = web3context.library.getSigner();
         const contract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
         const addresses = await contract.getConvertibleTokens();
-        
+
         const results = await Promise.all(addresses.map(address => getTokenName(address)));
 
         return results;
@@ -538,7 +538,7 @@ export const useBancor = (web3context) => {
     }, [web3context, bancorContractBancorNetwork])
 
 
-    const convert = useCallback(async (path, sourceTokenAddress, sourceAmount, sourceDecimal, destinationAmount, slipRate, fromETH, toETH, affiliateAccount="0x0000000000000000000000000000000000000000",  affiliateFee="0") => {
+    const convert = useCallback(async (path, sourceTokenAddress, sourceAmount, sourceDecimal, destinationAmount, slipRate, fromETH, toETH, affiliateAccount = "0x0000000000000000000000000000000000000000", affiliateFee = "0") => {
 
 
         try {
@@ -606,7 +606,7 @@ export const useBancor = (web3context) => {
             if (!fromETH) {
                 convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount, affiliateFee, options);
             } else {
-                convertTx = await networkContract.convert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount , affiliateFee , options);
+                convertTx = await networkContract.convert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount, affiliateFee, options);
             }
 
 
@@ -629,6 +629,35 @@ export const useBancor = (web3context) => {
 
     }, [web3context, bancorContractBancorNetwork])
 
+    const getReserveRatio = useCallback(async (converterAddress, tokenAddress) => {
+
+        try {
+            const signer = web3context.library.getSigner();
+            const contract = getContract(converterAddress, BancorConverterAbi, signer);
+            const ratioPPM = await contract.getReserveRatio(tokenAddress);
+            const ratio = ratioPPM.toNumber() / 1000000;
+            return ratio;
+        } catch (error) {
+            console.log("Can't fetch ratio for : ", tokenAddress, error);
+            console.log("Assumming 50%");
+            return 0.5;
+        }
+
+        
+
+    }, [web3context])
+
+    const getConversionFee = useCallback(async (converterAddress) => {
+
+        const signer = web3context.library.getSigner();
+        const contract = getContract(converterAddress, BancorConverterAbi, signer);
+
+        const fee = await contract.conversionFee();
+
+        return Number(fee.toString()) / 1000000;;
+
+    }, [web3context])
+
     return {
         loading,
         getTokenName,
@@ -642,7 +671,9 @@ export const useBancor = (web3context) => {
         getTokenDecimal,
         parseToken,
         convert,
-        getETHBalance
+        getETHBalance,
+        getConversionFee,
+        getReserveRatio
     }
 }
 
