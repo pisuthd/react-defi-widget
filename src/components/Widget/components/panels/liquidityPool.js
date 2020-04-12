@@ -25,7 +25,8 @@ const LiquidityPoolPanel = (props) => {
     const {
         web3ReactContext,
         updateActionText,
-        width
+        width,
+        clickCount
     } = props;
 
     const networkId = web3ReactContext.networkId;
@@ -38,7 +39,9 @@ const LiquidityPoolPanel = (props) => {
         getTokenName,
         getLiquidityPool,
         getReserveRatio,
-        getConversionFee
+        getConversionFee,
+        getETHBalance,
+        getTokenBalance
     } = useBancor(web3ReactContext);
 
     useEffect(() => {
@@ -190,11 +193,11 @@ const LiquidityPoolPanel = (props) => {
     useEffect(() => {
 
         if (currentPoolRatio && currentPoolRatio !== "") {
-            const ratios =  currentPoolRatio.split("/");
+            const ratios = currentPoolRatio.split("/");
             const newData = ratios.map((item, index) => {
 
                 return {
-                    color: COLORS[index] || COLORS[0], 
+                    color: COLORS[index] || COLORS[0],
                     title: `${item}`,
                     value: Number(item)
                 }
@@ -203,7 +206,7 @@ const LiquidityPoolPanel = (props) => {
             const values = ["Low", "Medium", "High"]
             setCurrentPoolSpread(values[Math.floor(Math.random() * values.length)]);
 
-                
+
         }
 
 
@@ -368,11 +371,13 @@ const LiquidityPoolPanel = (props) => {
 
                                             <InfoContainer>
                                                 <table style={{ width: "100%" }}>
-
+                                                    {/*
                                                     <tr style={{ borderBottom: "1px solid #ddd" }}>
                                                         <th width="70%">Spread</th>
                                                         <td width="30%">{currentPoolSpread}</td>
                                                     </tr>
+                                                    */}
+                                                    
                                                     <tr>
                                                         <th width="70%">Ratio</th>
                                                         <td width="30%">{currentPoolRatio}</td>
@@ -414,6 +419,9 @@ const LiquidityPoolPanel = (props) => {
                             <ActionInputPanel
                                 actionPanel={actionPanel}
                                 currentPool={currentPool}
+                                getETHBalance={getETHBalance}
+                                getTokenBalance={getTokenBalance}
+                                clickCount={clickCount}
                             />
 
 
@@ -733,11 +741,15 @@ const ActionListPanel = (props) => {
 
 const ActionInputPanel = (props) => {
 
-    const { actionPanel, currentPool } = props;
+    const { actionPanel, currentPool, getETHBalance, getTokenBalance, clickCount } = props;
 
     const [selectedToken, setSelectedToken] = useState();
 
     const [showTokenList, setShowTokenList] = useState(false);
+
+    const [balance, setBalance] = useState("0.0");
+    const [isLoadingBalance, setLoadingBalance] = useState(false);
+    const [amount, setAmount] = useState(0);
 
     useEffect(() => {
 
@@ -752,6 +764,30 @@ const ActionInputPanel = (props) => {
 
     }, [currentPool])
 
+    useEffect(() => {
+        // Handle click event from Parent Component
+        onProceed();
+    }, [clickCount])
+
+    const onProceed = useCallback(async () => {
+        console.log("onProcess...");
+
+        if (amount <= 0) {
+            return;
+        }
+
+        console.log("amoutn is valid...");
+        switch(actionPanel) {
+            case ACTION_PANELS.ADD_LIQUIDITY:
+                console.log("ADD_LIQUIDITY ....")
+                break;
+            case ACTION_PANELS.REMOVE_LIQUIDITY:
+                console.log("REMOVE_LIQUIDITY ...")
+                break;
+        }
+
+    },[amount, selectedToken, currentPool])
+
     const toggle = useCallback(() => {
         setShowTokenList(!showTokenList)
     }, [showTokenList])
@@ -760,6 +796,55 @@ const ActionInputPanel = (props) => {
         setSelectedToken(token);
         setShowTokenList(false);
     }
+
+    useEffect(() => {
+        if (selectedToken) {
+
+            (async () => {
+                setLoadingBalance(true);
+
+                try {
+                    if (selectedToken === "ETH") {
+                        console.log("Check native ETH...");
+                        const result = await getETHBalance();
+                        setBalance(Number(result.toString()).toFixed(6) + "");
+                    } else {
+
+                        for (let i = 0; i < currentPool.symbols.length; i++) {
+                            if (currentPool.symbols[i] === selectedToken) {
+                                const result = await getTokenBalance(currentPool.reserves[i][1]);
+                                setBalance(Number(result.toString()).toFixed(6) + "");
+                                break;
+                            }
+                        }
+
+                    }
+                } catch (error) {
+                    console.log("fetch rate error : ", error);
+                }
+
+                setLoadingBalance(false);
+
+
+
+
+            })()
+
+
+
+
+
+        }
+    }, [selectedToken, currentPool])
+
+    const handleChange = useCallback((e) => {
+
+        e.preventDefault();
+        const regexp = /^[0-9]*(\.[0-9]{0,4})?$/;
+        const value = regexp.test(e.target.value) ? (e.target.value) : amount;
+        setAmount(value);
+
+    }, [isLoadingBalance, amount]);
 
     return (
         <Fragment>
@@ -830,7 +915,7 @@ const ActionInputPanel = (props) => {
 
                             </InputGroupButton>
                             <InputGroupArea>
-                                <input id="destinationInput" placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
+                                <input value={amount} id="amountInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
                             </InputGroupArea>
                         </InputGroup>
                     )
@@ -844,7 +929,7 @@ const ActionInputPanel = (props) => {
                 <AccountLeft>
                     {actionPanel === ACTION_PANELS.ADD_LIQUIDITY && (
                         <span>
-                            BALANCE 0.4387390 ETH
+                            BALANCE {balance}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
                         </span>
                     )
 

@@ -135,6 +135,7 @@ const Widget = (props) => {
                                     web3ReactContext={web3ReactContext}
                                     width={width}
                                     updateActionText={updateActionText}
+                                    clickCount={clickCount}
                                 />
                             )}
 

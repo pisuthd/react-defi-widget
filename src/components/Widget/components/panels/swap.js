@@ -314,7 +314,7 @@ const SwapPanel = (props) => {
             }
 
         } catch (error) {
-            console.log("loading rate error  ;", error);
+            console.log("loading balance error  ;", error);
         }
 
         setLoadingBalance(false);
