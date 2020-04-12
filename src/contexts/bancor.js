@@ -569,7 +569,7 @@ export const useBancor = (web3context) => {
 
             const diff = sourceAmountWei.sub(allowance);
 
-            if (diff > 0) {
+            if ((diff > 0) && (!fromETH)) {
                 console.log("diff : ", diff.toString());
 
                 if ((allowance > 0) && (!fromETH)) {
