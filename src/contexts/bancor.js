@@ -325,8 +325,14 @@ export const useBancor = (web3context) => {
                 const reserveAddress = await contract.connectorTokens(i);
 
                 const balance = await contract.getConnectorBalance(reserveAddress);
+
+                const reserveData = await contract.connectors(reserveAddress);
+
+
                 row.push(ethers.utils.formatEther(balance.toString()).toString());
                 row.push(reserveAddress);
+                row.push(reserveData[1] / 1000000);
+                row.push(reserveData[3]);
                 result.push(row);
             }
 
@@ -354,6 +360,16 @@ export const useBancor = (web3context) => {
             switch (address.toLowerCase()) {
                 case ('0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2').toLowerCase():
                     return ["MKR", address];
+                case ('0x1b22C32cD936cB97C28C5690a0695a82Abf688e6').toLowerCase():
+                    return ["WISH", address];
+                case ('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359').toLowerCase():
+                    return ["SAI", address];
+                case ('0xE0B7927c4aF23765Cb51314A0E0521A9645F0E2A').toLowerCase():
+                    return ["DGD", address];
+                case ('0xbdEB4b83251Fb146687fa19D1C660F99411eefe3').toLowerCase():
+                    return ["SVD", address];
+                case ('0xF1290473E210b2108A85237fbCd7b6eb42Cc654F').toLowerCase():
+                    return ["HEDG", address];
                 default:
                     return ["NAME_ERROR", address];
             }
@@ -643,7 +659,7 @@ export const useBancor = (web3context) => {
             return 0.5;
         }
 
-        
+
 
     }, [web3context])
 
@@ -655,6 +671,286 @@ export const useBancor = (web3context) => {
         const fee = await contract.conversionFee();
 
         return Number(fee.toString()) / 1000000;;
+
+    }, [web3context]);
+
+    const fundLiquidityPool = useCallback(async (poolObject) => {
+
+        console.log("fund... : ", poolObject);
+        try {
+
+            const signer = web3context.library.getSigner();
+
+            const estimatedGasPrice = await getGasPrice();
+            const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
+
+            const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
+
+            let options = {
+                gasLimit: GAS_LIMIT,
+                gasPrice: finalGasPrice, // Minimum 3 Gwei
+            };
+
+            const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
+            const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
+            const relayTokenBalance = await relayTokenContract.balanceOf(web3context.account);
+
+            console.log("relayTokenBalance : ", relayTokenBalance.toString());
+
+            const decimal = await relayTokenContract.decimals();
+
+            const supplyWei = await relayTokenContract.totalSupply();
+            const supply = ethers.utils.formatUnits(supplyWei.toString(), decimal);
+            console.log("relayToken Supply : ", supply);
+
+            let percentage = 100 / (supply / 0.01);
+            console.log("0.01% -->", percentage);
+
+            for (let i = 0; i < poolObject.reserves.length; i += 1) {
+                const reverse = poolObject.reserves[i];
+                const thisReserveBalance = await converterContract.getConnectorBalance(reverse[1]);
+                const token = getContract(reverse[1], ERC20TokenAbi, signer);
+
+                const symbolName = poolObject.symbols[i];
+
+                const buyingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor(percentage * 1000000))).div(ethers.utils.bigNumberify(1000000));
+                console.log("buyingAmount : ", ethers.utils.formatEther(buyingAmount), " for --> ", symbolName);
+                const allowance = await token.allowance(web3context.account, converterContract.address);
+                console.log("current allowance : ", allowance.toString(), " symbol : ", symbolName);
+
+                const diff = buyingAmount.sub(allowance);
+
+                const fromETH = symbolName === "ETH" ? true : false;
+
+
+                if ((diff > 0) && (!fromETH)) {
+                    console.log("diff : ", diff.toString());
+
+                    if ((allowance > 0) && (!fromETH)) {
+                        console.log("allowance is not zero need to clear it first...");
+                        const clearTx = await token.approve(converterContract.address, 0, options);
+                    }
+
+                    const approvalTx = await token.approve(converterContract.address, buyingAmount, options);
+                    console.log("waiting for confirmation : ", approvalTx)
+                }
+
+                if (fromETH) {
+                    const depositOptions = {
+                        ...options,
+                        value: buyingAmount
+                    }
+                    const etherTokenContract = getContract(reverse[1], EtherTokenAbi, signer);
+                    const depositTx = await etherTokenContract.deposit(depositOptions);
+                    console.log("depositTx : ", depositTx);
+                }
+
+
+            }
+
+
+
+            await converterContract.fund(ethers.utils.parseEther("0.01"), options);
+
+            console.log("funded")
+
+        } catch (error) {
+            console.log("Funding failed : ", error);
+
+        }
+
+    }, [web3context]);
+
+    const withdrawLiquidityPool = useCallback(async (poolObject) => {
+        console.log("withdraw... : ", poolObject);
+        try {
+
+
+            const signer = web3context.library.getSigner();
+
+            const estimatedGasPrice = await getGasPrice();
+            const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
+
+            const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
+
+            let options = {
+                gasLimit: GAS_LIMIT,
+                gasPrice: finalGasPrice, // Minimum 3 Gwei
+            };
+
+            const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
+            const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
+            const relayTokenBalanceWei = await relayTokenContract.balanceOf(web3context.account);
+
+            const relayTokenBalance = ethers.utils.formatEther(relayTokenBalanceWei.toString());
+
+            console.log("relayTokenBalance : ", relayTokenBalance);
+
+            const decimal = await relayTokenContract.decimals();
+
+            const supplyWei = await relayTokenContract.totalSupply();
+            const supply = ethers.utils.formatUnits(supplyWei.toString(), decimal);
+            console.log("relayToken Supply : ", supply);
+
+            let percentage = (100 * relayTokenBalance) / supply;
+            console.log("your stake in percentage-->", percentage);
+
+            let withdrawEthAmount = 0;
+            let etherTokenAddress;
+
+            for (let i = 0; i < poolObject.reserves.length; i += 1) {
+                const reverse = poolObject.reserves[i];
+                const thisReserveBalance = await converterContract.getConnectorBalance(reverse[1]);
+                const token = getContract(reverse[1], ERC20TokenAbi, signer);
+
+                const symbolName = poolObject.symbols[i];
+
+                const sellingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor(percentage * 1000000))).div(ethers.utils.bigNumberify(1000000));
+                console.log("sellingAmount : ", ethers.utils.formatEther(sellingAmount), " for --> ", symbolName);
+
+                const fromETH = symbolName === "ETH" ? true : false;
+
+                if (fromETH) {
+                    withdrawEthAmount = sellingAmount;
+                    etherTokenAddress = reverse[1];
+                }
+
+            }
+
+            console.log("liquidating ... ", relayTokenBalanceWei)
+            await converterContract.liquidate(relayTokenBalanceWei, options);
+
+            console.log("liquidated")
+
+
+            if ((withdrawEthAmount !== 0) && (etherTokenAddress)) {
+
+                const etherTokenContract = getContract(etherTokenAddress, EtherTokenAbi, signer);
+
+
+
+                const withdrawTx = await etherTokenContract.withdraw(withdrawEthAmount, options);
+                console.log("withdrawTx : ", withdrawTx);
+            }
+
+            console.log("done...")
+
+        } catch (error) {
+            console.log("Withdraw failed : ", error)
+        }
+
+    }, [web3context])
+
+
+    const getLiquidityPoolDeposit = useCallback(async (poolObject) => {
+        console.log("getLiquidityPoolDeposit....");
+
+        try {
+
+            const signer = web3context.library.getSigner();
+
+            const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
+            const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
+            const relayTokenBalanceWei = await relayTokenContract.balanceOf(web3context.account);
+
+            const relayTokenBalance = ethers.utils.formatEther(relayTokenBalanceWei.toString());
+
+            let result = [];
+
+            const decimal = await relayTokenContract.decimals();
+
+            const supplyWei = await relayTokenContract.totalSupply();
+            const supply = ethers.utils.formatUnits(supplyWei.toString(), decimal);
+
+            let percentage = (100 * relayTokenBalance) / supply;
+
+
+            for (let i = 0; i < poolObject.reserves.length; i += 1) {
+                const symbolName = poolObject.symbols[i];
+                const reverse = poolObject.reserves[i];
+                
+                const thisReserveBalance = await converterContract.getConnectorBalance(reverse[1]);
+                const token = getContract(reverse[1], ERC20TokenAbi, signer);
+
+                const decimals = await token.decimals();
+
+                
+
+                const amount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor(percentage * 1000000))).div(ethers.utils.bigNumberify(1000000));
+                // console.log("sellingAmount : ", ethers.utils.formatEther(sellingAmount), " for --> ", symbolName);
+                result.push({
+                    symbol : symbolName,
+                    amount: ethers.utils.formatUnits(amount, decimals)
+                })
+            }
+
+            return result;
+
+            
+
+        } catch (error) {
+            console.log("Checks deposit failed ", error)
+            return [];
+        }
+
+    }, [web3context])
+
+    const getAfforableAmount = useCallback( async (poolObject , tokenList) => {
+
+        console.log("from getAfforableAmount (symbol/balance) : ", tokenList)
+
+        try {
+
+            const signer = web3context.library.getSigner();
+            const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
+            const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
+            const relayTokenBalanceWei = await relayTokenContract.balanceOf(web3context.account);
+
+            
+
+            const decimal = await relayTokenContract.decimals();
+
+            const supplyWei = await relayTokenContract.totalSupply();
+            const relayTokenBalance = ethers.utils.formatUnits(relayTokenBalanceWei.toString(), decimal);
+            const supply = ethers.utils.formatUnits(supplyWei.toString(), decimal);
+
+
+            // let percentage = 100 / (supply / 0.01);
+
+            let maxAfforable = 1000;
+            
+
+            for (let i = 0; i < poolObject.reserves.length; i += 1) {
+                const reverse = poolObject.reserves[i];
+                const symbolName = poolObject.symbols[i];
+                const thisReserveBalance = await converterContract.getConnectorBalance(reverse[1]);
+                const token = getContract(reverse[1], ERC20TokenAbi, signer);
+                const decimal = await token.decimals();
+
+                const thisToken = tokenList.filter((item) => item.symbol === symbolName);
+                let max = thisToken[0].balance >= ethers.utils.formatUnits(thisReserveBalance, decimal) ? thisToken[0].balance : ethers.utils.formatUnits(thisReserveBalance, decimal);
+                console.log("afford to buy : ", thisToken[0].balance , " from : " ,  max, " reserve : ", ethers.utils.formatUnits(thisReserveBalance, decimal));
+
+                const tokenMaxAfforable = ( (thisToken[0].balance)*100)/ max ;
+                console.log("tokenMaxAfforable : ", tokenMaxAfforable);
+                if (tokenMaxAfforable < maxAfforable) {
+                    maxAfforable = tokenMaxAfforable
+                }
+                // const buyingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor(percentage * 1000000))).div(ethers.utils.bigNumberify(1000000));
+
+
+            }
+
+
+            return {
+                totalPoolToken : relayTokenBalance,
+                totalPoolTokenSupply : supply,
+                maxAfforable : maxAfforable===1000 ? 0 : maxAfforable
+            }
+
+        } catch (error) {
+            console.log("get affordable amount : ", error);
+        }
 
     }, [web3context])
 
@@ -673,7 +969,11 @@ export const useBancor = (web3context) => {
         convert,
         getETHBalance,
         getConversionFee,
-        getReserveRatio
+        getReserveRatio,
+        fundLiquidityPool,
+        withdrawLiquidityPool,
+        getLiquidityPoolDeposit,
+        getAfforableAmount
     }
 }
 

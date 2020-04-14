@@ -26,7 +26,8 @@ const LiquidityPoolPanel = (props) => {
         web3ReactContext,
         updateActionText,
         width,
-        clickCount
+        clickCount,
+        color
     } = props;
 
     const networkId = web3ReactContext.networkId;
@@ -41,7 +42,11 @@ const LiquidityPoolPanel = (props) => {
         getReserveRatio,
         getConversionFee,
         getETHBalance,
-        getTokenBalance
+        getTokenBalance,
+        fundLiquidityPool,
+        withdrawLiquidityPool,
+        getLiquidityPoolDeposit,
+        getAfforableAmount
     } = useBancor(web3ReactContext);
 
     useEffect(() => {
@@ -150,6 +155,9 @@ const LiquidityPoolPanel = (props) => {
     const [currentChartData, setCurrentChartData] = useState([{ color: COLORS[0], title: 'One', value: 50 }, { color: COLORS[1], title: 'Two', value: 50 }]);
     const [showActionListModal, setActionListModal] = useState(false);
     const [showPoolListModal, setPoolListModal] = useState(false);
+    const [deposit, setDeposit] = useState([]);
+
+    const [isLoadingDeposited, setLoadingDeposited] = useState(false);
 
     useEffect(() => {
         updateActionText(actionPanel);
@@ -162,31 +170,38 @@ const LiquidityPoolPanel = (props) => {
 
             (async () => {
 
+                const ratio = currentPool.reserves.reduce((prev, item) => {
+                    let reserveRatio;
+                    if (prev === "") {
+                        reserveRatio = `${Math.ceil(item[2] * 100)}`;
+                    } else {
+                        reserveRatio = prev + `/${Math.ceil(item[2] * 100)}`
+                    }
+                    return reserveRatio;
+                }, "")
+
+                setCurrentPoolRatio(ratio);
+                setLoadingDeposited(true);
                 const conversionFee = await getConversionFee(currentPool.converterAddress);
                 console.log("conversionFee : ", conversionFee);
                 setCurrentPoolFee(`${conversionFee}%`)
 
-                let ratio = "";
-
-                for (let reserve of currentPool.reserves) {
-                    const ratioForToken = await getReserveRatio(currentPool.converterAddress, reserve[1]);
-                    if (ratio !== "") {
-                        ratio = `${ratio}/${Math.ceil(ratioForToken * 100)}`
-                    } else {
-                        ratio = `${Math.ceil(ratioForToken * 100)}`;
-                    }
-                }
-
-
-
-                setCurrentPoolRatio(ratio);
-
+                // Checks a deposit amount on this pool
+                await updateDepositAmount();
 
 
             })()
 
-
         }
+
+    }, [currentPool])
+
+
+    const updateDepositAmount = useCallback(async () => {
+
+        const depositAmount = await getLiquidityPoolDeposit(currentPool);
+        setDeposit(depositAmount);
+        setLoadingDeposited(false);
 
     }, [currentPool])
 
@@ -203,9 +218,6 @@ const LiquidityPoolPanel = (props) => {
                 }
             })
             setCurrentChartData(newData);
-            const values = ["Low", "Medium", "High"]
-            setCurrentPoolSpread(values[Math.floor(Math.random() * values.length)]);
-
 
         }
 
@@ -330,67 +342,71 @@ const LiquidityPoolPanel = (props) => {
                             {currentPool &&
                                 (
                                     <Fragment>
-                                        <ChartBaseToken>
-
+                                        <ChartLeftPanel>
                                             {currentPool.symbols.map((item, index) => {
                                                 return (
                                                     <div key={index}>
                                                         <div>
-                                                            <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` `}{Number(currentPool.reserves[index][0]).toFixed(3)}
+                                                            <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` `}{Number(currentPool.reserves[index][0]).toFixed(6)}
                                                         </div>
 
                                                     </div>
                                                 )
                                             })}
+                                        </ChartLeftPanel>
+                                        <ChartRightPanel>
+
+                                            <div>
+                                                <b>Pool Fee</b>{` `}{currentPoolFee}
+                                            </div>
+                                            <div>
+                                                <b>Ratio</b>{` `}{currentPoolRatio}
+                                            </div>
+
 
                                             {/*
-                                            <div>
-                                                <Dot color={COLORS.PRIMARY} />
+                                            <div style={{display: "flex"}}>
+                                                <div style={{flex: "50%"}}>hello</div>
+                                                <div style={{flex: "50%"}}>hello2</div>
                                             </div>
-                                            <div>
-                                                {Number(currentPool.reserves[0][0]).toFixed(3)}{` `}{currentPool.firstTokenSymbol || ""}
-                                            </div>
-                                            <div>
-                                                $173,544
-                                            </div>
-                                            <div>
-
-                                                <Dot color={COLORS.SECONDARY} />
-                                            </div>
-                                            <div>
-                                                {Number(currentPool.reserves[1][0]).toFixed(3)}{` `}{currentPool.secondTokenSymbol || ""}
-                                            </div>
-                                            <div>
-                                                $45,446
-                                            </div>
-                                            */}
-
-
-                                        </ChartBaseToken>
-                                        <ChartPairToken>
-
+                                            
                                             <InfoContainer>
-                                                <table style={{ width: "100%" }}>
-                                                    {/*
+                                                <table>
+                                                    
                                                     <tr style={{ borderBottom: "1px solid #ddd" }}>
                                                         <th width="70%">Spread</th>
                                                         <td width="30%">{currentPoolSpread}</td>
                                                     </tr>
-                                                    */}
                                                     
                                                     <tr>
-                                                        <th width="70%">Ratio</th>
-                                                        <td width="30%">{currentPoolRatio}</td>
+                                                        <th>Conversion Fee</th>
+                                                        <td>{currentPoolFee}</td>
                                                     </tr>
                                                     <tr>
-                                                        <th width="70%">Fee</th>
-                                                        <td width="30%">{currentPoolFee}</td>
+                                                        <th>Ratio</th>
+                                                        <td>{currentPoolRatio}</td>
                                                     </tr>
+
 
 
                                                 </table>
                                             </InfoContainer>
-                                        </ChartPairToken>
+                                            */}
+
+                                        </ChartRightPanel>
+
+                                        <ChartDepositPanel>
+                                            <div>
+                                                {isLoadingDeposited && <img src={loadingIcon} width="12px" height="12px" />}
+                                                <b>Deposited</b>
+                                                {deposit.map((item, index) => {
+                                                    return (
+                                                        <div key={index}> {Number(item.amount).toFixed(4)}{` `}{item.symbol}</div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </ChartDepositPanel>
+
                                     </Fragment>
                                 )
 
@@ -422,6 +438,10 @@ const LiquidityPoolPanel = (props) => {
                                 getETHBalance={getETHBalance}
                                 getTokenBalance={getTokenBalance}
                                 clickCount={clickCount}
+                                fundLiquidityPool={fundLiquidityPool}
+                                withdrawLiquidityPool={withdrawLiquidityPool}
+                                getAfforableAmount={getAfforableAmount}
+                                color={color}
                             />
 
 
@@ -445,6 +465,7 @@ const LiquidityPoolPanel = (props) => {
         </Fragment >
     )
 }
+
 
 
 const Row = styled.div`
@@ -531,7 +552,7 @@ const ChartContainer = styled.div`
     position: relative; 
 `;
 
-const ChartBaseToken = styled.div`
+const ChartLeftPanel = styled.div`
     position: absolute; 
     left: 0px; 
     top: 20px; 
@@ -539,13 +560,30 @@ const ChartBaseToken = styled.div`
     font-size: 12px;
 `;
 
-const ChartPairToken = styled.div`
+const ChartRightPanel = styled.div`
     position: absolute; 
     right: 0px; 
     top: 20px;
     text-align: right;
     font-size: 12px;
+    width: 150px;
 `;
+
+const LiquidityInputPanel = styled.div`
+    position: absolute; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 225px
+`;
+
+const ChartDepositPanel = styled.div`
+    position: absolute; 
+    right: 0px; 
+    bottom: 0px;
+    text-align: right;
+    font-size: 12px;
+    width: 150px;
+`
 
 const DropdownContainer = styled.div`
     display: none;
@@ -587,9 +625,12 @@ const DropdownContainer = styled.div`
     }
 
     tr {
+
+        cursor: pointer;
+
         ${props => props.skipSearch && `
-            &:not(:first-child) {
-                cursor: pointer;
+            :first-child) {
+                cursor: default;
             }
         `}
         
@@ -608,6 +649,20 @@ const DropdownContainer = styled.div`
 `
 
 const TokenBalanceContainer = styled.div`
+    padding: 20px;
+    position: relative; 
+    font-size: 10px;
+    height: 100px;
+`;
+
+const LiquiditySummaryContainer = styled.div`
+    position: relative; 
+    height: 140px;
+`;
+
+
+
+const LiquidityInputContainer = styled.div`
     padding-top: 10px;
 `;
 
@@ -651,7 +706,7 @@ const TableInnerRow = styled.div`
 const TableBox = styled.div`
     border: 1px solid #eee;
     vertical-align: middle;
-    font-size: 12px;
+    font-size: 10px;
     padding: 5px;
     margin-right: 5px;
 `
@@ -690,6 +745,37 @@ const InputGroupIcon = styled.div`
 
 const InputGroupArea = styled.div`
     width:100%;
+
+    .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 15px;
+        border-radius: 5px;  
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
+      }
+      
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%; 
+        background: ${props => props.color ? props.color : "#4CAF50"};
+        cursor: pointer;
+      }
+      
+      .slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: ${props => props.color ? props.color : "#4CAF50"};
+        cursor: pointer;
+      }
+
 `;
 
 const InputArea = styled.div`
@@ -739,9 +825,9 @@ const ActionListPanel = (props) => {
     )
 };
 
-const ActionInputPanel = (props) => {
+const ActionInputPanelOLD = (props) => {
 
-    const { actionPanel, currentPool, getETHBalance, getTokenBalance, clickCount } = props;
+    const { actionPanel, currentPool, getETHBalance, getTokenBalance, clickCount, fundLiquidityPool, withdrawLiquidityPool } = props;
 
     const [selectedToken, setSelectedToken] = useState();
 
@@ -772,21 +858,29 @@ const ActionInputPanel = (props) => {
     const onProceed = useCallback(async () => {
         console.log("onProcess...");
 
+        /*
         if (amount <= 0) {
+            return;
+        }
+        */
+
+        if (!currentPool) {
             return;
         }
 
         console.log("amoutn is valid...");
-        switch(actionPanel) {
+        switch (actionPanel) {
             case ACTION_PANELS.ADD_LIQUIDITY:
-                console.log("ADD_LIQUIDITY ....")
+                console.log("ADD_LIQUIDITY ....");
+                await fundLiquidityPool(currentPool);
                 break;
             case ACTION_PANELS.REMOVE_LIQUIDITY:
-                console.log("REMOVE_LIQUIDITY ...")
+                console.log("REMOVE_LIQUIDITY ...");
+                await withdrawLiquidityPool(currentPool);
                 break;
         }
 
-    },[amount, selectedToken, currentPool])
+    }, [amount, selectedToken, currentPool, actionPanel])
 
     const toggle = useCallback(() => {
         setShowTokenList(!showTokenList)
@@ -950,8 +1044,246 @@ const ActionInputPanel = (props) => {
     )
 }
 
-const PoolListPanel = (props) => {
+const ActionInputPanel = (props) => {
 
+    const {
+        actionPanel,
+        currentPool,
+        getETHBalance,
+        getTokenBalance,
+        clickCount,
+        fundLiquidityPool,
+        withdrawLiquidityPool,
+        getAfforableAmount,
+        color
+    } = props;
+
+    const [isLoadingBalance, setLoadingBalance] = useState(false);
+    const [balances, setBalances] = useState([]);
+    const [summaryAmount, setSummaryAmount] = useState("120 BNT / 350.345 ETH");
+
+    const [inputMax, setInputMax] = useState(1000000);
+    const [inputMin, setInputMin] = useState(0);
+    const [inputAmount, setInputAmount] = useState(0);
+
+    const [maxAffordablePercentage, setMaxAffordablePercentage] = useState(0);
+    const [poolTokenAmount, setPoolTokenAmount] = useState(0);
+    const [poolTokenSupply, setPoolTokenSupply] = useState(0);
+
+    useEffect(() => {
+
+        if (currentPool) {
+            (async () => {
+                await updateBalance();
+            })()
+        }
+
+    }, [currentPool]);
+
+    const updateBalance = useCallback(async () => {
+
+        if (currentPool) {
+            setLoadingBalance(true);
+            let result = [];
+            try {
+
+                for (let i = 0; i < currentPool.reserves.length; i += 1) {
+                    const symbolName = currentPool.symbols[i] || "";
+
+                    if (symbolName === "ETH") {
+                        console.log("Check native ETH...");
+                        const amount = await getETHBalance();
+                        result.push({
+                            symbol: "ETH",
+                            balance: Number(amount.toString()).toFixed(6) + ""
+                        })
+                    } else {
+                        const amount = await getTokenBalance(currentPool.reserves[i][1]);
+                        result.push({
+                            symbol: symbolName,
+                            balance: Number(amount.toString()).toFixed(6) + ""
+                        })
+                    }
+
+                }
+
+
+            } catch (error) {
+                console.log("fetch rate error : ", error);
+            }
+            setBalances(result);
+            setInputAmount(0);
+            await updateAffordableToken(result);
+            setLoadingBalance(false);
+        }
+
+    }, [currentPool])
+
+    const updateAffordableToken = useCallback(async (tokenList) => {
+
+        if (currentPool && tokenList.length > 0) {
+
+            console.log("get affordable amount...")
+            const { maxAfforable, totalPoolToken, totalPoolTokenSupply } = await getAfforableAmount(currentPool, tokenList);
+            console.log("result --> ", maxAfforable, totalPoolToken, totalPoolTokenSupply);
+
+
+            setPoolTokenAmount(Number(totalPoolToken));
+            setPoolTokenSupply(Number(totalPoolTokenSupply));
+            setMaxAffordablePercentage(maxAfforable);
+
+        }
+
+    }, [currentPool])
+
+
+    const handleChange = useCallback((e) => {
+        e.preventDefault();
+
+        if (maxAffordablePercentage !== 0 && isLoadingBalance === false) {
+            setInputAmount(e.target.value);
+        }
+
+    }, [maxAffordablePercentage, isLoadingBalance])
+
+    if (!currentPool) {
+        return <Fragment></Fragment>
+    }
+
+    return (
+        <LiquiditySummaryContainer>
+
+            <ChartLeftPanel style={{ top: "10px", fontSize: "12px" }}>
+                <b>Your Balance</b>
+                {balances.map((item, index) => {
+                    return (
+                        <TokenAmount danger={item.balance === "0.000000"} key={index}>
+                            {item.balance}{` `}{item.symbol}
+                        </TokenAmount>
+                    )
+                })}
+            </ChartLeftPanel>
+            <LiquidityInputPanel>
+                <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
+                    <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
+                </InputGroupArea>
+                <AccountContainer>
+                    <AccountLeft style={{ flex: "40%" }}>
+                        Amount {(((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000).toFixed(6))}%
+                    </AccountLeft>
+                    <AccountRight style={{ flex: "60%" }}>
+                        Max Affordable {Number(maxAffordablePercentage).toFixed(6)}%
+                    </AccountRight>
+                </AccountContainer>
+                <div style={{ textAlign: "center", marginTop: "8px" }}>
+
+                    {currentPool.symbols.map((name, index) => {
+                        return (
+                            <span key={index}>
+                                <TokenLogo src={getIcon(name)} alt={name} />
+                            </span>
+                        )
+                    })}
+                    <div style={{ fontSize: "12px", marginTop: "8px" }}>
+                        <b>Current Stake / Total Pool Tokens</b>
+                        <div>
+                            {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(100 * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / poolTokenSupply).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                        </div>
+                    </div>
+
+
+                </div>
+            </LiquidityInputPanel>
+            <ChartRightPanel style={{ top: "10px", fontSize: "12px" }}>
+                {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Summary</b>
+                {currentPool.reserves.map((item, index) => {
+                    return (
+                        <div key={index}>
+                            {((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{currentPool.symbols[index]}
+                        </div>
+                    )
+                })}
+            </ChartRightPanel>
+
+
+            {/*
+            <div style={{ display: "flex" }}>
+                <div style={{ flex: "50%" }}>
+                    <LiquidityInputContainer>
+                        <InputGroupArea style={{ fontSize: "14px" , padding: "10px 20px 0px 0px"}}>
+                            <input type="range" min="1" max="100" value="50" class="slider" id="myRange" />
+                        </InputGroupArea>
+
+                    </LiquidityInputContainer>
+                    <TokenBalanceContainer>
+                        <ChartLeftPanel>
+                            <b>Your Balance</b>
+                            {balances.map((item, index) => {
+                                return (
+                                    <div key={index}>
+                                        {item.balance}{` `}{item.symbol}
+                                    </div>
+                                )
+                            })}
+                        </ChartLeftPanel>
+                    </TokenBalanceContainer>
+                </div>
+                <div style={{ flex: "50%" }}>
+                    <LiquidityInputContainer>
+                        <InputGroup>
+                            <InputGroupIcon>
+                                <div style={{ display: "flex", border: "0px" }}>
+                                    {currentPool.symbols.map((name, index) => {
+                                        return (
+                                            <TokenLogo key={index} src={getIcon(name)} alt={name} />
+                                        )
+                                    })}
+
+
+                                </div>
+                            </InputGroupIcon>
+
+                            <InputGroupArea style={{ fontSize: "14px" }}>
+                                <SummaryInput id="summaryAmount" value={summaryAmount} type="text" />
+                            </InputGroupArea>
+                        </InputGroup>
+                    </LiquidityInputContainer>
+                </div>
+            </div>
+
+
+            
+            <TokenBalanceContainer>
+                <ChartLeftPanel>
+                    <b>Your Balance</b>
+                    {balances.map((item, index) => {
+                        return (
+                            <div key={index}>
+                                {item.balance}{` `}{item.symbol}
+                            </div>
+                        )
+                    })}
+                </ChartLeftPanel>
+            </TokenBalanceContainer>
+            */}
+
+        </LiquiditySummaryContainer>
+    )
+}
+
+const SummaryInput = styled.input`
+    :hover {
+        cursor: default;
+    }
+`;
+
+const TokenAmount = styled.div`
+    ${props => props.danger && `
+        color: red;
+    `}
+`;
+
+const PoolListPanel = (props) => {
     const { active, onUpdateCurrentPool, pools } = props;
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -992,25 +1324,37 @@ const PoolListPanel = (props) => {
                 <tbody>
 
                     <TableSearchRow>
-                        <td style={{ textAlign: "center", fontSize: "10px" }} width="70px">
+                        <td style={{ textAlign: "center", fontSize: "10px" }} width="40%">
                             {/*
                             <img src={SearchIcon} width="26px" />
                             */}
                         </td>
-                        <td width="100px">
+                        <td>
                             <input value={searchTerm} onChange={handleSearchTerm} placeholder="Search By Symbol" type="text" />
                         </td>
-                        <td>
+                        <td width="10%">
+
                         </td>
                     </TableSearchRow>
 
                     {filtered.map((item, index) => {
-
+                        const ratio = item.reserves.reduce((prev, item) => {
+                            let reserveRatio;
+                            if (prev === "") {
+                                reserveRatio = `${Math.ceil(item[2] * 100)}`;
+                            } else {
+                                reserveRatio = prev + `/${Math.ceil(item[2] * 100)}`
+                            }
+                            return reserveRatio;
+                        }, "")
                         return (
                             <tr onClick={() => onChange(item)} key={index}>
-                                <td width="80px">
+                                <td width="40%">
                                     <TableInnerRow>
                                         {item.symbols.map((symbol, index) => {
+                                            if (index > 3) {
+                                                return;
+                                            }
                                             return (
                                                 <TokenLogo key={index} src={getIcon(symbol)} alt={symbol} />
                                             )
@@ -1018,9 +1362,18 @@ const PoolListPanel = (props) => {
 
                                     </TableInnerRow>
                                 </td>
-                                <td width="80px">
+                                <td>
                                     {`${item.name} `}
+                                    <TableInnerRow>
+                                        <TableBox>
+                                            Ratio {ratio}
+                                        </TableBox>
+                                    </TableInnerRow>
                                 </td>
+                                <td width="10%">
+
+                                </td>
+                                {/*
                                 <td>
                                     <TableInnerRow>
                                         <TableBox>
@@ -1029,6 +1382,7 @@ const PoolListPanel = (props) => {
                                     </TableInnerRow>
 
                                 </td>
+                                */}
                             </tr>
                         )
 
