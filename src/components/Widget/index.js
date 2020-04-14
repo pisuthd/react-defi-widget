@@ -136,6 +136,7 @@ const Widget = (props) => {
                                     width={width}
                                     updateActionText={updateActionText}
                                     clickCount={clickCount}
+                                    color={widgetColor}
                                 />
                             )}
 
