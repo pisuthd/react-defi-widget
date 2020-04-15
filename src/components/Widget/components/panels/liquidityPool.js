@@ -337,7 +337,9 @@ const LiquidityPoolPanel = (props) => {
                                 />
 
                             }
-
+                            <div style={{ fontSize: "12px", paddingTop: "10px", textAlign : "center"}}>
+                                <b>Pool Fee</b>{` `}{currentPoolFee} /  <b>Ratio</b>{` `}{currentPoolRatio}
+                            </div>
 
                             {currentPool &&
                                 (
@@ -356,46 +358,7 @@ const LiquidityPoolPanel = (props) => {
                                         </ChartLeftPanel>
                                         <ChartRightPanel>
 
-                                            <div>
-                                                <b>Pool Fee</b>{` `}{currentPoolFee}
-                                            </div>
-                                            <div>
-                                                <b>Ratio</b>{` `}{currentPoolRatio}
-                                            </div>
-
-
-                                            {/*
-                                            <div style={{display: "flex"}}>
-                                                <div style={{flex: "50%"}}>hello</div>
-                                                <div style={{flex: "50%"}}>hello2</div>
-                                            </div>
                                             
-                                            <InfoContainer>
-                                                <table>
-                                                    
-                                                    <tr style={{ borderBottom: "1px solid #ddd" }}>
-                                                        <th width="70%">Spread</th>
-                                                        <td width="30%">{currentPoolSpread}</td>
-                                                    </tr>
-                                                    
-                                                    <tr>
-                                                        <th>Conversion Fee</th>
-                                                        <td>{currentPoolFee}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th>Ratio</th>
-                                                        <td>{currentPoolRatio}</td>
-                                                    </tr>
-
-
-
-                                                </table>
-                                            </InfoContainer>
-                                            */}
-
-                                        </ChartRightPanel>
-
-                                        <ChartDepositPanel>
                                             <div>
                                                 {isLoadingDeposited && <img src={loadingIcon} width="12px" height="12px" />}
                                                 <b>Deposited</b>
@@ -405,7 +368,11 @@ const LiquidityPoolPanel = (props) => {
                                                     )
                                                 })}
                                             </div>
-                                        </ChartDepositPanel>
+
+
+                                        </ChartRightPanel>
+
+                                        
 
                                     </Fragment>
                                 )
@@ -442,6 +409,7 @@ const LiquidityPoolPanel = (props) => {
                                 withdrawLiquidityPool={withdrawLiquidityPool}
                                 getAfforableAmount={getAfforableAmount}
                                 color={color}
+                                width={width}
                             />
 
 
@@ -554,7 +522,7 @@ const ChartContainer = styled.div`
 
 const ChartLeftPanel = styled.div`
     position: absolute; 
-    left: 0px; 
+    left: 0px;
     top: 20px; 
     text-align: left;
     font-size: 12px;
@@ -572,7 +540,9 @@ const ChartRightPanel = styled.div`
 const LiquidityInputPanel = styled.div`
     position: absolute; 
     left: 50%;
-    transform: translateX(-50%);
+    top: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
     width: 225px
 `;
 
@@ -657,7 +627,17 @@ const TokenBalanceContainer = styled.div`
 
 const LiquiditySummaryContainer = styled.div`
     position: relative; 
-    height: 140px;
+    ${props => props.isMobile 
+    ?
+    `
+        height: 140px;
+    `
+    :
+    `
+        height: 100%;
+    `
+    }
+    
 `;
 
 
@@ -779,21 +759,6 @@ const InputGroupArea = styled.div`
 `;
 
 const InputArea = styled.div`
-
-`;
-
-const InfoContainer = styled.div`
-    
-    font-size: 12px;
-
-    th {
-        text-align: right;
-        padding-right: 5px;
-    }
-
-    td {
-        padding-left: 5px;
-    }
 
 `;
 
@@ -1055,7 +1020,8 @@ const ActionInputPanel = (props) => {
         fundLiquidityPool,
         withdrawLiquidityPool,
         getAfforableAmount,
-        color
+        color,
+        width
     } = props;
 
     const [isLoadingBalance, setLoadingBalance] = useState(false);
@@ -1151,10 +1117,10 @@ const ActionInputPanel = (props) => {
     }
 
     return (
-        <LiquiditySummaryContainer>
+        <LiquiditySummaryContainer isMobile={width <= 600} >
 
-            <ChartLeftPanel style={{ top: "10px", fontSize: "12px" }}>
-                <b>Your Balance</b>
+            <ChartLeftPanel style={{  fontSize: "12px" }}>
+                <b>Balance</b>
                 {balances.map((item, index) => {
                     return (
                         <TokenAmount danger={item.balance === "0.000000"} key={index}>
@@ -1194,7 +1160,7 @@ const ActionInputPanel = (props) => {
 
                 </div>
             </LiquidityInputPanel>
-            <ChartRightPanel style={{ top: "10px", fontSize: "12px" }}>
+            <ChartRightPanel style={{ fontSize: "12px" }}>
                 {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Summary</b>
                 {currentPool.reserves.map((item, index) => {
                     return (
@@ -1206,66 +1172,7 @@ const ActionInputPanel = (props) => {
             </ChartRightPanel>
 
 
-            {/*
-            <div style={{ display: "flex" }}>
-                <div style={{ flex: "50%" }}>
-                    <LiquidityInputContainer>
-                        <InputGroupArea style={{ fontSize: "14px" , padding: "10px 20px 0px 0px"}}>
-                            <input type="range" min="1" max="100" value="50" class="slider" id="myRange" />
-                        </InputGroupArea>
-
-                    </LiquidityInputContainer>
-                    <TokenBalanceContainer>
-                        <ChartLeftPanel>
-                            <b>Your Balance</b>
-                            {balances.map((item, index) => {
-                                return (
-                                    <div key={index}>
-                                        {item.balance}{` `}{item.symbol}
-                                    </div>
-                                )
-                            })}
-                        </ChartLeftPanel>
-                    </TokenBalanceContainer>
-                </div>
-                <div style={{ flex: "50%" }}>
-                    <LiquidityInputContainer>
-                        <InputGroup>
-                            <InputGroupIcon>
-                                <div style={{ display: "flex", border: "0px" }}>
-                                    {currentPool.symbols.map((name, index) => {
-                                        return (
-                                            <TokenLogo key={index} src={getIcon(name)} alt={name} />
-                                        )
-                                    })}
-
-
-                                </div>
-                            </InputGroupIcon>
-
-                            <InputGroupArea style={{ fontSize: "14px" }}>
-                                <SummaryInput id="summaryAmount" value={summaryAmount} type="text" />
-                            </InputGroupArea>
-                        </InputGroup>
-                    </LiquidityInputContainer>
-                </div>
-            </div>
-
-
             
-            <TokenBalanceContainer>
-                <ChartLeftPanel>
-                    <b>Your Balance</b>
-                    {balances.map((item, index) => {
-                        return (
-                            <div key={index}>
-                                {item.balance}{` `}{item.symbol}
-                            </div>
-                        )
-                    })}
-                </ChartLeftPanel>
-            </TokenBalanceContainer>
-            */}
 
         </LiquiditySummaryContainer>
     )
@@ -1373,16 +1280,6 @@ const PoolListPanel = (props) => {
                                 <td width="10%">
 
                                 </td>
-                                {/*
-                                <td>
-                                    <TableInnerRow>
-                                        <TableBox>
-                                            $870044
-                                        </TableBox>
-                                    </TableInnerRow>
-
-                                </td>
-                                */}
                             </tr>
                         )
 
