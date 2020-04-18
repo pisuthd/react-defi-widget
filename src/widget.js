@@ -6,12 +6,15 @@ import Widget from "./components/Widget";
 import { PAGES } from "./constants";
 
 import BancorContextProvider from "./contexts/bancor";
+import ModalContextProvider from "./contexts/modal";
 
 const ContextProviders = ({ children }) => {
 
     return (
         <BancorContextProvider>
-            {children}
+            <ModalContextProvider>
+                {children}
+            </ModalContextProvider>
         </BancorContextProvider>
     )
 

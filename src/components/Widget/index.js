@@ -1,4 +1,4 @@
-import React, { Component, useCallback, useState, useEffect } from 'react';
+import React, { Component, useCallback, Fragment, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import WidgetLayout from "./layout";
@@ -8,9 +8,12 @@ import { PAGES, HEADLINES, COLORS } from "../../constants";
 import SwapPanel from "./components/panels/swap";
 import LiquidityPoolPanel from "./components/panels/liquidityPool";
 
+import Modal from "./modal";
+
 import styled from "styled-components"
 import ContainerDimensions from 'react-container-dimensions'
 import { useBancor } from "../../contexts/bancor";
+import { useModal } from "../../contexts/modal";
 
 
 const Widget = (props) => {
@@ -28,6 +31,8 @@ const Widget = (props) => {
         affiliateFee
     } = props;
 
+    const { showModal } = useModal();
+
     const widgetTitle = title || HEADLINES.HEADER[currentPage];
     const widgetSubtitle = subtitle || HEADLINES.TEXT[currentPage];
     const widgetDescription = description || HEADLINES.DISCLAIMER[currentPage];
@@ -37,12 +42,11 @@ const Widget = (props) => {
 
     const { loading, listConversionTokens, getTokenName, loadingErrorMessage } = useBancor(web3ReactContext);
 
-
-    const [processing, setProcessing] = useState(false);
     const [clickCount, setClickCount] = useState(0);
     const [disclaimer, setDisclaimer] = useState(widgetDescription);
     const [actionText, setActionText] = useState("");
 
+    const [ networkId, setNetworkId ] = useState();
 
     useEffect(() => {
         if (loadingErrorMessage) {
@@ -73,11 +77,6 @@ const Widget = (props) => {
 
     }, [web3ReactContext.error, web3ReactContext.active, loading])
 
-
-    const handleProcessing = (status) => {
-        setProcessing(status);
-    }
-
     const updateActionText = (text) => {
         setActionText(text);
     }
@@ -88,77 +87,111 @@ const Widget = (props) => {
 
     }, [clickCount])
 
-    const disabled = errorMessage || !web3ReactContext.active || loading || processing;
+    const disabled = errorMessage || !web3ReactContext.active || loading ;
+
+    useEffect(() => {
+
+        
+        if ((networkId !== undefined) && (web3ReactContext.networkId !== undefined)) {
+            if (networkId !== web3ReactContext.networkId) {
+                // TODO : Only Reload the widget
+                try {
+                    console.log("refresh page...")
+                    window.location.reload();
+                } catch (error) {
+
+                }
+            }
+        }
+
+        if (web3ReactContext.networkId) {
+            setNetworkId(web3ReactContext.networkId);  
+        };
+
+        
+
+    }, [web3ReactContext.networkId, networkId])
 
     return (
         <ContainerDimensions>
             {({ width, height }) =>
-                <Container>
-                    {width > 600 &&
-                        <Header
+                <Fragment>
+                    <Container
+                        inactive={showModal}
+                    >
+                        {width > 600 &&
+                            <Header
+                                width={width}
+                                height={height}
+                            >
+                                <h3>
+                                    {widgetTitle}
+                                </h3>
+                                <p>
+                                    {widgetSubtitle}
+                                </p>
+
+                            </Header>
+                        }
+
+                        <Body
                             width={width}
                             height={height}
                         >
-                            <h3>
-                                {widgetTitle}
-                            </h3>
-                            <p>
-                                {widgetSubtitle}
-                            </p>
+                            {currentPage === PAGES.SWAP &&
+                                (
+                                    <SwapPanel
+                                        clickCount={clickCount}
+                                        web3ReactContext={web3ReactContext}
+                                        halt={errorMessage}
+                                        baseCurrency={baseCurrency}
+                                        pairCurrency={pairCurrency}
+                                        affiliateAccount={affiliateAccount}
+                                        affiliateFee={affiliateFee}
+                                    />
+                                )}
 
-                        </Header>
-                    }
+                            {currentPage === PAGES.POOLS &&
+                                (
+                                    <LiquidityPoolPanel
+                                        web3ReactContext={web3ReactContext}
+                                        width={width}
+                                        updateActionText={updateActionText}
+                                        clickCount={clickCount}
+                                        color={widgetColor}
+                                    />
+                                )}
 
-                    <Body
+                        </Body>
+
+                        <Footer>
+                            <ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
+                                {currentPage === PAGES.SWAP ? HEADLINES.ACTIONS[currentPage] : actionText}
+                            </ActionButton>
+                            <StatusPanel
+                                width={width}
+                            >
+                                {errorMessage
+                                    ?
+                                    (<ErrorMessage>{`Error : ${errorMessage}` || "Error : An unknown error occurred."}</ErrorMessage>)
+                                    :
+                                    <span>{disclaimer}</span>
+                                }
+                            </StatusPanel>
+
+                        </Footer>
+                    </Container>
+                    { showModal && (
+                        <Modal
                         width={width}
                         height={height}
-                    >
-                        {currentPage === PAGES.SWAP &&
-                            (
-                                <SwapPanel
-                                    clickCount={clickCount}
-                                    handleTextStatus={setDisclaimer}
-                                    handleProcessing={handleProcessing}
-                                    web3ReactContext={web3ReactContext}
-                                    halt={errorMessage}
-                                    textDescription={widgetDescription}
-                                    baseCurrency={baseCurrency}
-                                    pairCurrency={pairCurrency}
-                                    affiliateAccount={affiliateAccount}
-                                    affiliateFee={affiliateFee}
-                                />
-                            )}
+                    />
+                    )
 
-                        {currentPage === PAGES.POOLS &&
-                            (
-                                <LiquidityPoolPanel
-                                    web3ReactContext={web3ReactContext}
-                                    width={width}
-                                    updateActionText={updateActionText}
-                                    clickCount={clickCount}
-                                    color={widgetColor}
-                                />
-                            )}
+                    }
+                    
+                </Fragment>
 
-                    </Body>
-
-                    <Footer>
-                        <ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
-                            {currentPage === PAGES.SWAP ? HEADLINES.ACTIONS[currentPage] : actionText}
-                        </ActionButton>
-                        <StatusPanel
-                            width={width}
-                        >
-                            {errorMessage
-                                ?
-                                (<ErrorMessage>{`Error : ${errorMessage}` || "Error : An unknown error occurred."}</ErrorMessage>)
-                                :
-                                <span>{disclaimer}</span>
-                            }
-                        </StatusPanel>
-
-                    </Footer>
-                </Container>
 
             }
         </ContainerDimensions>
@@ -201,6 +234,12 @@ const Container = styled.div`
     border-radius: 5px;
     padding: 20px;
     color: rgba(0, 0, 0, 0.7);
+    height: 100%;
+
+    ${props => props.inactive && `
+        opacity: 0.6;   
+    `}
+
 `;
 
 const Header = styled.div`
