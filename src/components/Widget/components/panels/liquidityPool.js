@@ -405,6 +405,7 @@ const LiquidityPoolPanel = (props) => {
                                 getETHBalance={getETHBalance}
                                 getTokenBalance={getTokenBalance}
                                 clickCount={clickCount}
+                                updateDepositAmount={updateDepositAmount}
                                 fundLiquidityPool={fundLiquidityPool}
                                 withdrawLiquidityPool={withdrawLiquidityPool}
                                 getAfforableAmount={getAfforableAmount}
@@ -790,224 +791,6 @@ const ActionListPanel = (props) => {
     )
 };
 
-const ActionInputPanelOLD = (props) => {
-
-    const { actionPanel, currentPool, getETHBalance, getTokenBalance, clickCount, fundLiquidityPool, withdrawLiquidityPool } = props;
-
-    const [selectedToken, setSelectedToken] = useState();
-
-    const [showTokenList, setShowTokenList] = useState(false);
-
-    const [balance, setBalance] = useState("0.0");
-    const [isLoadingBalance, setLoadingBalance] = useState(false);
-    const [amount, setAmount] = useState(0);
-
-    useEffect(() => {
-
-        console.log("currentPool : ", currentPool)
-
-        if (currentPool && currentPool.symbols[0]) {
-            setSelectedToken(currentPool.symbols[0]);
-            setShowTokenList(false);
-        }
-
-
-
-    }, [currentPool])
-
-    useEffect(() => {
-        // Handle click event from Parent Component
-        onProceed();
-    }, [clickCount])
-
-    const onProceed = useCallback(async () => {
-        console.log("onProcess...");
-
-        /*
-        if (amount <= 0) {
-            return;
-        }
-        */
-
-        if (!currentPool) {
-            return;
-        }
-
-        console.log("amoutn is valid...");
-        switch (actionPanel) {
-            case ACTION_PANELS.ADD_LIQUIDITY:
-                console.log("ADD_LIQUIDITY ....");
-                await fundLiquidityPool(currentPool);
-                break;
-            case ACTION_PANELS.REMOVE_LIQUIDITY:
-                console.log("REMOVE_LIQUIDITY ...");
-                await withdrawLiquidityPool(currentPool);
-                break;
-        }
-
-    }, [amount, selectedToken, currentPool, actionPanel])
-
-    const toggle = useCallback(() => {
-        setShowTokenList(!showTokenList)
-    }, [showTokenList])
-
-    const onSelectedTokenChange = (token) => {
-        setSelectedToken(token);
-        setShowTokenList(false);
-    }
-
-    useEffect(() => {
-        if (selectedToken) {
-
-            (async () => {
-                setLoadingBalance(true);
-
-                try {
-                    if (selectedToken === "ETH") {
-                        console.log("Check native ETH...");
-                        const result = await getETHBalance();
-                        setBalance(Number(result.toString()).toFixed(6) + "");
-                    } else {
-
-                        for (let i = 0; i < currentPool.symbols.length; i++) {
-                            if (currentPool.symbols[i] === selectedToken) {
-                                const result = await getTokenBalance(currentPool.reserves[i][1]);
-                                setBalance(Number(result.toString()).toFixed(6) + "");
-                                break;
-                            }
-                        }
-
-                    }
-                } catch (error) {
-                    console.log("fetch rate error : ", error);
-                }
-
-                setLoadingBalance(false);
-
-
-
-
-            })()
-
-
-
-
-
-        }
-    }, [selectedToken, currentPool])
-
-    const handleChange = useCallback((e) => {
-
-        e.preventDefault();
-        const regexp = /^[0-9]*(\.[0-9]{0,4})?$/;
-        const value = regexp.test(e.target.value) ? (e.target.value) : amount;
-        setAmount(value);
-
-    }, [isLoadingBalance, amount]);
-
-    return (
-        <Fragment>
-            <TokenBalanceContainer>
-                {/*
-                <InputGroup>
-                    <InputGroupIcon>
-                        <div style={{ display: "flex", border: "0px" }}>
-                            <TokenLogo src={getIcon("BNT")} alt={"BNT"} />
-                            <TokenLogo src={getIcon("ETH")} alt={"ETH"} />
-
-                        </div>
-                    </InputGroupIcon>
-                    <InputGroupButton style={{ fontSize: "14px" }}>
-
-                        BNT/ETH{` `}
-                        &#9660;
-                    </InputGroupButton>
-                    <InputGroupArea style={{ width: "55%", fontSize: "14px" }}>
-                        <input id="deposited" placeholder="120 BNT / 350.345 ETH" type="text" />
-                    </InputGroupArea>
-                </InputGroup>
-                */}
-
-
-
-                {actionPanel !== ACTION_PANELS.CREATE_POOL &&
-                    (
-                        <InputGroup>
-                            <InputGroupIcon>
-                                <img src={getIcon(selectedToken)} alt={selectedToken} style={{
-                                    width: "34px",
-                                    height: "32px"
-                                }} />
-                            </InputGroupIcon>
-                            <InputGroupButton>
-                                <span onClick={() => toggle()}>{selectedToken}&#9660;</span>
-                                {showTokenList &&
-                                    (
-                                        <DropdownContainer
-                                            style={{ height: `${(currentPool.symbols.length * 60)}px` }}
-                                        >
-                                            <table>
-                                                <tbody>
-
-                                                    {currentPool.symbols.map((symbol, index) => {
-                                                        return (
-                                                            <tr key={index} onClick={() => onSelectedTokenChange(symbol)}>
-                                                                <td width="25%">
-                                                                    <img src={getIcon(symbol)} alt={symbol} style={{
-                                                                        width: "34px",
-                                                                        height: "32px"
-                                                                    }} />
-                                                                </td>
-                                                                <td >{symbol}</td>
-                                                            </tr>
-                                                        )
-                                                    })}
-
-
-                                                </tbody>
-                                            </table>
-                                        </DropdownContainer>
-                                    )
-                                }
-
-
-
-                            </InputGroupButton>
-                            <InputGroupArea>
-                                <input value={amount} id="amountInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
-                            </InputGroupArea>
-                        </InputGroup>
-                    )
-
-                }
-
-
-            </TokenBalanceContainer>
-
-            <AccountContainer>
-                <AccountLeft>
-                    {actionPanel === ACTION_PANELS.ADD_LIQUIDITY && (
-                        <span>
-                            BALANCE {balance}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
-                        </span>
-                    )
-
-                    }
-
-                    {actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY && (
-                        <span>
-                            AVAILABLE 0.66780 ETH
-                        </span>
-                    )
-
-                    }
-
-                </AccountLeft>
-
-            </AccountContainer>
-        </Fragment>
-    )
-}
 
 const ActionInputPanel = (props) => {
 
@@ -1021,13 +804,13 @@ const ActionInputPanel = (props) => {
         withdrawLiquidityPool,
         getAfforableAmount,
         color,
-        width
+        width,
+        updateDepositAmount
     } = props;
 
     const [isLoadingBalance, setLoadingBalance] = useState(false);
     const [balances, setBalances] = useState([]);
-    const [summaryAmount, setSummaryAmount] = useState("120 BNT / 350.345 ETH");
-
+    
     const [inputMax, setInputMax] = useState(1000000);
     const [inputMin, setInputMin] = useState(0);
     const [inputAmount, setInputAmount] = useState(0);
@@ -1045,6 +828,69 @@ const ActionInputPanel = (props) => {
         }
 
     }, [currentPool]);
+
+    useEffect(() => {
+        // Handle click event from Parent Component
+        onProceed();
+    }, [clickCount])
+
+    const onProceed = useCallback(async () => {
+
+        /*
+        if (amount <= 0) {
+            return;
+        }
+        */
+
+        if (!currentPool) {
+            return;
+        }
+
+        switch (actionPanel) {
+            case ACTION_PANELS.ADD_LIQUIDITY:
+                console.log("ADD_LIQUIDITY ....");
+
+                if (inputAmount === 0) {
+                    return;
+                }
+
+                const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
+                try {
+                    const tx  = await fundLiquidityPool(currentPool, input);
+                    
+                    await tx.wait();
+                    console.log("funded.");
+                    await updateBalance();
+                    await updateDepositAmount();
+                } catch (error) {
+                    console.log("error : ", error);
+                }
+                
+                
+                break;
+            case ACTION_PANELS.REMOVE_LIQUIDITY:
+                console.log("REMOVE_LIQUIDITY ...");
+
+                if (inputAmount === 0) {
+                    return;
+                }
+
+                const liquidateInput = ( (Number(poolTokenAmount*100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000;
+                try {
+                    const liquidateTx  = await withdrawLiquidityPool(currentPool, liquidateInput);
+                    
+                    await liquidateTx.wait();
+                    console.log("liquidated.");
+                    await updateBalance();
+                    await updateDepositAmount();
+                } catch (error) {
+                    console.log("error : ", error);
+                }
+
+                break;
+        }
+
+    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount, poolTokenAmount, poolTokenSupply ])
 
     const updateBalance = useCallback(async () => {
 
@@ -1078,7 +924,7 @@ const ActionInputPanel = (props) => {
                 console.log("fetch rate error : ", error);
             }
             setBalances(result);
-            setInputAmount(0);
+            
             await updateAffordableToken(result);
             setLoadingBalance(false);
         }
@@ -1086,6 +932,12 @@ const ActionInputPanel = (props) => {
     }, [currentPool])
 
     const updateAffordableToken = useCallback(async (tokenList) => {
+
+        if (actionPanel === ACTION_PANELS.ADD_LIQUIDITY) {
+            setInputAmount(0);
+        } else if (actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY) {
+            setInputAmount(1000000);
+        }
 
         if (currentPool && tokenList.length > 0) {
 
@@ -1100,76 +952,162 @@ const ActionInputPanel = (props) => {
 
         }
 
-    }, [currentPool])
+    }, [currentPool, actionPanel])
+
+    useEffect(() => {
+        if (actionPanel === ACTION_PANELS.ADD_LIQUIDITY) {
+            setInputAmount(0);
+        } else if (actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY) {
+            setInputAmount(1000000);
+        }
+    }, [actionPanel])
 
 
     const handleChange = useCallback((e) => {
         e.preventDefault();
 
-        if (maxAffordablePercentage !== 0 && isLoadingBalance === false) {
-            setInputAmount(e.target.value);
+        
+
+        if (actionPanel === ACTION_PANELS.ADD_LIQUIDITY) {
+            if (maxAffordablePercentage !== 0 && isLoadingBalance === false) {
+                setInputAmount(e.target.value);
+            }
         }
 
-    }, [maxAffordablePercentage, isLoadingBalance])
+        if (actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY) {
+            if (poolTokenAmount!==0 && isLoadingBalance === false) {
+                setInputAmount(e.target.value);
+            }
+        }
+
+
+    }, [maxAffordablePercentage, isLoadingBalance, actionPanel, poolTokenAmount])
 
     if (!currentPool) {
         return <Fragment></Fragment>
     }
 
+
+    
+
     return (
         <LiquiditySummaryContainer isMobile={width <= 600} >
 
-            <ChartLeftPanel style={{  fontSize: "12px" }}>
-                <b>Balance</b>
-                {balances.map((item, index) => {
-                    return (
-                        <TokenAmount danger={item.balance === "0.000000"} key={index}>
-                            {item.balance}{` `}{item.symbol}
-                        </TokenAmount>
-                    )
-                })}
-            </ChartLeftPanel>
-            <LiquidityInputPanel>
-                <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
-                    <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
-                </InputGroupArea>
-                <AccountContainer>
-                    <AccountLeft style={{ flex: "40%" }}>
-                        Amount {(((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000).toFixed(6))}%
-                    </AccountLeft>
-                    <AccountRight style={{ flex: "60%" }}>
-                        Max Affordable {Number(maxAffordablePercentage).toFixed(6)}%
-                    </AccountRight>
-                </AccountContainer>
-                <div style={{ textAlign: "center", marginTop: "8px" }}>
+            { actionPanel === ACTION_PANELS.ADD_LIQUIDITY &&
+            (
+                <Fragment>
+                    <ChartLeftPanel style={{  fontSize: "12px" }}>
+                        <b>Balance</b>
+                        {balances.map((item, index) => {
+                            return (
+                                <TokenAmount danger={item.balance === "0.000000"} key={index}>
+                                    {item.balance}{` `}{item.symbol}
+                                </TokenAmount>
+                            )
+                        })}
+                    </ChartLeftPanel>
+                    <LiquidityInputPanel>
+                        <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
+                            <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
+                        </InputGroupArea>
+                        <AccountContainer>
+                            <AccountLeft style={{ flex: "40%" }}>
+                                Amount {(((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000).toFixed(6))}%
+                            </AccountLeft>
+                            <AccountRight style={{ flex: "60%" }}>
+                                Max Affordable {Number(maxAffordablePercentage).toFixed(6)}%
+                            </AccountRight>
+                        </AccountContainer>
+                        <div style={{ textAlign: "center", marginTop: "8px" }}>
 
-                    {currentPool.symbols.map((name, index) => {
-                        return (
-                            <span key={index}>
-                                <TokenLogo src={getIcon(name)} alt={name} />
-                            </span>
-                        )
-                    })}
-                    <div style={{ fontSize: "12px", marginTop: "8px" }}>
-                        <b>Current Stake / Total Pool Tokens</b>
-                        <div>
-                            {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(100 * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / poolTokenSupply).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                            {currentPool.symbols.map((name, index) => {
+                                return (
+                                    <span key={index}>
+                                        <TokenLogo src={getIcon(name)} alt={name} />
+                                    </span>
+                                )
+                            })}
+                            <div style={{ fontSize: "12px", marginTop: "8px" }}>
+                                <b>Current Stake / Total Pool Tokens</b>
+                                <div>
+                                    {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                                </div>
+                            </div>
+
+
                         </div>
-                    </div>
+                    </LiquidityInputPanel>
+                    <ChartRightPanel style={{ fontSize: "12px" }}>
+                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Transaction Details</b>
+                        {currentPool.reserves.map((item, index) => {
+                            return (
+                                <div key={index}>
+                                    {((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{currentPool.symbols[index]}
+                                </div>
+                            )
+                        })}
+                    </ChartRightPanel>
+                </Fragment>
+            )
 
+            }
 
-                </div>
-            </LiquidityInputPanel>
-            <ChartRightPanel style={{ fontSize: "12px" }}>
-                {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Summary</b>
-                {currentPool.reserves.map((item, index) => {
-                    return (
-                        <div key={index}>
-                            {((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{currentPool.symbols[index]}
+            { actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY &&
+            (
+                <Fragment>
+                    <ChartLeftPanel style={{  fontSize: "12px" }}>
+                        <b>Balance</b>
+                        {balances.map((item, index) => {
+                            return (
+                                <TokenAmount danger={item.balance === "0.000000"} key={index}>
+                                    {item.balance}{` `}{item.symbol}
+                                </TokenAmount>
+                            )
+                        })}
+                    </ChartLeftPanel>
+                    <LiquidityInputPanel>
+                        <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
+                            <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
+                        </InputGroupArea>
+                        <AccountContainer>
+                            <AccountLeft style={{ flex: "40%" }}>
+                                Amount {((( (Number(poolTokenAmount*100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000).toFixed(6))}%
+                            </AccountLeft>
+                            <AccountRight style={{ flex: "60%" }}>
+                                Max Affordable {(Number(poolTokenAmount*100) / Number(poolTokenSupply)).toFixed(6)}%
+                            </AccountRight>
+                        </AccountContainer>
+                        <div style={{ textAlign: "center", marginTop: "8px" }}>
+                            {currentPool.symbols.map((name, index) => {
+                                return (
+                                    <span key={index}>
+                                        <TokenLogo src={getIcon(name)} alt={name} />
+                                    </span>
+                                )
+                            })}
+                             <div style={{ fontSize: "12px", marginTop: "8px" }}>
+                                <b>Current Stake / Total Pool Tokens</b>
+                                <div>
+                                    {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 ) &&  `(-${( (poolTokenAmount * Number(inputAmount))/ 1000000 ).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                                </div>
+                            </div>
                         </div>
-                    )
-                })}
-            </ChartRightPanel>
+                       
+                    </LiquidityInputPanel>
+                    <ChartRightPanel style={{ fontSize: "12px" }}>
+                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Transaction Details</b>
+                        {currentPool.reserves.map((item, index) => {
+                            return (
+                                <div key={index}>
+                                    {((Number(item[0]) * 0.01 * ((((Number(poolTokenAmount*100) / Number(poolTokenSupply))) * Number(inputAmount)) / 1000000)) ).toFixed(6)}{` `}{currentPool.symbols[index]}
+                                </div>
+                            )
+                        })}
+                    </ChartRightPanel>
+                </Fragment>
+            )
+
+            }
 
 
             
