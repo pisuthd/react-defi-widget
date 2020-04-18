@@ -6,12 +6,15 @@ import Widget from "./components/Widget";
 import { PAGES } from "./constants";
 
 import BancorContextProvider from "./contexts/bancor";
+import ModalContextProvider from "./contexts/modal";
 
 const ContextProviders = ({ children }) => {
 
     return (
         <BancorContextProvider>
-            {children}
+            <ModalContextProvider>
+                {children}
+            </ModalContextProvider>
         </BancorContextProvider>
     )
 
@@ -110,13 +113,21 @@ TokenConversionWidget.propTypes = {
 
 export const LiquidityPoolsWidget = (props) => {
 
-    const { web3ReactContext } = props;
+    const { web3ReactContext, color } = props;
 
     return <ConnectedWidget
                 web3ReactContext={web3ReactContext}
                 currentPage={PAGES.POOLS}
+                color={color}
             />
 }
+
+
+LiquidityPoolsWidget.propTypes = {
+    web3ReactContext: PropTypes.object.isRequired,
+    color : PropTypes.string
+
+};
 
 export const StablecoinsWidget = (props) => {
     const { web3ReactContext } = props;

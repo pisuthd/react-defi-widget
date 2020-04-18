@@ -6,6 +6,7 @@ import { useBancor, INITIAL_TOKENS, ROPSTEN_TOKENS, EXCLUDE_TOKENS } from "../..
 import { getIcon, getDefaultTokenAddress, getRopstenTokenAddress } from "../../../../utils/token";
 import { getAddress, parseFee } from "../../../../utils/account";
 import { HEADLINES, PAGES, SLIPPAGE_RATE } from "../../../../constants";
+import { useModal } from "../../../../contexts/modal";
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 
@@ -17,15 +18,14 @@ const SwapPanel = (props) => {
 
     const {
         web3ReactContext,
-        handleProcessing,
         clickCount,
-        handleTextStatus,
-        textDescription,
         baseCurrency,
         pairCurrency,
         affiliateAccount,
         affiliateFee
     } = props;
+
+    const { showProcessingModal } = useModal();
 
     const initialList = INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0])
 
@@ -178,7 +178,11 @@ const SwapPanel = (props) => {
     const onConvert = useCallback(async () => {
 
         if ((source[1] !== "") && (path.length > 0) && (sourceAmount !== 0)) {
-            handleProcessing(true);
+
+
+
+            // handleProcessing(true);
+
             console.log("Convert...", source, path, sourceAmount);
 
             const round = (num) => {
@@ -214,9 +218,14 @@ const SwapPanel = (props) => {
 
                 if (tx.hash) {
                     const { hash } = tx;
-                    handleTextStatus(`Your transaction ${hash} is being processed.`);
+                    const onClose = showProcessingModal("Please wait while your transaction is processing", `${hash}`);
+                    try {
+                        await tx.wait(); // shows an error if it's failed
+                    } catch (error) {
+                        
+                    }
+                    onClose();
 
-                    await tx.wait(); // shows an error if it's failed
                     console.log("done...");
 
                 }
@@ -228,8 +237,8 @@ const SwapPanel = (props) => {
             } catch (error) {
                 console.log("onConvert error : ", error)
             }
-            handleTextStatus(textDescription);
-            handleProcessing(false);
+
+            
             setTimeout(async () => {
                 await updateBalance(source);
             }, 5000)
@@ -269,16 +278,6 @@ const SwapPanel = (props) => {
 
     useEffect(() => {
 
-        if (!isLoadingBalance && !isLoadingRate) {
-            handleProcessing(false)
-        } else if (isLoadingBalance || isLoadingRate) {
-            handleProcessing(true)
-        }
-
-    }, [isLoadingBalance, isLoadingRate])
-
-    useEffect(() => {
-
         if (source[1] !== '' && !loading) {
             (async () => {
                 await updateBalance(source);
@@ -314,7 +313,7 @@ const SwapPanel = (props) => {
             }
 
         } catch (error) {
-            console.log("loading rate error  ;", error);
+            console.log("loading balance error  ;", error);
         }
 
         setLoadingBalance(false);
@@ -486,10 +485,7 @@ const SwapPanel = (props) => {
 
 SwapPanel.propTypes = {
     web3ReactContext: PropTypes.object.isRequired,
-    handleProcessing: PropTypes.func.isRequired,
     clickCount: PropTypes.number.isRequired,
-    handleTextStatus: PropTypes.func.isRequired,
-    textDescription: PropTypes.string,
     baseCurrency: PropTypes.string,
     pairCurrency: PropTypes.string,
     affiliateAccount: PropTypes.string,
@@ -562,7 +558,7 @@ const DropdownPanel = (props) => {
 
 const SearchPanel = styled.tr`
     td {
-        fonct-size: 14px;
+        font-size: 14px;
 
         :first-child {
             text-align: center;

@@ -23,18 +23,18 @@ const LiquidityPool = (props) => {
 
     const { web3context } = props;
 
+    const color = "orange";
+
     return (
         <Fragment>
             <Row>
-                <Col sm="6">
+                <Col sm="12">
                     <OrangeGradientJumbotron>
                         <LiquidityPoolsWidget
                             web3ReactContext={web3context}
+                            color={color}
                         />
                     </OrangeGradientJumbotron>
-                </Col>
-                <Col sm="6">
-                    
                 </Col>
             </Row>
         </Fragment>
@@ -43,10 +43,21 @@ const LiquidityPool = (props) => {
 
 export default LiquidityPool;
 
+/*
+const GreyGradientJumbotron = styled(Jumbotron)`
+    background-image: linear-gradient(to bottom, #bdc3c7, #2c3e50);  
+    border-radius: 10px;
+    color: white;
+    height: 600px;
+`;
+*/
 
 const OrangeGradientJumbotron = styled(Jumbotron)`
     background-image: linear-gradient(to bottom, #f5af19, #f12711);  
     border-radius: 10px;
     color: white;
-    height: 400px;
+    height: 600px;
+    width: 600px;
+    padding: 40px 20px 40px 20px;
 `;
+
