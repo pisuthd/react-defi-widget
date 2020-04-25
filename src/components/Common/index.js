@@ -58,3 +58,11 @@ export const LauncherButton = styled.button`
 export const LauncherIcon = styled.img`
     filter: invert(91%) sepia(2%) saturate(1410%) hue-rotate(197deg) brightness(105%) contrast(93%);
 `;
+
+export const Header = styled.div`
+    font-size: 20px;
+    font-weight: 500;
+    span {
+        cursor: pointer;
+    }
+`;

@@ -57,7 +57,7 @@ const OrangeGradientJumbotron = styled(Jumbotron)`
     border-radius: 10px;
     color: white;
     height: 600px;
-    width: 600px;
+    
     padding: 40px 20px 40px 20px;
 `;
 

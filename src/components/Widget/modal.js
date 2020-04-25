@@ -14,9 +14,7 @@ const Modal = (props) => {
     const [ showLoadingIcon , setShowLoadingIcon ] = useState(false);
 
     useEffect(() => {
-
-        console.log("type chainingn... : ", type );
-
+        
         if (type === MODAL_TYPES.PROCESSING ) {
             setShowLoadingIcon(true);
         } else {
