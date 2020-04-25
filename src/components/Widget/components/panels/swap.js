@@ -77,6 +77,7 @@ const SwapPanel = (props) => {
     const [fee, setFee] = useState(0);
     const [path, setPath] = useState([]);
     const [isLoadingRate, setLoadingRate] = useState(true);
+    const [loadingModal, setLoadingModal ] = useState();
 
     const [sourceAmount, setSourceAmount] = useState(0);
     const [destinationAmount, setDestinationAmount] = useState(0);
@@ -85,6 +86,16 @@ const SwapPanel = (props) => {
         // Handle click event from Parent Component
         onConvert();
     }, [clickCount])
+
+    
+
+    useEffect(() => {
+
+            if (loading) {
+                // showProcessingModal("Looking up system contracts in registry...", "");
+            } 
+        
+    }, [loading])
 
     useEffect(() => {
 
@@ -184,12 +195,14 @@ const SwapPanel = (props) => {
             // handleProcessing(true);
 
             console.log("Convert...", source, path, sourceAmount);
-
+            /*
             const round = (num) => {
                 return +(Math.floor(num + "e+3") + "e-3");
             }
 
             const normalizedAmount = `${round(Number(sourceAmount))}`;
+            */
+           const normalizedAmount = sourceAmount;
 
             console.log("normalizedAmount : ", normalizedAmount);
 
@@ -222,17 +235,13 @@ const SwapPanel = (props) => {
                     try {
                         await tx.wait(); // shows an error if it's failed
                     } catch (error) {
-                        
+                        alert(error.message);
                     }
                     onClose();
 
                     console.log("done...");
 
                 }
-
-
-
-
 
             } catch (error) {
                 console.log("onConvert error : ", error)
@@ -254,27 +263,33 @@ const SwapPanel = (props) => {
     const onSourceChange = useCallback((newSource) => {
 
         if (newSource[0] === destination[0]) {
-            alert("Can't choose the same token")
+            // alert("Can't choose the same token")
+            setSource(destination);
+            setDestination(source);
+            setSourceModal(false);
             return;
         }
 
         setSource(newSource);
         setSourceModal(false);
 
-    }, [destination])
+    }, [destination, source])
 
 
     const onDestinationChange = useCallback((newDestination) => {
 
         if (newDestination[0] === source[0]) {
-            alert("Can't choose the same token")
+            // alert("Can't choose the same token")
+            setDestination(source);
+            setSource(destination);
+            setDestinationModal(false);
             return;
         }
 
         setDestination(newDestination);
         setDestinationModal(false);
 
-    }, [source])
+    }, [source, destination])
 
     useEffect(() => {
 
@@ -298,7 +313,7 @@ const SwapPanel = (props) => {
 
     const updateBalance = useCallback(async (source) => {
         setLoadingBalance(true);
-
+        const onClose = showProcessingModal("Loading balances...", "");
         try {
 
             if (source[0] === "ETH") {
@@ -315,7 +330,7 @@ const SwapPanel = (props) => {
         } catch (error) {
             console.log("loading balance error  ;", error);
         }
-
+        onClose();
         setLoadingBalance(false);
 
     }, [web3ReactContext])
@@ -326,6 +341,7 @@ const SwapPanel = (props) => {
             console.log(`looking for an exchange rate on the pair ${source[0]}/${destination[0]} `);
             (async () => {
                 setLoadingRate(true);
+                const onClose = showProcessingModal("Fetching rates...", "");
                 try {
                     const path = await generatePath(source[1], destination[1], liquidityPools);
                     console.log("path : ", path);
@@ -346,6 +362,7 @@ const SwapPanel = (props) => {
                     console.log("Find a shortest path error : ", error);
                 }
                 setLoadingRate(false);
+                onClose();
 
             })();
         }
@@ -401,6 +418,17 @@ const SwapPanel = (props) => {
         return <Fragment></Fragment>
     }
 
+    if (loading) {
+        return (
+            <Fragment>
+                <Column>
+                    <img src={loadingIcon} width="12px" height="12px" />
+                </Column>
+                <Column></Column>
+            </Fragment>
+        )
+    }
+
     return (
         <Fragment>
             <Column>
@@ -433,9 +461,10 @@ const SwapPanel = (props) => {
                 </InputGroup>
                 <AccountSection>
                     <AccountLeft>
-                        BALANCE {sourceBalance == "0.0" ? sourceBalance : <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)} >{sourceBalance}</Percentage>}{` `}{isLoadingBalance && (<img src={loadingIcon} width="12px" height="12px" />)}
+                        BALANCE {sourceBalance}
                     </AccountLeft>
                     <AccountRight>
+                        {/*
                         {sourceBalance !== "0.0" && (
                             <span>
                                 <Percentage onClick={() => setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
@@ -443,6 +472,7 @@ const SwapPanel = (props) => {
                                 <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
                             </span>
                         )}
+                        */}
                     </AccountRight>
                 </AccountSection>
             </Column>
@@ -475,7 +505,7 @@ const SwapPanel = (props) => {
                         FEE {fee.toFixed(1)} %
                     </AccountLeft>
                     <AccountRight>
-                        {isLoadingRate && (<img src={loadingIcon} width="12px" height="12px" />)}{` `}{`1 ${source[0].toUpperCase()} = ${rate} ${destination[0].toUpperCase()}`}
+                        {`1 ${source[0].toUpperCase()} = ${rate} ${destination[0].toUpperCase()}`}
                     </AccountRight>
                 </AccountSection>
             </Column>

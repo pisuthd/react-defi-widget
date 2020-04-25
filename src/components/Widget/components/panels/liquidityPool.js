@@ -157,7 +157,7 @@ const LiquidityPoolPanel = (props) => {
 
     const isLoading = loading || loadingPools;
 
-    const [actionPanel, setActionPanel] = useState(ACTION_PANELS.CREATE_POOL);
+    const [actionPanel, setActionPanel] = useState(ACTION_PANELS.ADD_LIQUIDITY);
     const [currentPool, setCurrentPool] = useState();
     const [currentPoolRatio, setCurrentPoolRatio] = useState("");
     const [currentPoolFee, setCurrentPoolFee] = useState("");
@@ -266,6 +266,18 @@ const LiquidityPoolPanel = (props) => {
     if (!networkId) {
         return <Fragment></Fragment>
     }
+
+    if (loading) {
+        return (
+            <Fragment>
+                <Column>
+                    <img src={loadingIcon} width="12px" height="12px" />
+                </Column>
+                <Column></Column>
+            </Fragment>
+        )
+    }
+
 
     if (actionPanel === ACTION_PANELS.CREATE_POOL) {
         return (

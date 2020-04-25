@@ -11,11 +11,11 @@ import ModalContextProvider from "./contexts/modal";
 const ContextProviders = ({ children }) => {
 
     return (
-        <BancorContextProvider>
-            <ModalContextProvider>
-                {children}
-            </ModalContextProvider>
-        </BancorContextProvider>
+        <ModalContextProvider>
+            <BancorContextProvider>
+                    {children}
+            </BancorContextProvider>
+        </ModalContextProvider>
     )
 
     
