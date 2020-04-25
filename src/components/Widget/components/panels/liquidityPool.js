@@ -42,6 +42,8 @@ const LiquidityPoolPanel = (props) => {
         getLiquidityPool,
         getReserveRatio,
         getConversionFee,
+        getMaxConversionFee,
+        getTotalSupplyByConverter,
         getETHBalance,
         getTokenBalance,
         fundLiquidityPool,
@@ -53,6 +55,9 @@ const LiquidityPoolPanel = (props) => {
         createConverter,
         checkIfAccountHasSufficientBalance,
         addInitialReserve,
+        activateConverter,
+        converterOwner,
+        getReserves,
         registerConverter
     } = useBancor(web3ReactContext);
 
@@ -273,7 +278,12 @@ const LiquidityPoolPanel = (props) => {
                 getSmartToken={getSmartToken}
                 checkIfAccountHasSufficientBalance={checkIfAccountHasSufficientBalance}
                 createConverter={createConverter}
+                getTotalSupplyByConverter={getTotalSupplyByConverter}
+                getMaxConversionFee={getMaxConversionFee}
                 addInitialReserve={addInitialReserve}
+                activateConverter={activateConverter}
+                converterOwner={converterOwner}
+                getReserves={getReserves}
                 registerConverter={registerConverter}
             />
         )
