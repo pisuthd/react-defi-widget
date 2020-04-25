@@ -2,19 +2,20 @@ import React, { useCallback, useState, useEffect, Fragment } from 'react';
 import PieChart from 'react-minimal-pie-chart';
 import { useBancor } from "../../../../contexts/bancor";
 import { getIcon } from "../../../../utils/token";
+import { Header } from "../../../Common";
+import PoolCreationPanel from "./poolCreation";
 import styled from "styled-components";
 
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 
-const ACTION_PANELS = {
+export const ACTION_PANELS = {
     ADD_LIQUIDITY: "Add Liquidity",
     REMOVE_LIQUIDITY: "Remove Liquidity",
     CREATE_POOL: "Create a New Pool"
 }
 
 const COLORS = ["#E38627", "#C13C37", "#47682C", "#6874E8", "#F7ACCF", "#12130F", "#113537"];
-
 
 /*
     Liquidity Pools Panel
@@ -46,12 +47,16 @@ const LiquidityPoolPanel = (props) => {
         fundLiquidityPool,
         withdrawLiquidityPool,
         getLiquidityPoolDeposit,
-        getAfforableAmount
+        getAfforableAmount,
+        createSmartToken,
+        getSmartToken,
+        createConverter,
+        checkIfAccountHasSufficientBalance,
+        addInitialReserve,
+        registerConverter
     } = useBancor(web3ReactContext);
 
     useEffect(() => {
-
-
         (async () => {
             if (!loading) {
 
@@ -147,7 +152,7 @@ const LiquidityPoolPanel = (props) => {
 
     const isLoading = loading || loadingPools;
 
-    const [actionPanel, setActionPanel] = useState(ACTION_PANELS.ADD_LIQUIDITY);
+    const [actionPanel, setActionPanel] = useState(ACTION_PANELS.CREATE_POOL);
     const [currentPool, setCurrentPool] = useState();
     const [currentPoolRatio, setCurrentPoolRatio] = useState("");
     const [currentPoolFee, setCurrentPoolFee] = useState("");
@@ -160,7 +165,9 @@ const LiquidityPoolPanel = (props) => {
     const [isLoadingDeposited, setLoadingDeposited] = useState(false);
 
     useEffect(() => {
+
         updateActionText(actionPanel);
+        
     }, [actionPanel])
 
     useEffect(() => {
@@ -218,11 +225,7 @@ const LiquidityPoolPanel = (props) => {
                 }
             })
             setCurrentChartData(newData);
-
         }
-
-
-
     }, [currentPoolRatio]);
 
 
@@ -245,10 +248,8 @@ const LiquidityPoolPanel = (props) => {
     }, [showPoolListModal]);
 
     const onActionPanelUpdate = useCallback((panel) => {
-        if (!isLoading) {
-            setActionPanel(panel);
-            setActionListModal(false);
-        }
+        setActionPanel(panel);
+        setActionListModal(false);
     }, [isLoading])
 
     const onUpdateCurrentPool = useCallback((poolObject) => {
@@ -261,10 +262,25 @@ const LiquidityPoolPanel = (props) => {
         return <Fragment></Fragment>
     }
 
+    if (actionPanel === ACTION_PANELS.CREATE_POOL) {
+        return (
+            <PoolCreationPanel
+                title={actionPanel}
+                color={color}
+                width={width}
+                onActionPanelUpdate={onActionPanelUpdate}
+                createSmartToken={createSmartToken}
+                getSmartToken={getSmartToken}
+                checkIfAccountHasSufficientBalance={checkIfAccountHasSufficientBalance}
+                createConverter={createConverter}
+                addInitialReserve={addInitialReserve}
+                registerConverter={registerConverter}
+            />
+        )
+    }
 
     return (
         <Fragment>
-
             <Column>
                 {isLoading
                     ? <img src={loadingIcon} width="12px" height="12px" />
@@ -357,8 +373,6 @@ const LiquidityPoolPanel = (props) => {
                                             })}
                                         </ChartLeftPanel>
                                         <ChartRightPanel>
-
-                                            
                                             <div>
                                                 {isLoadingDeposited && <img src={loadingIcon} width="12px" height="12px" />}
                                                 <b>Deposited</b>
@@ -368,28 +382,16 @@ const LiquidityPoolPanel = (props) => {
                                                     )
                                                 })}
                                             </div>
-
-
                                         </ChartRightPanel>
-
-                                        
-
                                     </Fragment>
                                 )
-
                             }
-
-
                         </ChartContainer>
-
-
-
                     </Fragment>
                 }
 
             </Column>
             <Column>
-
                 {!isLoading &&
                     (
                         <Fragment>
@@ -417,20 +419,8 @@ const LiquidityPoolPanel = (props) => {
 
                         </Fragment>
                     )
-
                 }
-
-
-
-
             </Column>
-
-
-
-
-
-
-
         </Fragment >
     )
 }
@@ -469,14 +459,6 @@ const Dot = styled.span`
     background-color: ${props => props.color ? props.color : "#bbb"};
     border-radius: 50%;
     display: inline-block;
-`;
-
-const Header = styled.h3`
-    font-size: 20px;
-    font-weight: 500;
-    span {
-        cursor: pointer;
-    }
 `;
 
 const Column = styled.div`
@@ -1038,7 +1020,7 @@ const ActionInputPanel = (props) => {
                         </div>
                     </LiquidityInputPanel>
                     <ChartRightPanel style={{ fontSize: "12px" }}>
-                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Transaction Details</b>
+                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Tx Details</b>
                         {currentPool.reserves.map((item, index) => {
                             return (
                                 <div key={index}>
@@ -1095,7 +1077,7 @@ const ActionInputPanel = (props) => {
                        
                     </LiquidityInputPanel>
                     <ChartRightPanel style={{ fontSize: "12px" }}>
-                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Transaction Details</b>
+                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Tx Details</b>
                         {currentPool.reserves.map((item, index) => {
                             return (
                                 <div key={index}>
@@ -1108,6 +1090,8 @@ const ActionInputPanel = (props) => {
             )
 
             }
+
+
 
 
             
@@ -1210,6 +1194,9 @@ const PoolListPanel = (props) => {
                                 <td>
                                     {`${item.name} `}
                                     <TableInnerRow>
+                                        <TableBox>
+                                            Bancor
+                                        </TableBox>
                                         <TableBox>
                                             Ratio {ratio}
                                         </TableBox>

@@ -5,8 +5,8 @@ import { BANCOR_CONTRACTS, NETWORKS, TOKEN_CONTRACTS } from "../constants";
 
 import { ContractRegistryAbi } from "../contracts/bancor/ContractRegistry";
 import { BancorConverterRegistryAbi } from "../contracts/bancor/BancorConverterRegistry";
-import { BancorConverterAbi } from "../contracts/bancor/BancorConverter";
-import { SmartTokenAbi } from "../contracts/bancor/SmartToken";
+import { BancorConverterAbi, BancorConverterByteCode } from "../contracts/bancor/BancorConverter";
+import { SmartTokenAbi, SmartTokenByteCode, SmartTokenControllerAbi } from "../contracts/bancor/SmartToken";
 import { BancorConverterRegistryDataAbi } from "../contracts/bancor/BancorConverterRegistryData";
 import { ERC20TokenAbi } from "../contracts/bancor/ERC20Token";
 import { EtherTokenAbi } from "../contracts/bancor/EtherToken";
@@ -349,12 +349,27 @@ export const useBancor = (web3context) => {
 
     }, [web3context])
 
-    const getTokenName = useCallback(async (address) => {
+    const getTokenName = useCallback(async (address, needFullName = false) => {
         try {
             const signer = web3context.library.getSigner();
             const contract = getContract(address, SmartTokenAbi, signer);
-            const name = await contract.symbol();
-            return [name, address];
+            
+            if (!needFullName) {
+                const name = await contract.symbol();
+                return [name, address];
+            } else {
+
+                try {
+                    const name = await contract.symbol();
+                    const fullName = await contract.name();
+
+                    return [name, fullName, address];
+                } catch (error) {
+                    return;
+                }
+                
+            }
+            
         } catch (error) {
 
             switch (address.toLowerCase()) {
@@ -969,6 +984,223 @@ export const useBancor = (web3context) => {
 
     },[web3context])
 
+    const createSmartToken = useCallback(async (symbol, fullName) => {
+
+        try {
+
+            const signer = web3context.library.getSigner();
+            const options = await constructTxOptions();
+            const factory = new ethers.ContractFactory(SmartTokenAbi , SmartTokenByteCode , signer);
+            const contract = await factory.deploy(fullName, symbol ,18, options);
+
+            return contract;
+        } catch (error) {
+            throw new Error(error.message)
+        }
+
+    }, [web3context])
+
+    const getSmartToken = useCallback(async (address) => {
+        try {
+            const result = await getTokenName(address, true);
+            if (!result) {
+                throw new Error("Token Address is invalid");
+            }
+            return {
+                symbol : result[0],
+                fullName : result[1]
+            }
+        } catch (error) {
+            throw new Error(error.message)
+        }
+
+    }, [web3context])
+
+    const checkIfAccountHasSufficientBalance = useCallback( async (address, amount) => {
+        try {
+
+            const balance = await getTokenBalance(address);
+            
+            if (Number(amount) > Number(balance)) {
+                throw new Error(`Insufficient balance on ${address}`);
+            }
+
+        } catch (error) {
+            throw new Error(error.message)
+        }
+    },[ web3context ])
+
+
+    const createConverter = useCallback(async (smartTokenAddress, conversionFee, reserves ) => {
+
+
+        console.log("createConverter : ", bancorContractContractRegistry, smartTokenAddress, conversionFee, reserves)
+
+        try {
+            const normalizedMaxConversionFee = Number(conversionFee) * (1000000/100);
+
+            const signer = web3context.library.getSigner();
+            let options = await constructTxOptions();
+
+            options.gasLimit = options.gasLimit*5;
+
+            const factory = new ethers.ContractFactory(BancorConverterAbi , BancorConverterByteCode , signer);
+            const contract = await factory.deploy(
+                smartTokenAddress,
+                bancorContractContractRegistry ,
+                normalizedMaxConversionFee, 
+                reserves[0].tokenAddress,
+                Number(reserves[0].weight) *  (1000000/100),
+                options // Increare GAS
+            );
+
+            console.log("contract : ", contract);
+
+            return contract;
+
+
+        } catch (error) {
+            throw new Error(error.message)
+        }
+
+    }, [web3context, bancorContractContractRegistry])
+
+
+    const addInitialReserve = useCallback(async (smartTokenAddress, converterAddress, reserves, initialPoolTokenAmount) => {
+
+        console.log("addInitialReserve : ", smartTokenAddress, converterAddress, reserves, initialPoolTokenAmount);
+
+        const signer = web3context.library.getSigner();
+        const options = await constructTxOptions();
+
+        const relayTokenContract = getContract(smartTokenAddress , SmartTokenAbi, signer);
+        const converterContract = getContract(converterAddress, BancorConverterAbi, signer);
+
+        let count = 0;
+
+        let addingReserveTxs = [];
+        let fundingTxs = [];
+
+        for (let reserve of reserves) {
+            if (count!==0) {
+                const addingReserveTx = await converterContract.addReserve(reserve.tokenAddress, Number(reserve.weight) * (1000000/100), options);
+                addingReserveTxs.push(addingReserveTx);
+            }
+
+            const tokenContract = getContract(reserve.tokenAddress, ERC20TokenAbi, signer);
+            const fundingTx =  await tokenContract.transfer(converterAddress, ethers.utils.parseEther(`${reserve.initialAmount}`) , options);
+
+            fundingTxs.push(fundingTx);
+
+            count +=1;
+        }
+
+        const issuranceTx = await relayTokenContract.issue(web3context.account, ethers.utils.parseEther(`${initialPoolTokenAmount}`) , options);
+
+        // const transferOwnershipTx = await relayTokenContract.transferOwnership();
+        return {
+            addingReserve : addingReserveTxs,
+            funding : fundingTxs,
+            issuranceTx : issuranceTx
+        }
+
+    }, [web3context])
+
+
+    const checkIfConnectorValid = useCallback(async (converterAddress) => {
+        const signer = web3context.library.getSigner();
+        const options = await constructTxOptions();
+
+        // Check token name & supply
+        console.log("check if connector valid...");
+        console.log("converterAddress : ", converterAddress);
+        const controllerContract = getContract(converterAddress ,SmartTokenControllerAbi, signer);
+        const token = await controllerContract.token();
+        console.log("token name : ", token);
+        const tokenContract = getContract(token, SmartTokenAbi, signer);
+        const totalSupply = await tokenContract.totalSupply();
+        console.log("total supply : ", ethers.utils.formatEther(totalSupply) );
+        const owner = await tokenContract.owner();
+        console.log("owner : ", owner);
+
+        // Check that the converter holds balance in each of its reserves
+        const converterContract = getContract(converterAddress, BancorConverterAbi, signer);
+        const reserveTokenCount = await converterContract.connectorTokenCount();
+        console.log("reserveTokenCount : ", reserveTokenCount);
+        for (let i = 0;i < reserveTokenCount; i += 1) {
+            const tokenAddress = await converterContract.connectorTokens(i);
+            console.log("tokenAddress : ", tokenAddress);
+            const ERC20contract = getContract(tokenAddress, ERC20TokenAbi, signer)
+            const balance = await ERC20contract.balanceOf(converterAddress);
+            console.log("balance : ", ethers.utils.formatEther(balance));
+        }
+
+    }, [web3context])
+
+
+    const registerConverter = useCallback(async (smartTokenAddress, converterAddress, tradingFee) => {
+
+        console.log("registerConverter : ", smartTokenAddress, converterAddress, tradingFee );
+        const signer = web3context.library.getSigner();
+        const options = await constructTxOptions();
+
+        const relayTokenContract = getContract(smartTokenAddress , SmartTokenAbi, signer);
+        const converterContract = getContract(converterAddress, BancorConverterAbi, signer);
+        const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer );
+
+        /*
+        const setConversionFeeTx = await converterContract.setConversionFee( Number(tradingFee) * (1000000/100) ,options);
+        const transferOwnershipTx = await relayTokenContract.transferOwnership(converterAddress,options);
+        const activateTx = await converterContract.acceptTokenOwnership(options);
+        */
+        
+        const isValid = await converterRegistry.isConverterValid(converterAddress);
+
+        console.log("isValid : ", isValid);
+
+        if (!isValid) {
+            throw new Error(`Can't add your converter ${converterAddress} to the registry. Make sure that is not duplicated with other reserve pools.`);
+        }
+
+        
+
+        const registerTx = await converterRegistry.addConverter(converterAddress, options);
+        
+        
+
+        
+        let setConversionFeeTx;
+        let transferOwnershipTx;
+        let activateTx;
+        // let registerTx;
+        /*
+        const owner = await relayTokenContract.owner();
+        console.log("owner / account / converteraddress : ", owner, web3context.account, converterAddress)
+
+        // const activateTx = await converterContract.acceptTokenOwnership(options);
+
+        // const isValid = await converterRegistry.isConverterValid(converterAddress);
+        // console.log("isValid : ", isValid);
+
+        await checkIfConnectorValid(converterAddress);
+
+        const result = await getLiquidityPool(converterAddress);
+        console.log("result : ", result);
+
+
+        // const registerTx = await converterRegistry.addConverter(converterAddress, options);
+        */
+
+        return {
+            setConversionFeeTx : setConversionFeeTx,
+            transferOwnershipTx : transferOwnershipTx ,
+            activateTx : activateTx,
+            registerTx: registerTx
+        }
+
+
+    }, [web3context, bancorContractBancorConverterRegistry])
+
     return {
         loading,
         getTokenName,
@@ -988,7 +1220,13 @@ export const useBancor = (web3context) => {
         fundLiquidityPool,
         withdrawLiquidityPool,
         getLiquidityPoolDeposit,
-        getAfforableAmount
+        getAfforableAmount,
+        createSmartToken,
+        getSmartToken,
+        checkIfAccountHasSufficientBalance,
+        createConverter,
+        addInitialReserve,
+        registerConverter
     }
 }
 

@@ -6,7 +6,7 @@ import WidgetLayout from "./layout";
 import { PAGES, HEADLINES, COLORS } from "../../constants";
 
 import SwapPanel from "./components/panels/swap";
-import LiquidityPoolPanel from "./components/panels/liquidityPool";
+import LiquidityPoolPanel, { ACTION_PANELS } from "./components/panels/liquidityPool";
 
 import Modal from "./modal";
 
@@ -46,7 +46,7 @@ const Widget = (props) => {
     const [disclaimer, setDisclaimer] = useState(widgetDescription);
     const [actionText, setActionText] = useState("");
 
-    const [ networkId, setNetworkId ] = useState();
+    const [networkId, setNetworkId] = useState();
 
     useEffect(() => {
         if (loadingErrorMessage) {
@@ -87,11 +87,11 @@ const Widget = (props) => {
 
     }, [clickCount])
 
-    const disabled = errorMessage || !web3ReactContext.active || loading ;
+    const disabled = errorMessage || !web3ReactContext.active || loading;
 
     useEffect(() => {
 
-        
+
         if ((networkId !== undefined) && (web3ReactContext.networkId !== undefined)) {
             if (networkId !== web3ReactContext.networkId) {
                 // TODO : Only Reload the widget
@@ -105,10 +105,10 @@ const Widget = (props) => {
         }
 
         if (web3ReactContext.networkId) {
-            setNetworkId(web3ReactContext.networkId);  
+            setNetworkId(web3ReactContext.networkId);
         };
 
-        
+
 
     }, [web3ReactContext.networkId, networkId])
 
@@ -165,9 +165,11 @@ const Widget = (props) => {
                         </Body>
 
                         <Footer>
-                            <ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
-                                {currentPage === PAGES.SWAP ? HEADLINES.ACTIONS[currentPage] : actionText}
-                            </ActionButton>
+                            {actionText !== ACTION_PANELS.CREATE_POOL &&
+                                <ActionButton color={widgetColor} onClick={handleClick} disabled={disabled}>
+                                    {currentPage === PAGES.SWAP ? HEADLINES.ACTIONS[currentPage] : actionText}
+                                </ActionButton>
+                            }
                             <StatusPanel
                                 width={width}
                             >
@@ -181,15 +183,15 @@ const Widget = (props) => {
 
                         </Footer>
                     </Container>
-                    { showModal && (
+                    {showModal && (
                         <Modal
-                        width={width}
-                        height={height}
-                    />
+                            width={width}
+                            height={height}
+                        />
                     )
 
                     }
-                    
+
                 </Fragment>
 
 
@@ -235,6 +237,7 @@ const Container = styled.div`
     padding: 20px;
     color: rgba(0, 0, 0, 0.7);
     height: 100%;
+    overflow: hidden;
 
     ${props => props.inactive && `
         opacity: 0.6;   
