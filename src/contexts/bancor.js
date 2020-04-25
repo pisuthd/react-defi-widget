@@ -699,7 +699,7 @@ export const useBancor = (web3context) => {
 
         const fee = await contract.conversionFee();
 
-        return Number(fee.toString()) / 1000000;;
+        return Number(fee.toString()) / 10000;;
 
     }, [web3context]);
 
