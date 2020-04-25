@@ -218,7 +218,7 @@ const SwapPanel = (props) => {
 
                 if (tx.hash) {
                     const { hash } = tx;
-                    const onClose = showProcessingModal("Please wait while your transaction is processing", `${hash}`);
+                    const onClose = showProcessingModal("Please wait while your transaction is being processed", `Tx : ${hash}`);
                     try {
                         await tx.wait(); // shows an error if it's failed
                     } catch (error) {

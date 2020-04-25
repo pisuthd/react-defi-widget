@@ -703,6 +703,44 @@ export const useBancor = (web3context) => {
 
     }, [web3context]);
 
+
+    const getMaxConversionFee = useCallback(async (converterAddress) => {
+        const signer = web3context.library.getSigner();
+        const contract = getContract(converterAddress, BancorConverterAbi, signer);
+        const fee = await contract.maxConversionFee();
+        return Number(fee.toString()) / 1000000;;
+    }, [web3context]);
+
+
+    const getReserves = useCallback(async (converterAddress) => {
+        const signer = web3context.library.getSigner();
+        const contract = getContract(converterAddress, BancorConverterAbi, signer);
+        const connectorTokenCount = await contract.connectorTokenCount();
+        let reserves = []
+        
+        for (let i = 0; i < Number(connectorTokenCount); i++) {
+            const reserveAddress = await contract.connectorTokens(i);
+            const balance = await contract.getConnectorBalance(reserveAddress);
+            const weight = await contract.getReserveRatio(reserveAddress);
+            reserves.push({
+                tokenAddress : reserveAddress,
+                initialAmount : `${ethers.utils.formatEther(balance)}` ,
+                weight : `${(Number(weight) / 10000)}` 
+            })
+        }
+
+        return reserves;
+    }, [web3context]);
+
+    const getTotalSupplyByConverter = useCallback(async (converterAddress) => {
+        const signer = web3context.library.getSigner();
+        const controllerContract = getContract(converterAddress ,SmartTokenControllerAbi, signer);
+        const token = await controllerContract.token();
+        const tokenContract = getContract(token, SmartTokenAbi, signer);
+        const totalSupply = await tokenContract.totalSupply();
+        return ethers.utils.formatEther(totalSupply);
+    }, [web3context])
+
     const getLiquidityPoolDeposit = useCallback(async (poolObject) => {
         
 
@@ -1137,10 +1175,19 @@ export const useBancor = (web3context) => {
 
     }, [web3context])
 
+    const converterOwner = useCallback( async (converterAddress) => {
+        const signer = web3context.library.getSigner();
+        const controllerContract = getContract(converterAddress ,SmartTokenControllerAbi, signer);
+        const token = await controllerContract.token();
+        const tokenContract = getContract(token, SmartTokenAbi, signer);
+        const owner = await tokenContract.owner();
+        return owner;
+    } ,[web3context])
 
-    const registerConverter = useCallback(async (smartTokenAddress, converterAddress, tradingFee) => {
 
-        console.log("registerConverter : ", smartTokenAddress, converterAddress, tradingFee );
+    const activateConverter = useCallback(async (smartTokenAddress, converterAddress, tradingFee) => {
+
+        console.log("activateConverter : ", smartTokenAddress, converterAddress, tradingFee );
         const signer = web3context.library.getSigner();
         const options = await constructTxOptions();
 
@@ -1148,56 +1195,35 @@ export const useBancor = (web3context) => {
         const converterContract = getContract(converterAddress, BancorConverterAbi, signer);
         const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer );
 
-        /*
         const setConversionFeeTx = await converterContract.setConversionFee( Number(tradingFee) * (1000000/100) ,options);
         const transferOwnershipTx = await relayTokenContract.transferOwnership(converterAddress,options);
         const activateTx = await converterContract.acceptTokenOwnership(options);
-        */
         
-        const isValid = await converterRegistry.isConverterValid(converterAddress);
-
-        console.log("isValid : ", isValid);
-
-        if (!isValid) {
-            throw new Error(`Can't add your converter ${converterAddress} to the registry. Make sure that is not duplicated with other reserve pools.`);
-        }
-
-        
-
-        const registerTx = await converterRegistry.addConverter(converterAddress, options);
-        
-        
-
-        
-        let setConversionFeeTx;
-        let transferOwnershipTx;
-        let activateTx;
-        // let registerTx;
-        /*
-        const owner = await relayTokenContract.owner();
-        console.log("owner / account / converteraddress : ", owner, web3context.account, converterAddress)
-
-        // const activateTx = await converterContract.acceptTokenOwnership(options);
-
-        // const isValid = await converterRegistry.isConverterValid(converterAddress);
-        // console.log("isValid : ", isValid);
-
-        await checkIfConnectorValid(converterAddress);
-
-        const result = await getLiquidityPool(converterAddress);
-        console.log("result : ", result);
-
-
-        // const registerTx = await converterRegistry.addConverter(converterAddress, options);
-        */
-
         return {
             setConversionFeeTx : setConversionFeeTx,
             transferOwnershipTx : transferOwnershipTx ,
-            activateTx : activateTx,
-            registerTx: registerTx
+            activateTx : activateTx
         }
 
+
+    }, [web3context, bancorContractBancorConverterRegistry]);
+
+    const registerConverter = useCallback(async (converterAddress) => {
+
+        console.log("register : ", converterAddress);
+        const signer = web3context.library.getSigner();
+        const options = await constructTxOptions();
+
+        const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer );
+        const isValid = await converterRegistry.isConverterValid(converterAddress);
+
+        if (!isValid) {
+            throw new Error(`Can't add your converter to the registry. Make sure that is not duplicated with other pools.`);
+        }
+
+        const registerTx = await converterRegistry.addConverter(converterAddress, options);
+
+        return registerTx;
 
     }, [web3context, bancorContractBancorConverterRegistry])
 
@@ -1216,6 +1242,7 @@ export const useBancor = (web3context) => {
         convert,
         getETHBalance,
         getConversionFee,
+        getMaxConversionFee,
         getReserveRatio,
         fundLiquidityPool,
         withdrawLiquidityPool,
@@ -1226,6 +1253,10 @@ export const useBancor = (web3context) => {
         checkIfAccountHasSufficientBalance,
         createConverter,
         addInitialReserve,
+        activateConverter,
+        converterOwner,
+        getReserves,
+        getTotalSupplyByConverter,
         registerConverter
     }
 }
