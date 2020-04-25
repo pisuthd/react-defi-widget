@@ -195,12 +195,14 @@ const SwapPanel = (props) => {
             // handleProcessing(true);
 
             console.log("Convert...", source, path, sourceAmount);
-
+            /*
             const round = (num) => {
                 return +(Math.floor(num + "e+3") + "e-3");
             }
 
             const normalizedAmount = `${round(Number(sourceAmount))}`;
+            */
+           const normalizedAmount = sourceAmount;
 
             console.log("normalizedAmount : ", normalizedAmount);
 
@@ -233,17 +235,13 @@ const SwapPanel = (props) => {
                     try {
                         await tx.wait(); // shows an error if it's failed
                     } catch (error) {
-                        
+                        alert(error.message);
                     }
                     onClose();
 
                     console.log("done...");
 
                 }
-
-
-
-
 
             } catch (error) {
                 console.log("onConvert error : ", error)
@@ -265,27 +263,33 @@ const SwapPanel = (props) => {
     const onSourceChange = useCallback((newSource) => {
 
         if (newSource[0] === destination[0]) {
-            alert("Can't choose the same token")
+            // alert("Can't choose the same token")
+            setSource(destination);
+            setDestination(source);
+            setSourceModal(false);
             return;
         }
 
         setSource(newSource);
         setSourceModal(false);
 
-    }, [destination])
+    }, [destination, source])
 
 
     const onDestinationChange = useCallback((newDestination) => {
 
         if (newDestination[0] === source[0]) {
-            alert("Can't choose the same token")
+            // alert("Can't choose the same token")
+            setDestination(source);
+            setSource(destination);
+            setDestinationModal(false);
             return;
         }
 
         setDestination(newDestination);
         setDestinationModal(false);
 
-    }, [source])
+    }, [source, destination])
 
     useEffect(() => {
 
@@ -457,9 +461,10 @@ const SwapPanel = (props) => {
                 </InputGroup>
                 <AccountSection>
                     <AccountLeft>
-                        BALANCE {sourceBalance == "0.0" ? sourceBalance : <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)} >{sourceBalance}</Percentage>}
+                        BALANCE {sourceBalance}
                     </AccountLeft>
                     <AccountRight>
+                        {/*
                         {sourceBalance !== "0.0" && (
                             <span>
                                 <Percentage onClick={() => setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
@@ -467,6 +472,7 @@ const SwapPanel = (props) => {
                                 <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
                             </span>
                         )}
+                        */}
                     </AccountRight>
                 </AccountSection>
             </Column>
