@@ -22,8 +22,8 @@ export const truncateString = (str, num) => {
 
 export const toFixed = (num, fixed) => {
 
-    if ((1/fixed) >= num) {
-        return num.toFixed(fixed);
+    if ((1/fixed) >= Number(num)) {
+        return Number(num).toFixed(fixed);
     }
     var re = new RegExp('^-?\\d+(?:\.\\d{0,' + (fixed || -1) + '})?');
     return num.toString().match(re)[0];
