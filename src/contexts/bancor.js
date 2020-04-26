@@ -586,98 +586,6 @@ export const useBancor = (web3context) => {
     }, [web3context, bancorContractBancorNetwork])
 
 
-    const convertOLD = useCallback(async (path, sourceTokenAddress, sourceAmount, sourceDecimal, destinationAmount, slipRate, fromETH, toETH, affiliateAccount = "0x0000000000000000000000000000000000000000", affiliateFee = "0") => {
-
-
-        try {
-
-            const sourceAmountWei = ethers.utils.parseUnits(`${sourceAmount}`, sourceDecimal);
-            // const allowanceAmount = ethers.utils.parseUnits(`${Math.ceil(Number(sourceAmount))}`, sourceDecimal);
-            const slipAmount = (destinationAmount.mul(ethers.utils.bigNumberify(slipRate))).div(ethers.utils.bigNumberify(1000000));
-            // console.log("slipAmount -> ", slipAmount.toString());
-            const destinationAmountWei = destinationAmount.sub(slipAmount);
-
-            const signer = web3context.library.getSigner();
-
-            const estimatedGasPrice = await getGasPrice();
-            const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
-
-            const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
-
-            console.log("gasPrice : ", finalGasPrice.toString());
-
-            let options = {
-                gasLimit: GAS_LIMIT,
-                gasPrice: finalGasPrice, // Minimum 3 Gwei
-            };
-
-            const tokenContract = getContract(sourceTokenAddress, SmartTokenAbi, signer);
-            const allowance = await tokenContract.allowance(web3context.account, bancorContractBancorNetwork);
-            console.log("allowance : ", allowance.toString());
-
-            const diff = sourceAmountWei.sub(allowance);
-
-            if ((diff > 0) && (!fromETH)) {
-                console.log("diff : ", diff.toString());
-
-                if ((allowance > 0) && (!fromETH)) {
-                    console.log("allowance is not zero need to clear it first...");
-                    const clearTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
-                    // await clearTx.wait();
-                }
-
-                const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, sourceAmountWei, options);
-                console.log("waiting for confirmation : ", approvalTx)
-                // await approvalTx.wait(); // <-- can't remove
-            }
-
-            if (fromETH) {
-                options = {
-                    ...options,
-                    value: sourceAmountWei
-                }
-            }
-            console.log("isETH : ", fromETH, options);
-            // await approvalTx.wait();
-
-
-            const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
-
-            let convertTx;
-            /*
-            if ( toETH ) {
-                convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
-            } else {
-                convertTx = await networkContract.convert2(path, sourceAmountWei , destinationAmountWei ,"0x0000000000000000000000000000000000000000", "0", options);
-            } 
-            */
-            if (!fromETH) {
-                convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount, affiliateFee, options);
-            } else {
-                convertTx = await networkContract.convert2(path, sourceAmountWei, destinationAmountWei, affiliateAccount, affiliateFee, options);
-            }
-
-
-            // convertTx = await networkContract.claimAndConvert2(path, sourceAmountWei , destinationAmountWei  ,"0x0000000000000000000000000000000000000000", "0", options);
-            // convertTx = await networkContract.convert2(path, sourceAmountWei , 1 ,"0x0000000000000000000000000000000000000000", "0", options);
-
-            console.log("convertTx : ", convertTx);
-
-
-
-            return convertTx;
-
-
-        } catch (error) {
-            // throw new Error(error);
-            console.log("error : ", error);
-            return undefined;
-        }
-
-
-    }, [web3context, bancorContractBancorNetwork])
-
-
     const convert = useCallback( async (path, baseTokenAddress, baseAmountRaw, baseDecimal, pairAmount, slipRate, fromETH, toETH, affiliateAccount = "0x0000000000000000000000000000000000000000", affiliateFee = "0") => {
         
         const baseAmount = ethers.utils.parseUnits(`${baseAmountRaw}`, baseDecimal);
@@ -697,9 +605,9 @@ export const useBancor = (web3context) => {
             if ((Number(ethers.utils.formatEther(allowance)) > 0) && (!fromETH)) {
                 console.log("allowance is not zero need to clear it first...");
                 const resetTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
-                // const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
-                // await resetTx.wait();
-                // onClose();
+                const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
+                await resetTx.wait();
+                onClose();
             }
 
             await tokenContract.approve(bancorContractBancorNetwork, baseAmount, options);
