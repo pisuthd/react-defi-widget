@@ -187,18 +187,13 @@ const Widget = (props) => {
                         <Modal
                             width={width}
                             height={height}
+                            color={widgetColor}
+                            web3ReactContext={web3ReactContext}
                         />
-                    )
-
-                    }
-
+                    )}
                 </Fragment>
-
-
             }
         </ContainerDimensions>
-
-
     )
 }
 

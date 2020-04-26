@@ -1,4 +1,8 @@
 import React, { createContext, useContext, useReducer, useState, useMemo, useCallback, useEffect } from "react";
+import { ethers } from "ethers";
+import { BANCOR_CONTRACTS, TOKEN_CONTRACTS } from "../constants";
+import { EtherTokenAbi } from "../contracts/bancor/EtherToken";
+import { getContract }  from "./bancor";
 
 const ModalContext = createContext();
 
@@ -8,14 +12,16 @@ const useModalContext = () => {
 
 const ACTIONS = {
     UPDATE_MESSAGE: "UPDATE_MESSAGE",
-    SHOW_MODAL: "SHOW_MODAL"
+    SHOW_MODAL: "SHOW_MODAL",
+    TICK: "TICK"
 }
 
 export const MODAL_TYPES = {
     PROCESSING: "PROCESSING",
     WARNING: "WARNING",
     ERROR: "ERROR",
-    NONE: "NONE"
+    NONE: "NONE",
+    ETHERTOKEN : "ETHERTOKEN"
 }
 
 const reducer = (state, { type, payload }) => {
@@ -42,6 +48,14 @@ const reducer = (state, { type, payload }) => {
                 type: type
             }
         }
+        case ACTIONS.TICK : {
+            const { newTick } = payload;
+            return {
+                ...state,
+                tick : newTick
+            }
+        }
+
         default: {
             throw Error(`Unexpected action type in ModalContext reducer: '${type}'.`)
         }
@@ -55,7 +69,8 @@ const provider = ({ children }) => {
         message: "",
         title: "",
         type : MODAL_TYPES.NONE,
-        showModal: false
+        showModal: false,
+        tick: 0
     })
 
     const updateMessage = useCallback((type, title, message) => {
@@ -67,16 +82,21 @@ const provider = ({ children }) => {
         dispatch({ type: ACTIONS.SHOW_MODAL, payload: { status } })
     }, [])
 
+    const updateTick = useCallback((newTick) => {
+        dispatch({ type: ACTIONS.TICK, payload: { newTick } })
+    }, []);
 
     return (
         <ModalContext.Provider
             value={useMemo(() => [state, {
                 updateMessage,
-                updateShowModal
+                updateShowModal,
+                updateTick
             }], [
                 state,
                 updateMessage,
-                updateShowModal
+                updateShowModal,
+                updateTick
             ])}
         >
             {children}
@@ -87,7 +107,7 @@ const provider = ({ children }) => {
 
 export const useModal = () => {
 
-    const [{ message, title, showModal, type }, { updateMessage, updateShowModal }] = useModalContext();
+    const [{ message, title, showModal, type, tick }, { updateMessage, updateShowModal, updateTick }] = useModalContext();
 
     useEffect(() => {
         // updateShowModal(true);
@@ -111,12 +131,116 @@ export const useModal = () => {
         return onClose;
     },[])
 
+    const showEtherTokenModal = useCallback((title, message) => {
+        updateShowModal(true);
+        updateMessage(MODAL_TYPES.ETHERTOKEN, title, message);
+    }, []);
+
+    const closeEtherTokenModal = useCallback(() => {
+        onClose();
+        updateTick(tick+1);
+    }, [tick]);
+
+    const getNativeETHBalance = useCallback(async (web3context) => {
+        const signer = web3context.library.getSigner();
+        const balance = await signer.provider.getBalance(web3context.account);
+        return ethers.utils.formatEther(balance);
+    },[])
+
+    const getETHTokenBalance=  useCallback(async (web3context) => {
+        const signer = web3context.library.getSigner();
+        const { networkId, account } = web3context;
+
+        let contractAddress;
+
+        if (networkId === 1 ) {
+            contractAddress= TOKEN_CONTRACTS.MAINNET.BANCOR_ETHER;
+        } else if (networkId === 3) {
+            contractAddress= TOKEN_CONTRACTS.ROPSTEN.BANCOR_ETHER;
+        } else {
+            return 0;
+        };
+
+        if (!contractAddress) {
+            return;
+        }
+
+        const tokenContract = getContract(contractAddress,EtherTokenAbi, signer );
+        const balance = await tokenContract.balanceOf(account);
+        return ethers.utils.formatEther(balance);
+    },[]);
+
+    const getTxOptions = useCallback(async (web3context) => {
+        const signer = web3context.library.getSigner();
+        const price = await signer.provider.getGasPrice();
+        const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
+        const finalGasPrice = price.lt(minimumGasPrice) ? minimumGasPrice : price;
+        let options = {
+            gasLimit: 1000000,
+            gasPrice: finalGasPrice, // Minimum 3 Gwei
+        };
+
+        return options;
+    }, []) 
+
+    const depositETHToken = useCallback(async (web3context, depositAmount ) => {
+        const signer = web3context.library.getSigner();
+        let options = await getTxOptions(web3context);
+        const { networkId, account } = web3context;
+        let contractAddress;
+
+        if (networkId === 1 ) {
+            contractAddress= TOKEN_CONTRACTS.MAINNET.BANCOR_ETHER;
+        } else if (networkId === 3) {
+            contractAddress= TOKEN_CONTRACTS.ROPSTEN.BANCOR_ETHER;
+        } else {
+            throw new Error("Network is not supported.")
+        };
+        const tokenContract = getContract(contractAddress,EtherTokenAbi, signer );
+
+        options = {
+            ...options,
+            value : ethers.utils.parseEther(`${depositAmount}`)
+        }
+        const tx = await tokenContract.deposit( options);
+
+        return tx;
+
+    }, []);
+
+    const withdrawETHToken = useCallback(async (web3context, withdrawAmount ) => {
+        const signer = web3context.library.getSigner();
+        const options = await getTxOptions(web3context);
+        const { networkId, account } = web3context;
+        let contractAddress;
+
+        if (networkId === 1 ) {
+            contractAddress= TOKEN_CONTRACTS.MAINNET.BANCOR_ETHER;
+        } else if (networkId === 3) {
+            contractAddress= TOKEN_CONTRACTS.ROPSTEN.BANCOR_ETHER;
+        } else {
+            throw new Error("Network is not supported.")
+        };
+        const tokenContract = getContract(contractAddress,EtherTokenAbi, signer );
+        const tx = await tokenContract.withdraw(ethers.utils.parseEther(`${withdrawAmount}`), options);
+
+        return tx;
+    }, []);
+
+
     return {
         showModal,
         message,
         title,
         type,
-        showProcessingModal
+        tick,
+        showProcessingModal,
+        showEtherTokenModal,
+        closeEtherTokenModal,
+        getNativeETHBalance,
+        getETHTokenBalance,
+        depositETHToken,
+        withdrawETHToken
     }
 
 
