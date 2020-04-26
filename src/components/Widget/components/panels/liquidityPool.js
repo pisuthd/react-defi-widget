@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useEffect, Fragment } from 'react';
 import PieChart from 'react-minimal-pie-chart';
 import { useBancor } from "../../../../contexts/bancor";
+import { useModal } from "../../../../contexts/modal";
 import { getIcon } from "../../../../utils/token";
 import { Header } from "../../../Common";
 import PoolCreationPanel from "./poolCreation";
@@ -8,6 +9,8 @@ import styled from "styled-components";
 
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
+
+import { toFixed } from "../../../../utils/conversion";
 
 export const ACTION_PANELS = {
     ADD_LIQUIDITY: "Add Liquidity",
@@ -34,7 +37,7 @@ const LiquidityPoolPanel = (props) => {
     const networkId = web3ReactContext.networkId;
     const [pools, setPools] = useState([]);
     const [loadingPools, setLoadingPools] = useState(false);
-
+    
     const {
         loading,
         listLiquidityPools,
@@ -61,12 +64,15 @@ const LiquidityPoolPanel = (props) => {
         registerConverter
     } = useBancor(web3ReactContext);
 
+    const { showProcessingModal, showEtherTokenModal, showModal, tick } = useModal();
+
     useEffect(() => {
         (async () => {
             if (!loading) {
 
                 // List liquidity pools
                 setLoadingPools(true);
+                const onClose = showProcessingModal("Loading Liquidity Pools...", "");
                 const poolList = await listLiquidityPools();
 
                 // Load reserves balance
@@ -136,6 +142,7 @@ const LiquidityPoolPanel = (props) => {
 
                                         setPools(finalResult.filter(item => item.reserves.length !== 1));
                                         setLoadingPools(false);
+                                        onClose();
                                     }
                                 )
 
@@ -155,7 +162,7 @@ const LiquidityPoolPanel = (props) => {
 
     }, [loading, networkId])
 
-    const isLoading = loading || loadingPools;
+    const isLoading = loading;
 
     const [actionPanel, setActionPanel] = useState(ACTION_PANELS.ADD_LIQUIDITY);
     const [currentPool, setCurrentPool] = useState();
@@ -170,9 +177,7 @@ const LiquidityPoolPanel = (props) => {
     const [isLoadingDeposited, setLoadingDeposited] = useState(false);
 
     useEffect(() => {
-
         updateActionText(actionPanel);
-        
     }, [actionPanel])
 
     useEffect(() => {
@@ -211,9 +216,12 @@ const LiquidityPoolPanel = (props) => {
 
     const updateDepositAmount = useCallback(async () => {
 
+        const onClose = showProcessingModal("Checking your deposits...", "");
+
         const depositAmount = await getLiquidityPoolDeposit(currentPool);
         setDeposit(depositAmount);
         setLoadingDeposited(false);
+        onClose();
 
     }, [currentPool])
 
@@ -375,7 +383,7 @@ const LiquidityPoolPanel = (props) => {
                                 />
 
                             }
-                            <div style={{ fontSize: "12px", paddingTop: "10px", textAlign : "center"}}>
+                            <div style={{ fontSize: "12px", paddingTop: "10px", textAlign: "center" }}>
                                 <b>Pool Fee</b>{` `}{currentPoolFee} /  <b>Ratio</b>{` `}{currentPoolRatio}
                             </div>
 
@@ -396,7 +404,6 @@ const LiquidityPoolPanel = (props) => {
                                         </ChartLeftPanel>
                                         <ChartRightPanel>
                                             <div>
-                                                {isLoadingDeposited && <img src={loadingIcon} width="12px" height="12px" />}
                                                 <b>Deposited</b>
                                                 {deposit.map((item, index) => {
                                                     return (
@@ -435,6 +442,10 @@ const LiquidityPoolPanel = (props) => {
                                 getAfforableAmount={getAfforableAmount}
                                 color={color}
                                 width={width}
+                                tick={tick}
+                                showProcessingModal={showProcessingModal}
+                                showEtherTokenModal={showEtherTokenModal}
+                                isModalActive={showModal}
                             />
 
 
@@ -548,7 +559,7 @@ const LiquidityInputPanel = styled.div`
     top: 50%;
     -ms-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
-    width: 225px
+    width: 200px
 `;
 
 const ChartDepositPanel = styled.div`
@@ -632,13 +643,13 @@ const TokenBalanceContainer = styled.div`
 
 const LiquiditySummaryContainer = styled.div`
     position: relative; 
-    ${props => props.isMobile 
-    ?
-    `
+    ${props => props.isMobile
+        ?
+        `
         height: 140px;
     `
-    :
-    `
+        :
+        `
         height: 100%;
     `
     }
@@ -731,6 +742,7 @@ const InputGroupIcon = styled.div`
 const InputGroupArea = styled.div`
     width:100%;
 
+
     .slider {
         -webkit-appearance: none;
         width: 100%;
@@ -809,12 +821,17 @@ const ActionInputPanel = (props) => {
         getAfforableAmount,
         color,
         width,
-        updateDepositAmount
+        tick,
+        updateDepositAmount,
+        showProcessingModal,
+        showEtherTokenModal,
+        isModalActive
+        
     } = props;
 
     const [isLoadingBalance, setLoadingBalance] = useState(false);
     const [balances, setBalances] = useState([]);
-    
+
     const [inputMax, setInputMax] = useState(1000000);
     const [inputMin, setInputMin] = useState(0);
     const [inputAmount, setInputAmount] = useState(0);
@@ -832,6 +849,14 @@ const ActionInputPanel = (props) => {
         }
 
     }, [currentPool]);
+
+    useEffect(() => {
+        if (tick > 0) {
+            (async () => {
+                await updateBalance();
+            })()
+        }
+    }, [tick])
 
     useEffect(() => {
         // Handle click event from Parent Component
@@ -860,8 +885,8 @@ const ActionInputPanel = (props) => {
 
                 const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
                 try {
-                    const tx  = await fundLiquidityPool(currentPool, input);
-                    
+                    const tx = await fundLiquidityPool(currentPool, input);
+
                     await tx.wait();
                     console.log("funded.");
                     await updateBalance();
@@ -869,8 +894,8 @@ const ActionInputPanel = (props) => {
                 } catch (error) {
                     console.log("error : ", error);
                 }
-                
-                
+
+
                 break;
             case ACTION_PANELS.REMOVE_LIQUIDITY:
                 console.log("REMOVE_LIQUIDITY ...");
@@ -879,10 +904,10 @@ const ActionInputPanel = (props) => {
                     return;
                 }
 
-                const liquidateInput = ( (Number(poolTokenAmount*100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000;
+                const liquidateInput = ((Number(poolTokenAmount * 100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000;
                 try {
-                    const liquidateTx  = await withdrawLiquidityPool(currentPool, liquidateInput);
-                    
+                    const liquidateTx = await withdrawLiquidityPool(currentPool, liquidateInput);
+
                     await liquidateTx.wait();
                     console.log("liquidated.");
                     await updateBalance();
@@ -894,18 +919,19 @@ const ActionInputPanel = (props) => {
                 break;
         }
 
-    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount, poolTokenAmount, poolTokenSupply ])
+    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount, poolTokenAmount, poolTokenSupply])
 
     const updateBalance = useCallback(async () => {
 
         if (currentPool) {
             setLoadingBalance(true);
+            const onClose = showProcessingModal("Loading balances...");
             let result = [];
             try {
 
                 for (let i = 0; i < currentPool.reserves.length; i += 1) {
                     const symbolName = currentPool.symbols[i] || "";
-
+                    /*
                     if (symbolName === "ETH") {
                         console.log("Check native ETH...");
                         const amount = await getETHBalance();
@@ -920,17 +946,21 @@ const ActionInputPanel = (props) => {
                             balance: Number(amount.toString()).toFixed(6) + ""
                         })
                     }
-
+                    */
+                   const amount = await getTokenBalance(currentPool.reserves[i][1]);
+                        result.push({
+                            symbol: symbolName,
+                            balance: `${toFixed(Number(amount), 6)}` 
+                    })
                 }
-
-
             } catch (error) {
                 console.log("fetch rate error : ", error);
             }
             setBalances(result);
-            
+
             await updateAffordableToken(result);
             setLoadingBalance(false);
+            onClose();
         }
 
     }, [currentPool])
@@ -970,7 +1000,7 @@ const ActionInputPanel = (props) => {
     const handleChange = useCallback((e) => {
         e.preventDefault();
 
-        
+
 
         if (actionPanel === ACTION_PANELS.ADD_LIQUIDITY) {
             if (maxAffordablePercentage !== 0 && isLoadingBalance === false) {
@@ -979,7 +1009,7 @@ const ActionInputPanel = (props) => {
         }
 
         if (actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY) {
-            if (poolTokenAmount!==0 && isLoadingBalance === false) {
+            if (poolTokenAmount !== 0 && isLoadingBalance === false) {
                 setInputAmount(e.target.value);
             }
         }
@@ -992,15 +1022,20 @@ const ActionInputPanel = (props) => {
     }
 
 
-    
+
 
     return (
         <LiquiditySummaryContainer isMobile={width <= 600} >
 
-            { actionPanel === ACTION_PANELS.ADD_LIQUIDITY &&
-            (
-                <Fragment>
+            {actionPanel === ACTION_PANELS.ADD_LIQUIDITY &&
+                (
+                    <Fragment>
+                        <PoolNavigation 
+                            width={width}
+                        />
+                        {/*
                     <ChartLeftPanel style={{  fontSize: "12px" }}>
+                        
                         <b>Balance</b>
                         {balances.map((item, index) => {
                             return (
@@ -1009,116 +1044,165 @@ const ActionInputPanel = (props) => {
                                 </TokenAmount>
                             )
                         })}
-                    </ChartLeftPanel>
-                    <LiquidityInputPanel>
-                        <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
-                            <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
-                        </InputGroupArea>
-                        <AccountContainer>
-                            <AccountLeft style={{ flex: "40%" }}>
-                                Amount {(((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000).toFixed(6))}%
+                    </ChartLeftPanel>*/}
+                        <LiquidityInputPanel>
+                            <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
+                                <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
+                            </InputGroupArea>
+                            <AccountContainer>
+                                <AccountLeft style={{ flex: "40%" }}>
+                                    Amount {(((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000).toFixed(6))}%
                             </AccountLeft>
-                            <AccountRight style={{ flex: "60%" }}>
-                                Max Affordable {Number(maxAffordablePercentage).toFixed(6)}%
+                                <AccountRight style={{ flex: "60%" }}>
+                                    Max Affordable {Number(maxAffordablePercentage).toFixed(6)}%
                             </AccountRight>
-                        </AccountContainer>
-                        <div style={{ textAlign: "center", marginTop: "8px" }}>
+                            </AccountContainer>
+                            <div style={{ textAlign: "center", marginTop: "8px" }}>
 
-                            {currentPool.symbols.map((name, index) => {
-                                return (
-                                    <span key={index}>
-                                        <TokenLogo src={getIcon(name)} alt={name} />
-                                    </span>
-                                )
-                            })}
-                            <div style={{ fontSize: "12px", marginTop: "8px" }}>
-                                <b>Current Stake / Total Pool Tokens</b>
-                                <div>
-                                    {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                                {currentPool.symbols.map((name, index) => {
+                                    return (
+                                        <span key={index}>
+                                            <TokenLogo src={getIcon(name)} alt={name} />
+                                        </span>
+                                    )
+                                })}
+                                <div style={{ fontSize: "12px", marginTop: "8px" }}>
+                                    <b>Current Stake / Total Pool Tokens</b>
+                                    <div>
+                                        {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                                    </div>
                                 </div>
                             </div>
+                        </LiquidityInputPanel>
+                        <ChartRightPanel style={{ fontSize: "12px" }}>   
+                            <b>Balances</b>
+                            {currentPool.reserves.map((item, index) => {
+                                const symbol = currentPool.symbols[index];
+                                const balance = (balances.find(item => item.symbol === symbol));
+                                const balanceAmount = balance ? balance.balance : "0.00";
+                                return (
+                                    <div key={index}>
+                                        <div>
+                                            {balanceAmount}{` `}{symbol}
+                                        </div>
+                                        { (Number(inputAmount) !== 0) &&
+                                        (
+                                            <div style={{color: "red", fontWeight: "600"}}>
+                                                (-{((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{symbol})
+                                            </div>
+                                        )
 
+                                        }
+                                        { symbol ==="ETH" && (
+                                            <WrappedEtherBar
+                                                showEtherTokenModal={showEtherTokenModal}
+                                                isModalActive={isModalActive || isLoadingBalance}
+                                            />
+                                        )}
+                                    </div>
+                                )
+                            })}
+                            
 
-                        </div>
-                    </LiquidityInputPanel>
-                    <ChartRightPanel style={{ fontSize: "12px" }}>
-                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Tx Details</b>
-                        {currentPool.reserves.map((item, index) => {
-                            return (
-                                <div key={index}>
-                                    {((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{currentPool.symbols[index]}
-                                </div>
-                            )
-                        })}
-                    </ChartRightPanel>
-                </Fragment>
-            )
+                        </ChartRightPanel>
+                    </Fragment>
+                )
 
             }
 
-            { actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY &&
-            (
-                <Fragment>
-                    <ChartLeftPanel style={{  fontSize: "12px" }}>
-                        <b>Balance</b>
-                        {balances.map((item, index) => {
-                            return (
-                                <TokenAmount danger={item.balance === "0.000000"} key={index}>
-                                    {item.balance}{` `}{item.symbol}
-                                </TokenAmount>
-                            )
-                        })}
-                    </ChartLeftPanel>
-                    <LiquidityInputPanel>
-                        <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
-                            <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
-                        </InputGroupArea>
-                        <AccountContainer>
-                            <AccountLeft style={{ flex: "40%" }}>
-                                Amount {((( (Number(poolTokenAmount*100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000).toFixed(6))}%
+            {actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY &&
+                (
+                    <Fragment>
+                        <PoolNavigation />
+
+                        <LiquidityInputPanel>
+                            <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
+                                <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
+                            </InputGroupArea>
+                            <AccountContainer>
+                                <AccountLeft style={{ flex: "40%" }}>
+                                    Amount {((((Number(poolTokenAmount * 100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000).toFixed(6))}%
                             </AccountLeft>
-                            <AccountRight style={{ flex: "60%" }}>
-                                Max Affordable {(Number(poolTokenAmount*100) / Number(poolTokenSupply)).toFixed(6)}%
+                                <AccountRight style={{ flex: "60%" }}>
+                                    Max Affordable {(Number(poolTokenAmount * 100) / Number(poolTokenSupply)).toFixed(6)}%
                             </AccountRight>
-                        </AccountContainer>
-                        <div style={{ textAlign: "center", marginTop: "8px" }}>
-                            {currentPool.symbols.map((name, index) => {
-                                return (
-                                    <span key={index}>
-                                        <TokenLogo src={getIcon(name)} alt={name} />
-                                    </span>
-                                )
-                            })}
-                             <div style={{ fontSize: "12px", marginTop: "8px" }}>
-                                <b>Current Stake / Total Pool Tokens</b>
-                                <div>
-                                    {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 ) &&  `(-${( (poolTokenAmount * Number(inputAmount))/ 1000000 ).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                            </AccountContainer>
+                            <div style={{ textAlign: "center", marginTop: "8px" }}>
+                                {currentPool.symbols.map((name, index) => {
+                                    return (
+                                        <span key={index}>
+                                            <TokenLogo src={getIcon(name)} alt={name} />
+                                        </span>
+                                    )
+                                })}
+                                <div style={{ fontSize: "12px", marginTop: "8px" }}>
+                                    <b>Current Stake / Total Pool Tokens</b>
+                                    <div>
+                                        {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0) && `(-${((poolTokenAmount * Number(inputAmount)) / 1000000).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                       
-                    </LiquidityInputPanel>
-                    <ChartRightPanel style={{ fontSize: "12px" }}>
-                        {isLoadingBalance && <img src={loadingIcon} width="12px" height="12px" />}<b>Tx Details</b>
-                        {currentPool.reserves.map((item, index) => {
+
+                        </LiquidityInputPanel>
+                        <ChartRightPanel style={{ fontSize: "12px" }}>
+                            <b>Balance</b>
+                            {currentPool.reserves.map((item, index) => {
+                            const symbol = currentPool.symbols[index];
+                            const balance = (balances.find(item => item.symbol === symbol));
+                            const balanceAmount = balance ? balance.balance : "0.00";
                             return (
                                 <div key={index}>
-                                    {((Number(item[0]) * 0.01 * ((((Number(poolTokenAmount*100) / Number(poolTokenSupply))) * Number(inputAmount)) / 1000000)) ).toFixed(6)}{` `}{currentPool.symbols[index]}
+                                    <div>
+                                        {balanceAmount}{` `}{symbol}
+                                    </div>
+                                    { (Number(inputAmount) !== 0) &&
+                                    (
+                                        <div style={{color: "green", fontWeight: "600"}}>
+                                            (+{((Number(item[0]) * 0.01 * ((((Number(poolTokenAmount*100) / Number(poolTokenSupply))) * Number(inputAmount)) / 1000000)) ).toFixed(6)}{` `}{symbol})
+                                        </div>
+                                    )
+
+                                    }
+                                    
                                 </div>
-                            )
-                        })}
-                    </ChartRightPanel>
-                </Fragment>
-            )
+                                )
+                            })}
+                        </ChartRightPanel>
+                    </Fragment>
+                )
 
             }
 
 
 
 
-            
+
 
         </LiquiditySummaryContainer>
+    )
+}
+
+const WrappedEtherBar = ({showEtherTokenModal, isModalActive}) => {
+
+    const showModal = useCallback((e) => {
+        if (!isModalActive) {
+            showEtherTokenModal("", "")
+        }
+    },[isModalActive])
+    
+    return (
+        <div
+            style={{
+                fontSize : "10px",
+                fontWeight : "600",
+                fontStyle : "italic",
+                cursor:"pointer",
+                opacity: isModalActive ? "0.6" : "1.0"
+            }}
+            onClick={showModal}
+        >
+            Wrap/Unwrap ETH
+        </div>
     )
 }
 
@@ -1133,6 +1217,42 @@ const TokenAmount = styled.div`
         color: red;
     `}
 `;
+
+const PoolNavigation = ({width}) => {
+
+    const [ active, setActive  ] = useState(false);
+
+    const toggle = useCallback((e) => {
+        e.preventDefault();
+        setActive(!active);
+    },[active])
+
+    return (
+        <ChartLeftPanel
+            style={{
+                width : width > 600 ? "30%" : "20%",
+                fontSize: "12px"
+            }}
+            
+        >
+                <b style={{cursor : "pointer"}} onClick={toggle}>
+                    By Equal Weight Each{` `}&#9660;
+                </b>
+                <DropdownContainer style={{height : "45px"}} active={active}>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>By Equal Weight Each</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </DropdownContainer>
+                <p style={{fontSize: "10px"}}>
+                    Weights every token equally by the given percentage that refers to the pool's total supply.
+                </p>
+        </ChartLeftPanel>
+    )
+}
 
 const PoolListPanel = (props) => {
     const { active, onUpdateCurrentPool, pools } = props;

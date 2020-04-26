@@ -9,6 +9,7 @@ import { HEADLINES, PAGES, SLIPPAGE_RATE } from "../../../../constants";
 import { useModal } from "../../../../contexts/modal";
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
+import { toFixed } from "../../../../utils/conversion";
 
 /*
     Token Swap Panel
@@ -324,12 +325,12 @@ const SwapPanel = (props) => {
                 console.log("Check native ETH...");
                 const result = await getETHBalance();
                 console.log(result.toString());
-                setSourceBalance(`${Number(result).toFixed(5).slice(0,-1)}`);
+                setSourceBalance(`${toFixed(result, 4)}`);
             } else {
                 const result = await getTokenBalance(source[1]);
                 console.log(result.toString());
 
-                setSourceBalance(`${Number(result).toFixed(5).slice(0,-1)}`);
+                setSourceBalance(`${toFixed(result, 4)}`);
             }
 
         } catch (error) {
@@ -357,7 +358,7 @@ const SwapPanel = (props) => {
                     const destinationDecimal = await getTokenDecimal(destination[1]);
                     const finalRate = parseToken(rate, destinationDecimal);
                     const finalFee = parseToken(fee, destinationDecimal);
-                    setRate(`${Number(finalRate).toFixed(6)}`);
+                    setRate(`${toFixed(finalRate, 6)}`);
                     setFee(Number((100 * Number(finalFee)) / Number(finalRate)));
                     setPath(path);
 
@@ -385,12 +386,12 @@ const SwapPanel = (props) => {
         if (e.target.id === 'sourceInput') {
             const value = regexp.test(e.target.value) ? (e.target.value) : sourceAmount;
             setSourceAmount(value);
-            const result = (Number(value) * Number(rate)).toFixed(5).slice(0,-1);
+            const result = (Number(value) * Number(toFixed(rate, 4)));
             setDestinationAmount(result);
         } else {
             const value = regexp.test(e.target.value) ? (e.target.value) : destinationAmount;
             setDestinationAmount(value);
-            const result = (Number(value) * Number(rate)).toFixed(5).slice(0,-1);
+            const result = (Number(value) * Number(toFixed(rate, 4)));
             setSourceAmount(result);
 
         }
@@ -400,7 +401,7 @@ const SwapPanel = (props) => {
     const updateDestinationAmount = useCallback((rate) => {
 
         if (Number(destinationAmount) !== 0) {
-            const result = (Number(sourceAmount) * Number(rate)).toFixed(5).slice(0,-1);
+            const result = (Number(sourceAmount) * Number(toFixed(rate, 4)));
             setDestinationAmount(result);
         }
 
@@ -413,10 +414,10 @@ const SwapPanel = (props) => {
             return;
         }
 
-        const newAmount = (Number(amount) * percent).toFixed(5).slice(0,-1);
+        const newAmount = toFixed((Number(amount) * percent), 4);
         setSourceAmount(newAmount);
-        setDestinationAmount((newAmount * Number(rate)).toFixed(5).slice(0,-1));
-
+        setDestinationAmount( toFixed(newAmount * Number(rate), 4));
+        
     }, [rate, isLoadingRate])
 
 
@@ -506,7 +507,7 @@ const SwapPanel = (props) => {
                 </InputGroup>
                 <AccountSection>
                     <AccountLeft>
-                        FEE {fee.toFixed(1)} %
+                        FEE { toFixed(fee, 1) } %
                     </AccountLeft>
                     <AccountRight>
                         {`1 ${source[0].toUpperCase()} = ${rate} ${destination[0].toUpperCase()}`}

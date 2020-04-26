@@ -19,3 +19,12 @@ export const truncateString = (str, num) => {
     // Return str truncated with '...' concatenated to the end of str.
     return str.slice(0, num+2) + '...' + str.slice(Math.abs(num) * -1)
 }
+
+export const toFixed = (num, fixed) => {
+
+    if ((1/fixed) >= num) {
+        return num.toFixed(fixed);
+    }
+    var re = new RegExp('^-?\\d+(?:\.\\d{0,' + (fixed || -1) + '})?');
+    return num.toString().match(re)[0];
+}

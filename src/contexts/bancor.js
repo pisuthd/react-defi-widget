@@ -219,6 +219,7 @@ export const useBancor = (web3context) => {
             if (web3context && web3context.active && network !== undefined) {
                 // console.log(`load bancor's contract for  ${network}`);
                 const signer = web3context.library.getSigner();
+                
                 const getContractRegistryAddress = (network) => {
                     switch (network) {
                         case NETWORKS.MAINNET:
@@ -234,47 +235,31 @@ export const useBancor = (web3context) => {
                 contract.itemCount().then(
                     totalItem => {
                         const totalContracts = totalItem.toNumber()
-
                         let contractList = {};
-
                         const onUpdate = (contractName, contractAddress) => {
-
                             const parseString = (str) => {
                                 return str.replace(/[^a-z0-9+]+/gi, '');
                             }
-
                             contractList[`bancorContract${parseString(contractName)}`] = contractAddress
-
                             if (Object.keys(contractList).length === totalContracts) {
                                 updateBancorContracts(contractList);
                             }
-
                         }
-
-
                         for (let i = 0, p = Promise.resolve(); i < totalContracts; i++) {
                             p = p.then(_ => new Promise(resolve => {
-
                                 contract.contractNames(i + "").then(
                                     contractName => {
-
                                         contract.getAddress(ethers.utils.toUtf8Bytes(contractName)).then(
                                             contractAddress => {
                                                 onUpdate(contractName, contractAddress)
                                                 resolve();
                                             }
                                         )
-
-
-
                                     }
                                 )
-
-
                             }
                             ));
                         }
-
                     }
                 ).catch(error => {
                     // throw new Error(error);
@@ -291,7 +276,6 @@ export const useBancor = (web3context) => {
             setErrorMessage(msg);
 
         }
-
 
     }, [web3context])
 
@@ -881,12 +865,9 @@ export const useBancor = (web3context) => {
 
                     const approvalTx = await token.approve(converterContract.address, buyingAmount, options);
                     console.log("waiting for confirmation : ", approvalTx)
-                }
-
-                
+                }      
             }
           
-
             console.log("deciaml : ", decimal, " tokenAmount : ", ethers.utils.formatEther(tokenAmount), "options : ", options);
 
             const fundtx =  await converterContract.fund( tokenAmount , options);
