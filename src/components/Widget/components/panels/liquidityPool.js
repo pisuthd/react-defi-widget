@@ -105,6 +105,7 @@ const LiquidityPoolPanel = (props) => {
 
                                     let formalName = "";
                                     let symbols = [];
+                                    const totalSupply = await getTotalSupplyByConverter(pool.converterAddress);
 
                                     for (let reserve of reserves) {
                                         const tokenName = (await getTokenName(reserve[1]))[0];
@@ -123,6 +124,7 @@ const LiquidityPoolPanel = (props) => {
                                         name: name[0] || "",
                                         formalName: formalName,
                                         symbols: symbols,
+                                        totalSupply: totalSupply,
                                         address: pool.smartTokenAddress,
                                         converterAddress: pool.converterAddress,
                                         reserves: reserves
@@ -140,7 +142,7 @@ const LiquidityPoolPanel = (props) => {
 
                                         console.log("finalResult : ", finalResult);
 
-                                        setPools(finalResult.filter(item => item.reserves.length !== 1));
+                                        setPools(finalResult.filter(item => item.reserves.length !== 1).sort((a, b) => (Number(a.totalSupply) > Number(b.totalSupply)) ? -1 : 1));
                                         setLoadingPools(false);
                                         onClose();
                                     }
@@ -865,12 +867,6 @@ const ActionInputPanel = (props) => {
 
     const onProceed = useCallback(async () => {
 
-        /*
-        if (amount <= 0) {
-            return;
-        }
-        */
-
         if (!currentPool) {
             return;
         }
@@ -886,13 +882,20 @@ const ActionInputPanel = (props) => {
                 const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
                 try {
                     const tx = await fundLiquidityPool(currentPool, input);
-
-                    await tx.wait();
-                    console.log("funded.");
-                    await updateBalance();
-                    await updateDepositAmount();
+                    const onClose = showProcessingModal("Funding...", `Tx : ${tx.hash}`);
+                    try {
+                        await tx.wait();
+                        console.log("funded.");
+                        await updateBalance();
+                        await updateDepositAmount();
+                    } catch (error) {
+                        throw new Error(error.message);
+                    }  
+                    onClose(); 
+                    
                 } catch (error) {
                     console.log("error : ", error);
+                    alert(error.message);
                 }
 
 
@@ -907,13 +910,20 @@ const ActionInputPanel = (props) => {
                 const liquidateInput = ((Number(poolTokenAmount * 100) / Number(poolTokenSupply)) * Number(inputAmount)) / 1000000;
                 try {
                     const liquidateTx = await withdrawLiquidityPool(currentPool, liquidateInput);
+                    const onClose = showProcessingModal("Liquidating...", `Tx : ${liquidateTx.hash}`);
+                    try {
+                        await liquidateTx.wait();
+                        console.log("liquidated.");
+                        await updateBalance();
+                        await updateDepositAmount();
+                    } catch (error) {
+                        throw new Error(error.message);
+                    }  
+                    onClose(); 
 
-                    await liquidateTx.wait();
-                    console.log("liquidated.");
-                    await updateBalance();
-                    await updateDepositAmount();
                 } catch (error) {
                     console.log("error : ", error);
+                    alert(error.message);
                 }
 
                 break;
@@ -1163,6 +1173,12 @@ const ActionInputPanel = (props) => {
                                     )
 
                                     }
+                                    { symbol ==="ETH" && (
+                                            <WrappedEtherBar
+                                                showEtherTokenModal={showEtherTokenModal}
+                                                isModalActive={isModalActive || isLoadingBalance}
+                                            />
+                                    )}
                                     
                                 </div>
                                 )
@@ -1340,7 +1356,7 @@ const PoolListPanel = (props) => {
                                             Bancor
                                         </TableBox>
                                         <TableBox>
-                                            Ratio {ratio}
+                                            Size ~${Number(Math.floor(item.totalSupply)).toLocaleString()}
                                         </TableBox>
                                     </TableInnerRow>
                                 </td>
