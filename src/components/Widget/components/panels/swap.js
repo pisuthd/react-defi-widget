@@ -250,7 +250,7 @@ const SwapPanel = (props) => {
             
             setTimeout(async () => {
                 await updateBalance(source);
-            }, 5000)
+            }, 3000)
 
 
         }
@@ -261,6 +261,10 @@ const SwapPanel = (props) => {
 
 
     const onSourceChange = useCallback((newSource) => {
+
+        if (newSource[0] === source[0]) {
+            updateBalance(source);
+        }
 
         if (newSource[0] === destination[0]) {
             // alert("Can't choose the same token")
@@ -320,11 +324,12 @@ const SwapPanel = (props) => {
                 console.log("Check native ETH...");
                 const result = await getETHBalance();
                 console.log(result.toString());
-                setSourceBalance(`${Number(result).toFixed(4)}`);
+                setSourceBalance(`${Number(result).toFixed(5).slice(0,-1)}`);
             } else {
                 const result = await getTokenBalance(source[1]);
                 console.log(result.toString());
-                setSourceBalance(`${Number(result).toFixed(4)}`);
+
+                setSourceBalance(`${Number(result).toFixed(5).slice(0,-1)}`);
             }
 
         } catch (error) {
@@ -380,12 +385,12 @@ const SwapPanel = (props) => {
         if (e.target.id === 'sourceInput') {
             const value = regexp.test(e.target.value) ? (e.target.value) : sourceAmount;
             setSourceAmount(value);
-            const result = (Number(value) * Number(rate)).toFixed(4);
+            const result = (Number(value) * Number(rate)).toFixed(5).slice(0,-1);
             setDestinationAmount(result);
         } else {
             const value = regexp.test(e.target.value) ? (e.target.value) : destinationAmount;
             setDestinationAmount(value);
-            const result = (Number(value) * Number(rate)).toFixed(4);
+            const result = (Number(value) * Number(rate)).toFixed(5).slice(0,-1);
             setSourceAmount(result);
 
         }
@@ -395,7 +400,7 @@ const SwapPanel = (props) => {
     const updateDestinationAmount = useCallback((rate) => {
 
         if (Number(destinationAmount) !== 0) {
-            const result = (Number(sourceAmount) * Number(rate)).toFixed(4);
+            const result = (Number(sourceAmount) * Number(rate)).toFixed(5).slice(0,-1);
             setDestinationAmount(result);
         }
 
@@ -407,9 +412,9 @@ const SwapPanel = (props) => {
             return;
         }
 
-        const newAmount = (Number(amount) * percent).toFixed(4);
+        const newAmount = (Number(amount) * percent).toFixed(5).slice(0,-1);
         setSourceAmount(newAmount);
-        setDestinationAmount((newAmount * Number(rate)).toFixed(4));
+        setDestinationAmount((newAmount * Number(rate)).toFixed(5).slice(0,-1));
 
     }, [rate, isLoadingRate])
 
@@ -464,7 +469,6 @@ const SwapPanel = (props) => {
                         BALANCE {sourceBalance}
                     </AccountLeft>
                     <AccountRight>
-                        {/*
                         {sourceBalance !== "0.0" && (
                             <span>
                                 <Percentage onClick={() => setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
@@ -472,7 +476,6 @@ const SwapPanel = (props) => {
                                 <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
                             </span>
                         )}
-                        */}
                     </AccountRight>
                 </AccountSection>
             </Column>

@@ -697,9 +697,9 @@ export const useBancor = (web3context) => {
             if ((Number(ethers.utils.formatEther(allowance)) > 0) && (!fromETH)) {
                 console.log("allowance is not zero need to clear it first...");
                 const resetTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
-                const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted...", `tx : ${resetTx.hash}`);
-                await resetTx.wait();
-                onClose();
+                // const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
+                // await resetTx.wait();
+                // onClose();
             }
 
             await tokenContract.approve(bancorContractBancorNetwork, baseAmount, options);
