@@ -409,6 +409,7 @@ const SwapPanel = (props) => {
     const setSourceAmountByPercentage = useCallback((percent, amount) => {
 
         if (isLoadingRate) {
+            alert("Not ready!")
             return;
         }
 
