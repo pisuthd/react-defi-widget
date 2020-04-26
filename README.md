@@ -23,8 +23,8 @@
 * Earn commission in BNT token up to 3%
 * Customizable widget attributes
 * Support of Mainnet and Ropsten
-* Adding liquidity to a pool within Bancor network and earning fee (Under development)
-* Creating a new liquidity pool within Bancor network (Under development)
+* Adding liquidity to a pool within Bancor network and earning fee
+* Creating a new liquidity pool within Bancor network
 
 ## Install
 

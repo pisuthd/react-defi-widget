@@ -40,7 +40,7 @@ export const TOKEN_CONTRACTS = {
         BUSD: "0xeedc02321e60fc310b3973877729193fc288297f"
     },
     MAINNET : {
-        BANCOR_ETHER : "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        BANCOR_ETHER : "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315",
         BNT: "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
         BUSD : "0x309627af60f0926daa6041b8279484312f2bf060"
     }
@@ -54,11 +54,11 @@ export const NETWORKS = {
 export const HEADLINES = {
     HEADER : {
         SWAP : "Simple & Easy Token Swap",
-        POOLS: "POOLS HEADER"
+        POOLS: "Liquidity Pool Creation"
     },
     TEXT : {
-        SWAP : "You can swap your Ethereum ERC-20 tokens for other tokens within this widget",
-        POOLS: "TEXT TEXT"
+        SWAP : "Allow your site's visitor convert Ethereum's ERC-20 tokens for other & earn commission on each transaction",
+        POOLS: "Easily staking liquidity and earn fees on Bancor as well as make your own pool"
     },
     DISCLAIMER : {
         SWAP : "DISCLAIMER : This feature give access to third-party liquidity pools. We make no warranties of any kind of financial loss including but not limited to accuracy, security and updatedness. Please consult your financial advisor before taking any financial decision.",
