@@ -792,8 +792,8 @@ export const useBancor = (web3context) => {
 
     }, [web3context])
 
-
-    const fundLiquidityPool = useCallback(async (poolObject, amountInPercentage) => {
+    /*
+    const fundLiquidityPoolOLD = useCallback(async (poolObject, amountInPercentage) => {
 
         console.log("fund... : ", poolObject, " % : ", amountInPercentage);
         try {
@@ -861,6 +861,7 @@ export const useBancor = (web3context) => {
                     if ((allowance > 0) ) {
                         console.log("allowance is not zero need to clear it first...");
                         const clearTx = await token.approve(converterContract.address, 0, options);
+
                     }
 
                     const approvalTx = await token.approve(converterContract.address, buyingAmount, options);
@@ -879,8 +880,59 @@ export const useBancor = (web3context) => {
         }
 
     }, [web3context]);
+    */
 
-    const withdrawLiquidityPool = useCallback(async (poolObject, amountInPercentage) => {
+    const fundLiquidityPool = useCallback(async (poolObject, amountInPercentage) => {
+        
+        console.log("fund... : ", poolObject, " % : ", amountInPercentage);
+        const signer = web3context.library.getSigner();
+        const options = await constructTxOptions();
+        const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
+        const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
+        
+        const decimal = await relayTokenContract.decimals();
+        const supplyWei = await relayTokenContract.totalSupply();
+        const supply = ethers.utils.formatUnits(`${supplyWei}`, decimal);
+        const percentage = amountInPercentage;
+        const tokenAmount = supplyWei.mul(ethers.utils.bigNumberify(Math.floor((amountInPercentage/100) * 1000000))).div(ethers.utils.bigNumberify(1000000));
+  
+        for (let i = 0; i < poolObject.reserves.length; i += 1) {
+            const reverse = poolObject.reserves[i];
+            const thisReserveBalance = await converterContract.getConnectorBalance(reverse[1]);
+            const token = getContract(reverse[1], ERC20TokenAbi, signer);
+            const thisReserveDecimal = await token.decimals();
+            const symbolName = poolObject.symbols[i];
+            const buyingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor((percentage * 1000000 )))).div(ethers.utils.bigNumberify(1000000 * 100));
+            console.log("buyingAmount : ", ethers.utils.formatUnits(buyingAmount, thisReserveDecimal), " for --> ", symbolName);
+            
+            const allowance = await token.allowance(web3context.account, converterContract.address);
+            console.log("current allowance : ", ethers.utils.formatUnits(allowance, thisReserveDecimal) , " symbol : ", symbolName);
+
+            const diff = Number(ethers.utils.formatUnits(buyingAmount, thisReserveDecimal))-Number(ethers.utils.formatUnits(allowance, thisReserveDecimal));
+
+            if (diff > 0) {
+                console.log("diff : ", diff);
+                if (Number(ethers.utils.formatUnits(allowance, thisReserveDecimal)> 0)) {
+                    console.log("allowance is not zero need to clear it first...");
+                    const resetTx = await token.approve(converterContract.address, 0, options);
+                    const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
+                    await resetTx.wait();
+                    onClose(); 
+                }
+                const approvalTx = await token.approve(converterContract.address, buyingAmount, options);
+            }
+
+        }
+
+        const fundingTx = await converterContract.fund( tokenAmount , options);
+        console.log("funding...");
+        return fundingTx;
+
+    },[web3context]);
+
+
+    /*
+    const withdrawLiquidityPoolOLD = useCallback(async (poolObject, amountInPercentage) => {
 
         try {
             
@@ -920,12 +972,7 @@ export const useBancor = (web3context) => {
                 if (fromETH) {
                     withdrawEthAmount = sellingAmount;
                     etherTokenAddress = reverse[1];
-                    
-                   /*
-                   const etherTokenContract = getContract(reverse[1], EtherTokenAbi, signer);
-                   const test = await etherTokenContract.balanceOf(web3context.account);
-                   const depositTx = await etherTokenContract.withdraw(test);
-                   */
+             
                 }
             }
             
@@ -951,17 +998,34 @@ export const useBancor = (web3context) => {
             } else {
                 return tx;
             }
-            
-
-            
-            
-
         } catch (error) {
             console.log("Withdraw failed : ", error);
         }
 
 
     },[web3context])
+    */
+
+    const withdrawLiquidityPool = useCallback(async (poolObject, amountInPercentage) => {
+        
+        const signer = web3context.library.getSigner();
+        const options = await constructTxOptions();
+        const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
+        const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
+
+        const supplyWei = await relayTokenContract.totalSupply();
+        const supply = ethers.utils.formatEther(supplyWei.toString());
+        
+        const percentage = amountInPercentage;
+        const tokenAmount = supplyWei.mul(ethers.utils.bigNumberify(Math.floor((amountInPercentage/100) * 1000000))).div(ethers.utils.bigNumberify(1000000));
+        console.log("selling amount : ", percentage, " token amount : ", ethers.utils.formatEther(tokenAmount) , " from supply : ", supply); 
+
+        const tx =  await converterContract.liquidate( tokenAmount , options);
+        return tx;
+
+
+    },[web3context]);
+
 
     const createSmartToken = useCallback(async (symbol, fullName) => {
 
