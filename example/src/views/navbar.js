@@ -48,7 +48,7 @@ const NavBar = (props) => {
                         </NavItem>
                         <NavItem>
                             <Link to="/pools">
-                                <NavLink>Liquidity Pools</NavLink>
+                                <NavLink>Pool Creation</NavLink>
                             </Link>
                         </NavItem>
                     </Nav>
