@@ -110,32 +110,10 @@ const PoolCreationPanel = (props) => {
                     </Column>
                     <Column>
                         <p>
-                            Prepared is me marianne pleasure likewise debating. Wonder an unable except better stairs do ye admire. His and eat secure sex called esteem praise.
+                        The Bancor Protocol is a fully on-chain liquidity protocol provides an endpoint for automated market-making against a smart contract.
                         </p>
-
                     </Column>
                 </Row>
-                {/*
-                <ChartContainer>
-                    <SummarySection>
-                        <b>Summary</b>
-
-                    </SummarySection>
-                    
-                    <PieChart
-                        data={[{ value: 1, key: 1, color: color }]}
-                        reveal={percentage}
-                        lineWidth={20}
-                        background="#bfbfbf"
-                        lengthAngle={270}
-                        style={{
-                            height: width <= 600 ? '100px' : '200px'
-                        }}
-                        rounded
-                    />
-                    
-                </ChartContainer>
-                */}
 
             </Pane>
             <Pane>
