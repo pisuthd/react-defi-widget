@@ -31,7 +31,8 @@ const LiquidityPoolPanel = (props) => {
         updateActionText,
         width,
         clickCount,
-        color
+        color,
+        wrapAt
     } = props;
 
     const networkId = web3ReactContext.networkId;
@@ -331,7 +332,7 @@ const LiquidityPoolPanel = (props) => {
 
                         <ChartContainer>
 
-                            {width <= 600 ?
+                            {width <= wrapAt ?
                                 <PieChart
                                     animate={false}
                                     animationDuration={500}
@@ -448,6 +449,7 @@ const LiquidityPoolPanel = (props) => {
                                 showProcessingModal={showProcessingModal}
                                 showEtherTokenModal={showEtherTokenModal}
                                 isModalActive={showModal}
+                                wrapAt={wrapAt}
                             />
 
 
@@ -827,7 +829,8 @@ const ActionInputPanel = (props) => {
         updateDepositAmount,
         showProcessingModal,
         showEtherTokenModal,
-        isModalActive
+        isModalActive,
+        wrapAt
         
     } = props;
 
@@ -941,23 +944,8 @@ const ActionInputPanel = (props) => {
 
                 for (let i = 0; i < currentPool.reserves.length; i += 1) {
                     const symbolName = currentPool.symbols[i] || "";
-                    /*
-                    if (symbolName === "ETH") {
-                        console.log("Check native ETH...");
-                        const amount = await getETHBalance();
-                        result.push({
-                            symbol: "ETH",
-                            balance: Number(amount.toString()).toFixed(6) + ""
-                        })
-                    } else {
-                        const amount = await getTokenBalance(currentPool.reserves[i][1]);
-                        result.push({
-                            symbol: symbolName,
-                            balance: Number(amount.toString()).toFixed(6) + ""
-                        })
-                    }
-                    */
-                   const amount = await getTokenBalance(currentPool.reserves[i][1]);
+
+                    const amount = await getTokenBalance(currentPool.reserves[i][1]);
                         result.push({
                             symbol: symbolName,
                             balance: `${toFixed(Number(amount), 6)}` 
@@ -1035,13 +1023,14 @@ const ActionInputPanel = (props) => {
 
 
     return (
-        <LiquiditySummaryContainer isMobile={width <= 600} >
+        <LiquiditySummaryContainer isMobile={width <= 800} >
 
             {actionPanel === ACTION_PANELS.ADD_LIQUIDITY &&
                 (
                     <Fragment>
                         <PoolNavigation 
                             width={width}
+                            wrapAt={wrapAt}
                         />
                         {/*
                     <ChartLeftPanel style={{  fontSize: "12px" }}>
@@ -1234,7 +1223,7 @@ const TokenAmount = styled.div`
     `}
 `;
 
-const PoolNavigation = ({width}) => {
+const PoolNavigation = ({width, wrapAt}) => {
 
     const [ active, setActive  ] = useState(false);
 
@@ -1246,7 +1235,7 @@ const PoolNavigation = ({width}) => {
     return (
         <ChartLeftPanel
             style={{
-                width : width > 600 ? "30%" : "20%",
+                width : width > wrapAt ? "30%" : "20%",
                 fontSize: "12px"
             }}
             

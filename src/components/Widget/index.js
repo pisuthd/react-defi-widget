@@ -110,7 +110,9 @@ const Widget = (props) => {
 
 
 
-    }, [web3ReactContext.networkId, networkId])
+    }, [web3ReactContext.networkId, networkId]);
+
+    const WRAP_WIDTH = currentPage === PAGES.SWAP ? 600 : 800;
 
     return (
         <ContainerDimensions>
@@ -119,7 +121,7 @@ const Widget = (props) => {
                     <Container
                         inactive={showModal}
                     >
-                        {width > 600 &&
+                        {((width > WRAP_WIDTH) || (currentPage === PAGES.SWAP)) &&
                             <Header
                                 width={width}
                                 height={height}
@@ -136,6 +138,7 @@ const Widget = (props) => {
 
                         <Body
                             width={width}
+                            isMobile={width > WRAP_WIDTH}
                             height={height}
                         >
                             {currentPage === PAGES.SWAP &&
@@ -156,6 +159,7 @@ const Widget = (props) => {
                                     <LiquidityPoolPanel
                                         web3ReactContext={web3ReactContext}
                                         width={width}
+                                        wrapAt={WRAP_WIDTH}
                                         updateActionText={updateActionText}
                                         clickCount={clickCount}
                                         color={widgetColor}
@@ -171,7 +175,7 @@ const Widget = (props) => {
                                 </ActionButton>
                             }
                             <StatusPanel
-                                width={width}
+                                isMobile={width > WRAP_WIDTH}
                             >
                                 {errorMessage
                                     ?
@@ -215,7 +219,7 @@ const StatusPanel = styled.div`
     text-align: center;
     padding-top: 10px;
 
-    ${ props => props.width > 600 && `
+    ${ props => (props.isMobile) && `
         font-size: 12px;
     `}
 `;
@@ -274,7 +278,7 @@ const Body = styled.div`
     display: grid;
     grid-gap: 1rem;
 
-    ${ props => (props.width > 600) && `
+    ${ props => (props.isMobile) && `
         grid-template-columns: repeat(2, 1fr);
     `}
 
