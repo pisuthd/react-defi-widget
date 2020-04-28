@@ -7,7 +7,7 @@
 
 ## Introduction
 
-`react-defi-widget` is a React widget that allows your website visitors to quickly and easily convert tokens from the widget and the website owner can collect a fee from each transaction up to 3% (paid in BNT token). You would need `web3-react` imported on your app and passing its context through props to the widget component.
+`react-defi-widget` is a React widget that allows your website visitors to quickly and easily access automated liquidity pools (Bancor, ...) in Ethereum blockchain where they can convert tokens to another seamlessly and completely permissionless as well as stake liquidity to the pool. You can embed the widget and set a fee that allows take commissions up to 3% from each transaction all you need is `web3-react` been imported on your app and passing its context through props to the widget component.
 
 ## Preview
 
@@ -19,12 +19,12 @@
 
 ## Features
 
-* Enabling on-chain token swap on React-based applications through Bancor network
+* Enabling on-chain token swap on any React-based applications through Bancor
 * Earn commission in BNT token up to 3%
 * Customizable widget attributes
 * Support of Mainnet and Ropsten
-* Adding liquidity to a pool within Bancor network and earning fee
-* Creating a new liquidity pool within Bancor network
+* Adding liquidity to a pool within Bancor and earning fee (normally ~0.1-0.3% on each trade)
+* Creating a new liquidity pool within Bancor (aka. List your token on decentralized exchanges for free)
 
 ## Install
 
@@ -94,9 +94,33 @@ const MainPage = (props) => {
 }
 ```
 
-### Liquidity Pools Explorer Widget
+### Pool Creation Widget
 
-TBD
+Pool Creation widget is on early development that won't be much custom attributes except for the color. However the widget offers a vast opportunity for your website visitors to stake liquidity and create the new pool in the permissionless manner.
+
+```jsx
+import React, { Component, Fragment } from 'react'
+import { useWeb3Context } from 'web3-react';
+import { LiquidityPoolsWidget } from 'react-defi-widget'
+
+const MainPage = (props) => {
+
+  const context = useWeb3Context();
+
+  useEffect(() => {
+        context.setFirstValidConnector(['MetaMask']) // Or on your choice
+  }, [])
+
+  return (
+    <Fragment>
+        <LiquidityPoolsWidget
+          web3ReactContext={web3context}
+          color={color}
+        />
+    </Fragment>
+  )
+}
+```
 
 
 ## Local Development
