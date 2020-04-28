@@ -12,6 +12,7 @@ import { ERC20TokenAbi } from "../contracts/bancor/ERC20Token";
 import { EtherTokenAbi } from "../contracts/bancor/EtherToken";
 import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 import { useModal } from "./modal";
+import { parseString } from "../utils/conversion";
 
 
 export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB", "USDC"]
@@ -28,7 +29,6 @@ const useBancorContext = () => {
 }
 
 const ACTIONS = {
-    UPDATE_PROCESSING_TX: "UPDATE_PROCESSING_TX",
     UPDATE_BANCOR_CONTRACTS: "UPDATE_BANCOR_CONTRACTS"
 }
 
@@ -111,10 +111,6 @@ const provider = ({ children }) => {
         bancorContractEtherToken: ""
     })
 
-    const updateProcessingTx = useCallback((processingTx) => {
-        dispatch({ type: ACTIONS.UPDATE_PROCESSING_TX, payload: { processingTx } })
-    }, [])
-
     const updateBalance = useCallback(({ bancorEther, bancorToken, bancorUsd }) => {
         dispatch({ type: ACTIONS.UPDATE_BALANCE, payload: { bancorEther, bancorToken, bancorUsd } })
     }, [])
@@ -161,12 +157,10 @@ const provider = ({ children }) => {
     return (
         <BancorContext.Provider
             value={useMemo(() => [state, {
-                updateProcessingTx,
                 updateBancorContracts,
                 updateBalance
             }], [
                 state,
-                updateProcessingTx,
                 updateBancorContracts,
                 updateBalance
             ])}
@@ -183,7 +177,7 @@ export const getContract = (address, ABI, signer) => {
 
 
 export const useBancor = (web3context) => {
-    const [state, { updateProcessingTx, updateBancorContracts, updateBalance }] = useBancorContext();
+    const [state, { updateBancorContracts, updateBalance }] = useBancorContext();
 
     const [loadingErrorMessage, setErrorMessage] = useState();
 
@@ -192,7 +186,6 @@ export const useBancor = (web3context) => {
 
 
     const {
-        processingTx,
         loading,
         bancorContractContractRegistry,
         bancorContractContractFeatures,
@@ -214,70 +207,59 @@ export const useBancor = (web3context) => {
     useEffect(() => {
 
         try {
-            // console.log("web3context.networkId : ", web3context.networkId)
             const network = ([NETWORKS.MAINNET, NETWORKS.ROPSTEN].indexOf(web3context.networkId) !== -1) ? web3context.networkId : undefined;
-            if (web3context && web3context.active && network !== undefined) {
-                // console.log(`load bancor's contract for  ${network}`);
-                const signer = web3context.library.getSigner();
-                
-                const getContractRegistryAddress = (network) => {
-                    switch (network) {
-                        case NETWORKS.MAINNET:
-                            return BANCOR_CONTRACTS.MAINNET.ContractRegistry
-                        case NETWORKS.ROPSTEN:
-                            return BANCOR_CONTRACTS.ROPSTEN.ContractRegistry
-                        default:
-                            return;
-                    }
-                }
-                const contract = getContract(getContractRegistryAddress(network), ContractRegistryAbi, signer);
-
-                contract.itemCount().then(
-                    totalItem => {
-                        const totalContracts = totalItem.toNumber()
-                        let contractList = {};
-                        const onUpdate = (contractName, contractAddress) => {
-                            const parseString = (str) => {
-                                return str.replace(/[^a-z0-9+]+/gi, '');
-                            }
-                            contractList[`bancorContract${parseString(contractName)}`] = contractAddress
-                            if (Object.keys(contractList).length === totalContracts) {
-                                updateBancorContracts(contractList);
-                            }
-                        }
-                        for (let i = 0, p = Promise.resolve(); i < totalContracts; i++) {
-                            p = p.then(_ => new Promise(resolve => {
-                                contract.contractNames(i + "").then(
-                                    contractName => {
-                                        contract.getAddress(ethers.utils.toUtf8Bytes(contractName)).then(
-                                            contractAddress => {
-                                                onUpdate(contractName, contractAddress)
-                                                resolve();
-                                            }
-                                        )
-                                    }
-                                )
-                            }
-                            ));
-                        }
-                    }
-                ).catch(error => {
-                    // throw new Error(error);
-                    console.log("error : ", error);
-                    setErrorMessage(error);
-                })
-
-            } else {
-                console.log("Unable to load Bancor's contracts");
-            }
+            loadContracts(network);
         } catch (error) {
-            const msg = `Load Bancor contracts error : ${error}`;
-            console.log(msg);
-            setErrorMessage(msg);
+            console.log("Error : ", error.message);
+            setErrorMessage(error.message);
+        }
+
+    },[web3context]);
+
+    const [ loadedContracts , setLoadedContracts ] = useState(false);
+
+
+    const loadContracts = useCallback(async (network) => {
+
+        if (web3context && web3context.active && network !== undefined && !loadedContracts) {            
+            const signer = web3context.library.getSigner();
+
+            const getContractRegistryAddress = (network) => {
+                switch (network) {
+                    case NETWORKS.MAINNET:
+                        return BANCOR_CONTRACTS.MAINNET.ContractRegistry
+                    case NETWORKS.ROPSTEN:
+                        return BANCOR_CONTRACTS.ROPSTEN.ContractRegistry
+                    default:
+                        return;
+                }
+            }
+
+            const registryContract = getContract(getContractRegistryAddress(network), ContractRegistryAbi, signer);
+            const total = await registryContract.itemCount();
+
+            let promises = [];
+            for (let i =0; i < total ; i += 1) {
+                promises.push(i);
+            }
+            const results = await Promise.all(promises.map(index => registryContract.contractNames(index)));
+            const addresses = await Promise.all(results.map( name => registryContract.getAddress(ethers.utils.toUtf8Bytes(name))  ));
+
+            let contractList = {};
+
+            for (let count = 0; count < Number(total); count +=1) {
+                contractList[`bancorContract${parseString(results[count])}`] = addresses[count];
+                if (Object.keys(contractList).length === Number(total)) {
+                    updateBancorContracts(contractList);
+                }
+            }
+
+            setLoadedContracts(true);
+            console.log("contracts loaded.");
 
         }
 
-    }, [web3context])
+    },[web3context, loadedContracts])
 
 
     const loadReserve = useCallback(async (converterAddress, index) => {
