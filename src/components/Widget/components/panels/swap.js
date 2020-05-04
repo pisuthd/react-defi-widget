@@ -11,6 +11,7 @@ import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 import { toFixed } from "../../../../utils/conversion";
 
+
 /*
     Token Swap Panel
 */
@@ -23,36 +24,18 @@ const SwapPanel = (props) => {
         baseCurrency,
         pairCurrency,
         affiliateAccount,
-        affiliateFee
+        affiliateFee,
+        width
     } = props;
-
     const { showProcessingModal } = useModal();
-
-    const initialList = INITIAL_TOKENS.map(token => [token, getDefaultTokenAddress(token), 0])
-
     const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
     const defaultAffiliateFee = affiliateFee ? parseFee(affiliateFee) : "0";
-
     const networkId = web3ReactContext.networkId;
 
-    const getDefaultCurrency = (currency, list, fallback) => {
-        for (let item of list) {
-            if (item[0] === currency) {
-                return item
-            }
-        }
-        return fallback;
-    }
-
-    const defaultBaseCurrency = getDefaultCurrency(baseCurrency, initialList, initialList[1]);
-    const defaultPairCurrency = getDefaultCurrency(pairCurrency, initialList, initialList[0]);
-
-    const [tokens, setTokens] = useState(initialList);
-
+    const [tokens, setTokens] = useState();
     const [liquidityPools, setLiquidityPools] = useState([]);
-
-    const [isSourceModalOpen, setSourceModal] = useState(false);
-    const [isDestinationModalOpen, setDestinationModal] = useState(false);
+    const [isBaseTokenModalOpen, setBaseTokenModal] = useState(false);
+    const [isPairTokenModalOpen, setPairTokenModal] = useState(false);
 
     const {
         loading,
@@ -66,22 +49,20 @@ const SwapPanel = (props) => {
         getLiquidityPool,
         getTokenName,
         getTokenBalance,
-        generatePath
+        generatePath,
+        getConvertibleTokens
     } = useBancor(web3ReactContext);
 
-    const [source, setSource] = useState(defaultBaseCurrency);
-    const [destination, setDestination] = useState(defaultPairCurrency);
-
+    const [baseToken, setBaseToken] = useState();
+    const [pairToken, setPairToken] = useState();
     const [sourceBalance, setSourceBalance] = useState("0.0");
     const [isLoadingBalance, setLoadingBalance] = useState(true);
     const [rate, setRate] = useState("1");
     const [fee, setFee] = useState(0);
     const [path, setPath] = useState([]);
     const [isLoadingRate, setLoadingRate] = useState(true);
-    const [loadingModal, setLoadingModal ] = useState();
-
-    const [sourceAmount, setSourceAmount] = useState(0);
-    const [destinationAmount, setDestinationAmount] = useState(0);
+    const [baseTokenAmount, setBaseTokenAmount] = useState(0);
+    const [pairTokenAmount, setPairTokenAmount] = useState(0);
 
     useEffect(() => {
         // Handle click event from Parent Component
@@ -89,133 +70,84 @@ const SwapPanel = (props) => {
     }, [clickCount])
 
     useEffect(() => {
-
-        (async () => {
-            if (!loading) {
+        if (!loading) {
+            (async () => {
                 // List all available tokens to trade
-                let tokenList = [];
+                const onClose = showProcessingModal("Loading Tokens...", "");
                 try {
-                    const available = await listConversionTokens();
-
-                    let finalList;
-
-                    if (networkId === 1) {
-                        finalList = INITIAL_TOKENS.map(name => available.find(item => item[0] === name));
-                        for (let token of available) {
-                            if ((finalList.find(item => item[0] === token[0]) === undefined) && (token[0] !== "NAME_ERROR") && (EXCLUDE_TOKENS.indexOf(token[0]) === -1)) {
-                                finalList.push(token);
-                            }
-                        }
-                    } else {
-                        finalList = available;
-                    }
-
-                    console.log("final token list : ", finalList);
-                    setTokens(finalList.map(item => [item[0], item[1], 0]));
-                    tokenList = finalList;
+                    const available = await getConvertibleTokens();
+                    console.log("available : ", available);
+                    setTokens(available);
+                    const defaultBaseSymbol = baseCurrency ? baseCurrency : "ETH";
+                    const defaultPairSymbol = pairCurrency ? pairCurrency : "BNT";
+                    const defaultBaseToken = available.find(item => item.symbol === defaultBaseSymbol);
+                    const defaultPairToken = available.find(item => item.symbol === defaultPairSymbol);
+                    setBaseToken(defaultBaseToken);
+                    setPairToken(defaultPairToken);
                 } catch (error) {
-                    console.log("list tokens error : ", error);
-                }
+                    console.log("Load tokens error : ", error.message);
+                };
+
                 // List all liquidity pools
                 const poolList = await listLiquidityPools();
                 setLiquidityPools(poolList);
-
-                // Load reserves balance
-                console.log("Find a liquidity depth on all tokens");
-                let poolPromises = [];
-                for (let pool of poolList) {
-                    poolPromises.push(getLiquidityPool(pool.converterAddress));
-                }
-
-                Promise.all(poolPromises).then(
-                    poolResult => {
-
-                        let listWithReserveBalance = [];
-
-                        for (let token of tokenList) {
-                            const tokenAddress = token[1];
-                            const filtered = poolResult.reduce((array, items) => {
-                                for (let item of items) {
-                                    if (item[1] === tokenAddress) {
-                                        array.push(item)
-                                    }
-                                }
-                                return array;
-                            }, []);
-
-                            const totalReserves = filtered.reduce((result, items) => {
-                                result = result + Number(items[0]);
-
-                                return result;
-                            }, 0)
-                            listWithReserveBalance.push([token[0], token[1], Math.round(totalReserves)]);
-
-                        }
-                        setTokens(listWithReserveBalance);
-
-                    }
-                )
-            }
-        })()
-
-
+                onClose();
+            })();
+        }
 
     }, [loading, networkId])
 
     useEffect(() => {
-        if (networkId) {
-            // Update default token list for non-mainnet
-            if (networkId === 3) {
-                const ropstenList = ROPSTEN_TOKENS.map(token => [token, getRopstenTokenAddress(token), 0])
-                setTokens(ropstenList);
-                const defaultBaseCurrency = getDefaultCurrency(baseCurrency, ropstenList, ropstenList[1]);
-                const defaultPairCurrency = getDefaultCurrency(pairCurrency, ropstenList, ropstenList[0]);
-                setSource(defaultBaseCurrency);
-                setDestination(defaultPairCurrency);
-            }
-        }
-    }, [networkId, baseCurrency, pairCurrency])
 
+        if (baseToken && !loading) {
+            (async () => {
+                await updateBalance(baseToken);
+            })();
+
+        }
+    }, [baseToken, loading])
+
+    const updateBalance = useCallback(async (base) => {
+        setLoadingBalance(true);
+        try {
+            if (base.symbol === "ETH") {
+                console.log("Check native ETH...");
+                const result = await getETHBalance();
+                console.log(result.toString());
+                setSourceBalance(`${toFixed(result, 8)}`);
+            } else {
+                const result = await getTokenBalance(base.address);
+                console.log(result.toString());
+                setSourceBalance(`${toFixed(result, 8)}`);
+            }
+        } catch (error) {
+            console.log("loading balance error  ;", error);
+        }
+        setLoadingBalance(false);
+
+    }, [web3ReactContext])
 
     const onConvert = useCallback(async () => {
 
-        if ((source[1] !== "") && (path.length > 0) && (sourceAmount !== 0)) {
-
-
-
-            // handleProcessing(true);
-
-            console.log("Convert...", source, path, sourceAmount);
-            /*
-            const round = (num) => {
-                return +(Math.floor(num + "e+3") + "e-3");
-            }
-
-            const normalizedAmount = `${round(Number(sourceAmount))}`;
-            */
-           const normalizedAmount = sourceAmount;
-
-            console.log("normalizedAmount : ", normalizedAmount);
-
+        if ((baseToken) && (path.length > 0) && (baseTokenAmount !== 0)) {
+            console.log("Converting...", baseToken, path, baseTokenAmount);
+            const normalizedAmount = baseTokenAmount;
             try {
-                const sourceDecimal = await getTokenDecimal(source[1]);
+                const sourceDecimal = await getTokenDecimal(baseToken.address);
                 const rateResult = await getRate(path, normalizedAmount, sourceDecimal);
                 const detinationAmount = rateResult[0];
-
                 const slipRate = SLIPPAGE_RATE; // 3%
-                console.log("detinationAmount : ", detinationAmount.toString());
-
                 console.log("defaultAffiliateAccount : ", defaultAffiliateAccount, " rate : ", defaultAffiliateFee);
 
                 const tx = await convert(
                     path,
-                    source[1],
+                    baseToken.address,
                     normalizedAmount,
                     sourceDecimal,
                     detinationAmount,
                     slipRate,
-                    source[0] === "ETH",
-                    destination[0] === "ETH",
+                    baseToken.symbol === "ETH",
+                    pairToken.symbol === "ETH",
                     defaultAffiliateAccount,
                     defaultAffiliateFee
                 );
@@ -229,281 +161,222 @@ const SwapPanel = (props) => {
                         alert(error.message);
                     }
                     onClose();
-
                     console.log("done...");
-
                 }
-
             } catch (error) {
                 console.log("onConvert error : ", error)
             }
-
-            
             setTimeout(async () => {
-                await updateBalance(source);
+                await updateBalance(baseToken);
             }, 3000)
-
-
         }
-
-    }, [sourceAmount, source, destination, path, web3ReactContext])
-
-
-
-
-    const onSourceChange = useCallback((newSource) => {
-
-        if (newSource[0] === source[0]) {
-            updateBalance(source);
-        }
-
-        if (newSource[0] === destination[0]) {
-            // alert("Can't choose the same token")
-            setSource(destination);
-            setDestination(source);
-            setSourceModal(false);
-            return;
-        }
-
-        setSource(newSource);
-        setSourceModal(false);
-
-    }, [destination, source])
-
-
-    const onDestinationChange = useCallback((newDestination) => {
-
-        if (newDestination[0] === source[0]) {
-            // alert("Can't choose the same token")
-            setDestination(source);
-            setSource(destination);
-            setDestinationModal(false);
-            return;
-        }
-
-        setDestination(newDestination);
-        setDestinationModal(false);
-
-    }, [source, destination])
+    }, [baseTokenAmount, baseToken, pairToken, path, web3ReactContext])
 
     useEffect(() => {
 
-        if (source[1] !== '' && !loading) {
-            (async () => {
-                await updateBalance(source);
-            })();
+        if (baseToken && pairToken && !loading && networkId !== undefined && liquidityPools.length > 0) {
+            if (baseToken.symbol !== '' && pairToken.symbol !== '') {
 
-        }
-    }, [source, loading])
+                (async () => {
+                    console.log(`looking for an exchange rate on the pair ${baseToken.symbol}/${pairToken.symbol} `);
+                    setLoadingRate(true);
+                    const onClose = showProcessingModal("Fetching rates...", "");
+                    try {
+                        const path = await generatePath(baseToken.address, pairToken.address, liquidityPools);
+                        console.log("path : ", path);
+                        const baseDecimal = await getTokenDecimal(baseToken.address);
+                        const rateResult = await getRate(path, "1", baseDecimal);
+                        const rate = rateResult[0];
+                        const fee = rateResult[1];
+                        const pairDecimal = await getTokenDecimal(pairToken.address);
+                        const finalRate = parseToken(rate, pairDecimal);
+                        const finalFee = parseToken(fee, pairDecimal);
+                        console.log("finalRate / finalFee : ", finalRate, finalFee);
+                        setRate(`${finalRate}`);
+                        setFee(Number((100 * Number(finalFee)) / Number(finalRate)));
+                        setPath(path);
 
-    const toggleSourceModal = useCallback(() => {
-        setSourceModal(!isSourceModalOpen);
+                        // updateDestinationAmount(finalRate);
 
-    }, [isSourceModalOpen]);
 
-    const toggleDestinationModal = useCallback(() => {
-        setDestinationModal(!isDestinationModalOpen);
-
-    }, [isDestinationModalOpen])
-
-    const updateBalance = useCallback(async (source) => {
-        setLoadingBalance(true);
-        const onClose = showProcessingModal("Loading balances...", "");
-        try {
-
-            if (source[0] === "ETH") {
-                console.log("Check native ETH...");
-                const result = await getETHBalance();
-                console.log(result.toString());
-                setSourceBalance(`${toFixed(result, 4)}`);
-            } else {
-                const result = await getTokenBalance(source[1]);
-                console.log(result.toString());
-
-                setSourceBalance(`${toFixed(result, 4)}`);
+                    } catch (error) {
+                        console.log("Find a shortest path error : ", error);
+                    }
+                    setLoadingRate(false);
+                    onClose();
+                })();
             }
-
-        } catch (error) {
-            console.log("loading balance error  ;", error);
         }
-        onClose();
-        setLoadingBalance(false);
+    }, [baseToken, pairToken, loading, liquidityPools, networkId]);
 
-    }, [web3ReactContext])
+    const toggleBaseModal = useCallback(() => {
+        setBaseTokenModal(!isBaseTokenModalOpen);
+    }, [isBaseTokenModalOpen]);
 
-    useEffect(() => {
+    const togglePairModal = useCallback(() => {
+        setPairTokenModal(!isPairTokenModalOpen);
+    }, [isPairTokenModalOpen]);
 
-        if (source[1] !== '' && destination[1] !== '' && !loading && networkId !== undefined && liquidityPools.length > 0) {
-            console.log(`looking for an exchange rate on the pair ${source[0]}/${destination[0]} `);
-            (async () => {
-                setLoadingRate(true);
-                const onClose = showProcessingModal("Fetching rates...", "");
-                try {
-                    const path = await generatePath(source[1], destination[1], liquidityPools);
-                    console.log("path : ", path);
-                    const sourceDecimal = await getTokenDecimal(source[1]);
-                    const rateResult = await getRate(path, "1", sourceDecimal);
-                    const rate = rateResult[0];
-                    const fee = rateResult[1];
-                    const destinationDecimal = await getTokenDecimal(destination[1]);
-                    const finalRate = parseToken(rate, destinationDecimal);
-                    const finalFee = parseToken(fee, destinationDecimal);
-                    setRate(`${toFixed(finalRate, 6)}`);
-                    setFee(Number((100 * Number(finalFee)) / Number(finalRate)));
-                    setPath(path);
+    const onBaseChange = useCallback((newSource) => {
 
-                    updateDestinationAmount(finalRate);
-
-                } catch (error) {
-                    console.log("Find a shortest path error : ", error);
-                }
-                setLoadingRate(false);
-                onClose();
-
-            })();
+        if (newSource.symbol === baseToken.symbol) {
+            // updateBalance(newSource);
         }
 
-    }, [source, destination, loading, liquidityPools, networkId])
+        if (newSource.symbol === pairToken.symbol) {
+            // alert("Can't choose the same token")
+            setBaseToken(pairToken);
+            setPairToken(baseToken);
+            setBaseTokenModal(false);
+            return;
+        }
+
+        setBaseToken(newSource);
+        setBaseTokenModal(false);
+
+    }, [pairToken, baseToken]);
+
+    const onPairChange = useCallback((newDestination) => {
+
+        if (newDestination.symbol === baseToken.symbol) {
+            // alert("Can't choose the same token")
+            setPairToken(baseToken);
+            setBaseToken(pairToken);
+            setPairTokenModal(false);
+            return;
+        }
+
+        setPairToken(newDestination);
+        setPairTokenModal(false);
+
+    }, [baseToken, pairToken])
 
     const handleChange = useCallback((e) => {
         e.preventDefault();
-
         if (isLoadingRate) {
             return;
         }
-        const regexp = /^[0-9]*(\.[0-9]{0,4})?$/;
+        const regexp = /^[0-9]*(\.[0-9]{0,8})?$/;
 
         if (e.target.id === 'sourceInput') {
-            const value = regexp.test(e.target.value) ? (e.target.value) : sourceAmount;
-            setSourceAmount(value);
-            const result = (Number(value) * Number(toFixed(rate, 4)));
-            setDestinationAmount(result);
+            const value = regexp.test(e.target.value) ? (e.target.value) : baseTokenAmount;
+            setBaseTokenAmount(value);
+            const result = (Number(value) * Number(rate));
+            setPairTokenAmount(result);
         } else {
-            const value = regexp.test(e.target.value) ? (e.target.value) : destinationAmount;
-            setDestinationAmount(value);
-            const result = (Number(value) * Number(toFixed(rate, 4)));
-            setSourceAmount(result);
-
+            const value = regexp.test(e.target.value) ? (e.target.value) : pairTokenAmount;
+            setPairTokenAmount(value);
+            const result = (Number(value) * Number(rate));
+            setBaseTokenAmount(result);
         }
+    }, [rate, isLoadingRate, baseTokenAmount, pairTokenAmount])
 
-    }, [rate, isLoadingRate, sourceAmount, destinationAmount])
-
-    const updateDestinationAmount = useCallback((rate) => {
-
-        if (Number(destinationAmount) !== 0) {
-            const result = (Number(sourceAmount) * Number(toFixed(rate, 4)));
-            setDestinationAmount(result);
-        }
-
-    }, [sourceAmount, destinationAmount]);
-
-    const setSourceAmountByPercentage = useCallback((percent, amount) => {
+    const setBaseAmountByPercent = useCallback((percent, amount) => {
 
         if (isLoadingRate) {
             alert("Not ready!")
             return;
         }
 
-        const newAmount = toFixed((Number(amount) * percent), 4);
-        setSourceAmount(newAmount);
-        setDestinationAmount( toFixed(newAmount * Number(rate), 4));
-        
-    }, [rate, isLoadingRate])
+        const newAmount = toFixed((Number(amount) * percent), 8);
+        setBaseTokenAmount(newAmount);
+        setPairTokenAmount(toFixed(newAmount * Number(rate), 8));
 
+    }, [rate, isLoadingRate])
 
     if (!networkId) {
         return <Fragment></Fragment>
     }
 
-    if (loading) {
-        return (
-            <Fragment>
-                <Column>
-                    <img src={loadingIcon} width="12px" height="12px" />
-                </Column>
-                <Column></Column>
-            </Fragment>
-        )
-    }
-
     return (
         <Fragment>
-            <Column>
-                <h3>Pay</h3>
+            {loading
+                ?
+                <Fragment>
+                    <Column>
+                        <img src={loadingIcon} width="12px" height="12px" />
+                    </Column>
+                    <Column>
+                    </Column>
+                </Fragment>
+                :
+                <Fragment>
+                    <Column>
+                        <h3>Pay</h3>
+                        <InputGroup>
+                            <InputGroupIcon>
+                                {baseToken &&
+                                    (
+                                        <TokenLogo src={getIcon(baseToken.symbol)} alt={baseToken.symbol} />
+                                    )}
+                            </InputGroupIcon>
+                            <InputGroupDropdown active={isBaseTokenModalOpen}>
+                                <span onClick={() => toggleBaseModal()}>
+                                    {baseToken && `${baseToken.symbol}`}&#9660;
+                                </span>
+                                <DropdownPanel
+                                    tokens={tokens || []}
+                                    onChange={onBaseChange}
+                                    getIcon={getIcon}
+                                />
+                            </InputGroupDropdown>
+                            <InputGroupArea>
+                                <input value={baseTokenAmount} id="sourceInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,6})?$" />
+                            </InputGroupArea>
+                        </InputGroup>
+                        <AccountSection>
+                            <AccountLeft>
+                                BALANCE {sourceBalance}
+                            </AccountLeft>
+                            <AccountRight>
+                                {sourceBalance !== "0.0" && (
+                                    <span>
+                                        <Percentage onClick={() => setBaseAmountByPercent(0.25, sourceBalance)} >25%</Percentage>{` `}
+                                        <Percentage onClick={() => setBaseAmountByPercent(0.5, sourceBalance)}>50%</Percentage>{` `}
+                                        <Percentage onClick={() => setBaseAmountByPercent(1, sourceBalance)}>100%</Percentage>
+                                    </span>
+                                )}
+                            </AccountRight>
+                        </AccountSection>
+                    </Column>
+                    <Column>
+                        <h3>Receive</h3>
+                        <InputGroup>
+                            <InputGroupIcon>
+                                {pairToken &&
+                                    (
+                                        <TokenLogo src={getIcon(pairToken.symbol)} alt={pairToken.symbol} />
+                                    )}
+                            </InputGroupIcon>
+                            <InputGroupDropdown active={isPairTokenModalOpen}>
+                                <span onClick={() => togglePairModal()}>
+                                    {pairToken && `${pairToken.symbol}`}&#9660;
+                                </span>
+                                <DropdownPanel
+                                    tokens={tokens || []}
+                                    onChange={onPairChange}
+                                    getIcon={getIcon}
+                                />
+                            </InputGroupDropdown>
+                            <InputGroupArea>
+                                <input value={pairTokenAmount} id="destinationInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,6})?$" />
+                            </InputGroupArea>
+                        </InputGroup>
+                        <AccountSection>
+                            <AccountLeft>
+                                FEE {toFixed(fee, 1)} %
+                            </AccountLeft>
+                            {baseToken && pairToken && (
+                                <AccountRight>
+                                    {`1 ${baseToken.symbol.toUpperCase()} = ${Number(rate).toFixed(6)} ${pairToken.symbol.toUpperCase()}`}
+                                </AccountRight>
+                            )}
 
-                <InputGroup>
-                    <InputGroupIcon>
-                        <TokenLogo src={getIcon(source[0])} alt={source[0]} />
-                    </InputGroupIcon>
-                    <InputGroupDropdown active={isSourceModalOpen}>
+                        </AccountSection>
+                    </Column>
+                </Fragment>
+            }
 
-                        <span onClick={() => toggleSourceModal()}>
-                            {source[0]}&#9660;
-                        </span>
-
-
-                        <DropdownPanel
-                            tokens={tokens}
-                            onChange={onSourceChange}
-                            getIcon={getIcon}
-                        />
-
-
-
-
-                    </InputGroupDropdown>
-                    <InputGroupArea>
-                        <input value={sourceAmount} id="sourceInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
-                    </InputGroupArea>
-                </InputGroup>
-                <AccountSection>
-                    <AccountLeft>
-                        BALANCE {sourceBalance}
-                    </AccountLeft>
-                    <AccountRight>
-                        {sourceBalance !== "0.0" && (
-                            <span>
-                                <Percentage onClick={() => setSourceAmountByPercentage(0.25, sourceBalance)} >25%</Percentage>{` `}
-                                <Percentage onClick={() => setSourceAmountByPercentage(0.5, sourceBalance)}>50%</Percentage>{` `}
-                                <Percentage onClick={() => setSourceAmountByPercentage(1, sourceBalance)}>100%</Percentage>
-                            </span>
-                        )}
-                    </AccountRight>
-                </AccountSection>
-            </Column>
-            <Column>
-                <h3>Receive</h3>
-
-
-                <InputGroup>
-                    <InputGroupIcon>
-                        <TokenLogo src={getIcon(destination[0])} alt={destination[0]} />
-                    </InputGroupIcon>
-                    <InputGroupDropdown active={isDestinationModalOpen}>
-                        <span onClick={() => toggleDestinationModal()}>{destination[0]}&#9660;</span>
-
-                        <DropdownPanel
-                            tokens={tokens}
-                            onChange={onDestinationChange}
-                            getIcon={getIcon}
-                        />
-
-
-
-                    </InputGroupDropdown>
-                    <InputGroupArea>
-                        <input value={destinationAmount} id="destinationInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$" />
-                    </InputGroupArea>
-                </InputGroup>
-                <AccountSection>
-                    <AccountLeft>
-                        FEE { toFixed(fee, 1) } %
-                    </AccountLeft>
-                    <AccountRight>
-                        {`1 ${source[0].toUpperCase()} = ${rate} ${destination[0].toUpperCase()}`}
-                    </AccountRight>
-                </AccountSection>
-            </Column>
         </Fragment>
     )
 }
@@ -521,26 +394,21 @@ export default SwapPanel;
 
 
 const DropdownPanel = (props) => {
-
     const { tokens, onChange, getIcon } = props;
-
     const [filtered, setFiltered] = useState(tokens);
-
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         if (tokens.length > 0) {
-
             if (searchTerm === "") {
                 setFiltered(tokens);
             } else {
-                setFiltered(tokens.filter((item) => item[0].toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1))
+                setFiltered(tokens.filter((item) => item.symbol.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1))
             }
         }
     }, [tokens, searchTerm])
 
     const handleSearchTerm = useCallback(async (e) => {
-
         e.preventDefault();
         setSearchTerm(e.target.value);
     }, [tokens])
@@ -563,13 +431,16 @@ const DropdownPanel = (props) => {
                         return (
                             <tr onClick={() => onChange(item)} key={index}>
                                 <td width="25%">
-                                    <TokenLogo src={getIcon(item[0])} alt={item[0]} />
+                                    <TokenLogo src={getIcon(item.symbol)} alt={item.symbol} />
                                 </td>
                                 <td>
-                                    {item[0]}
+                                    {item.symbol}
+                                    {/*
                                     <ReservePoolAmount inactive={item[2] === 0}>
                                         SUPPLY{` `}:{` `}{item[2]}{` `}{item[0]}
                                     </ReservePoolAmount>
+                                    */}
+
                                 </td>
                             </tr>
                         )

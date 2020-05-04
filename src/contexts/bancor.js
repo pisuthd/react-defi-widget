@@ -235,7 +235,7 @@ export const useBancor = (web3context) => {
             // load contract addresses from cache
             if (network === NETWORKS.MAINNET) {
                 try {
-                    const response = await fetch(`${CACHE_URL}/address_book/bancor_systems123`);
+                    const response = await fetch(`${CACHE_URL}/address_book/bancor_systems`);
                     if (!response.ok) {
                         throw new Error();
                     }
@@ -373,6 +373,58 @@ export const useBancor = (web3context) => {
 
     }, [web3context])
 
+    const getTokenName2 = useCallback(async (address) => {
+        const signer = web3context.library.getSigner();
+        const tokenContract = getContract(address, ERC20TokenAbi, signer);
+
+        try {
+            const symbol = await tokenContract.symbol();
+            const name = await tokenContract.name();
+            return {
+                name : name,
+                symbol : symbol,
+                address : address
+            };
+        } catch (error) {
+            let symbol;
+            let name;
+            switch (address.toLowerCase()) {
+                case ('0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2').toLowerCase():
+                    symbol = "MKR";
+                    name = "Maker"
+                    break;
+                case ('0x1b22C32cD936cB97C28C5690a0695a82Abf688e6').toLowerCase():
+                    symbol =  "WISH";
+                    name = "WISH";
+                    break;
+                case ('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359').toLowerCase():
+                    symbol =  "SAI";
+                    name = "Single Collateral DAI ";
+                    break;
+                case ('0xE0B7927c4aF23765Cb51314A0E0521A9645F0E2A').toLowerCase():
+                    symbol =  "DGD";
+                    name = "DigixDAO";
+                    break;
+                case ('0xbdEB4b83251Fb146687fa19D1C660F99411eefe3').toLowerCase():
+                    symbol =  "SVD";
+                    name = "Savedroid";
+                    break;
+                case ('0xF1290473E210b2108A85237fbCd7b6eb42Cc654F').toLowerCase():
+                    symbol =  "HEDG";
+                    name = "HedgeTrade";
+                    break;
+                default:
+                    symbol =  `${address}`;
+            }
+            return {
+                name : name || address,
+                symbol : symbol,
+                address : address
+            };
+        }
+
+    },[web3context])
+
     const listLiquidityPools = useCallback(async () => {
 
         const signer = web3context.library.getSigner();
@@ -383,22 +435,42 @@ export const useBancor = (web3context) => {
 
     }, [bancorContractBancorConverterRegistry, web3context])
 
-
     const listConversionTokens = useCallback(async () => {
+        const signer = web3context.library.getSigner();
+        const contract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
+        const addresses = await contract.getConvertibleTokens();
+        const results = await Promise.all(addresses.map(address => getTokenName(address)));
+        return results;
+    }, [bancorContractBancorConverterRegistry, web3context])
+
+    const getConvertibleTokens = useCallback(async () => {
+        try {
+            const response = await fetch(`${CACHE_URL}/address_book/bancor_tokens`);
+            if (!response.ok) {
+                throw new Error();
+            }
+            const data = await response.json();
+            console.log("tokens loaded (from cache)")
+            let result = [];
+            for (let token of Object.keys(data)) {
+                if (token !== "_id" && token !== "_rev") {
+                    result.push({
+                        ...data[token],
+                        symbol : token
+                    });
+                }
+            }
+            return result;
+        } catch (error) {
+            console.log("Load tokens from cache failed, failback to default.")
+        }
 
         const signer = web3context.library.getSigner();
         const contract = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer);
         const addresses = await contract.getConvertibleTokens();
-
-        const results = await Promise.all(addresses.map(address => getTokenName(address)));
-
-        return results;
-
-
-    }, [bancorContractBancorConverterRegistry, web3context])
-
-
-
+        const convertibleTokens = await Promise.all(addresses.map(address => getTokenName2(address)));
+        return convertibleTokens;
+    },[web3context, bancorContractBancorConverterRegistry]);
 
     const getConnectorTokenCount = useCallback(async (converterAddress) => {
 
@@ -1073,6 +1145,7 @@ export const useBancor = (web3context) => {
         getTokenDecimal,
         parseToken,
         convert,
+        getConvertibleTokens,
         getETHBalance,
         getConversionFee,
         getMaxConversionFee,

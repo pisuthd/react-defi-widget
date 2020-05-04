@@ -687,14 +687,16 @@ const TableSearchRow = styled.tr`
         :last-child {
             padding-top: 4px;
             padding-bottom: 4px;
-            input {
-                border: 0;
-                display: block;
-                width: 100%;
-                padding: 8px;
-                text-align:left;
-                outline: 1px solid #eee;
-            }
+            
+        }
+
+        input {
+            border: 0;
+            display: block;
+            width: 100%;
+            padding: 8px;
+            text-align:left;
+            outline: 1px solid #eee;
         }
     }
 `;
