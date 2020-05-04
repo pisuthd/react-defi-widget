@@ -445,6 +445,9 @@ export const useBancor = (web3context) => {
 
     const getConvertibleTokens = useCallback(async () => {
         try {
+            if (web3context.network !== NETWORKS.MAINNET) {
+                throw new Error();
+            }
             const response = await fetch(`${CACHE_URL}/address_book/bancor_tokens`);
             if (!response.ok) {
                 throw new Error();
