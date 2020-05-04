@@ -40,7 +40,7 @@ const Widget = (props) => {
 
     const [errorMessage, setErrorMessage] = useState();
 
-    const { loading, listConversionTokens, getTokenName, loadingErrorMessage } = useBancor(web3ReactContext);
+    const { loading, loadingErrorMessage } = useBancor(web3ReactContext);
 
     const [clickCount, setClickCount] = useState(0);
     const [disclaimer, setDisclaimer] = useState(widgetDescription);
@@ -151,6 +151,7 @@ const Widget = (props) => {
                                         pairCurrency={pairCurrency}
                                         affiliateAccount={affiliateAccount}
                                         affiliateFee={affiliateFee}
+                                        width={width}
                                     />
                                 )}
 
