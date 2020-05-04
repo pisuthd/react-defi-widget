@@ -892,6 +892,7 @@ const ActionInputPanel = (props) => {
                         await updateBalance();
                         await updateDepositAmount();
                     } catch (error) {
+                        onClose(); 
                         throw new Error(error.message);
                     }  
                     onClose(); 
@@ -920,6 +921,7 @@ const ActionInputPanel = (props) => {
                         await updateBalance();
                         await updateDepositAmount();
                     } catch (error) {
+                        onClose(); 
                         throw new Error(error.message);
                     }  
                     onClose(); 
