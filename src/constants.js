@@ -70,5 +70,7 @@ export const HEADLINES = {
     }
 }
 
+export const CACHE_URL = "https://db-staging.stakingdojo.com";
+
 export const SLIPPAGE_RATE =  30000;// 3%
 

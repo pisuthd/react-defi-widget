@@ -88,16 +88,6 @@ const SwapPanel = (props) => {
         onConvert();
     }, [clickCount])
 
-    
-
-    useEffect(() => {
-
-            if (loading) {
-                // showProcessingModal("Looking up system contracts in registry...", "");
-            } 
-        
-    }, [loading])
-
     useEffect(() => {
 
         (async () => {
