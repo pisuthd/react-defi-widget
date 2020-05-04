@@ -149,12 +149,10 @@ npm start
 |**subtitle**|PropTypes.string|NO||Subtitle of the widget|
 |**description**|PropTypes.string|NO||Long description at the bottom of the widget|
 |**color**|PropTypes.string|NO|#0275d8|Color of the widget|
-|**baseCurrency**|PropTypes.string|NO|ETH|Default base currency in a symbol format*|
-|**pairCurrency**|PropTypes.string|NO|BNT|Default pair currency in a symbol format*|
+|**baseCurrency**|PropTypes.string|NO|ETH|Default base currency in a symbol format|
+|**pairCurrency**|PropTypes.string|NO|BNT|Default pair currency in a symbol format|
 |**affiliateAccount**|PropTypes.string|NO|None|The recipient account that collects the fee from the transaction|
 |**affiliateFee**|PropTypes.number|NO|0|The fee rate, for example 2.5 if the fee is set to 2.5%|
-
-*Only these following token symbols can be provided as a default value BNT, ETH, DAI, ENJ, BAT, KNC, MANA, POWR, MKR, ANT, GNO, OMG, SNT, RDN, SAN, USDB, USDC
 
 ## License
 
