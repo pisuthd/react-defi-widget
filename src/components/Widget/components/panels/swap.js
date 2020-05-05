@@ -136,7 +136,6 @@ const SwapPanel = (props) => {
                 const sourceDecimal = await getTokenDecimal(baseToken.address);
                 const rateResult = await getRate(path, normalizedAmount, sourceDecimal);
                 const detinationAmount = rateResult[0];
-                const slipRate = SLIPPAGE_RATE; // 3%
                 console.log("defaultAffiliateAccount : ", defaultAffiliateAccount, " rate : ", defaultAffiliateFee);
 
                 const tx = await convert(
@@ -145,7 +144,6 @@ const SwapPanel = (props) => {
                     normalizedAmount,
                     sourceDecimal,
                     detinationAmount,
-                    slipRate,
                     baseToken.symbol === "ETH",
                     pairToken.symbol === "ETH",
                     defaultAffiliateAccount,
