@@ -521,7 +521,7 @@ export const useBancor = (web3context) => {
         const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
 
         let options = {
-            gasLimit: GAS_LIMIT,
+            // gasLimit: GAS_LIMIT,
             gasPrice: finalGasPrice, // Minimum 3 Gwei
         };
 
@@ -638,7 +638,7 @@ export const useBancor = (web3context) => {
     }, [web3context, bancorContractBancorNetwork])
 
 
-    const convert = useCallback( async (path, baseTokenAddress, baseAmountRaw, baseDecimal, pairAmount, slipRate, fromETH, toETH, affiliateAccount = "0x0000000000000000000000000000000000000000", affiliateFee = "0") => {
+    const convert = useCallback( async (path, baseTokenAddress, baseAmountRaw, baseDecimal, pairAmount, fromETH, toETH, affiliateAccount = "0x0000000000000000000000000000000000000000", affiliateFee = "0") => {
         
         const baseAmount = ethers.utils.parseUnits(`${baseAmountRaw}`, baseDecimal);
 
@@ -656,14 +656,20 @@ export const useBancor = (web3context) => {
             console.log("diff : ", diff);
             if ((Number(ethers.utils.formatEther(allowance)) > 0) && (!fromETH)) {
                 console.log("allowance is not zero need to clear it first...");
+                options = {
+                    ...options,
+                    gasLimit: await tokenContract.estimate.approve(bancorContractBancorNetwork, 0)
+                } 
                 const resetTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
                 const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
                 await resetTx.wait();
                 onClose();
             }
-
+            options = {
+                ...options,
+                gasLimit: await tokenContract.estimate.approve(bancorContractBancorNetwork, baseAmount)
+            }
             await tokenContract.approve(bancorContractBancorNetwork, baseAmount, options);
-
         }
 
         if (fromETH) {
@@ -675,8 +681,18 @@ export const useBancor = (web3context) => {
 
         let tx;
         if (!fromETH) {
+            // FIXME : FIND A BETTER WAY TO HANDLE THIS
+            options = {
+                ...options,
+                gasLimit: await networkContract.estimate.claimAndConvert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee)
+            }
             tx = await networkContract.claimAndConvert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee, options);
         } else {
+            options = {
+                ...options,
+                gasLimit: await networkContract.estimate.convert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee)
+            }
+
             tx = await networkContract.convert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee, options);
         }
 
