@@ -130,7 +130,6 @@ const PoolCreationPanel = (props) => {
                     </Header>
                 )}
 
-
                 {step === 1 &&
                     (
                         <SetupRelayToken
@@ -383,7 +382,9 @@ const SetupRelayToken = (props) => {
                 <Column>
                     <select disabled={state['setupRelayToken']['completed']} onChange={handleOptions} id="relayToken" value={isCreateNew}>
                         <option value={true}>Create New Token</option>
+                        {/*
                         <option value={false}>Use Existing Token</option>
+                        */}
                     
                     </select>
                 </Column>
@@ -546,12 +547,12 @@ const SetupConverter = (props) => {
         if (!isCompleted) {
             setReserves([
                 {
-                    tokenAddress: "0x0000000000000000000000000000000000000000",
+                    tokenAddress: "",
                     weight: "50",
                     initialAmount: "0"
                 },
                 {
-                    tokenAddress: "0x0000000000000000000000000000000000000000",
+                    tokenAddress: "",
                     weight: "50",
                     initialAmount: "0"
                 }
@@ -596,7 +597,11 @@ const SetupConverter = (props) => {
 
             }
         } catch (error) {
-            setErrorMessage(error.message);
+            let errorMessage = error.message;
+            if ((error.message.indexOf("ENS name not configured") !== -1 ) || (error.message.indexOf("Invalid address") !== -1)) {
+                errorMessage = "One of address is not valid ERC-20.";
+            }
+            setErrorMessage(errorMessage);
             onClose();
             return;
         }
@@ -640,10 +645,18 @@ const SetupConverter = (props) => {
 
             const txs = await addInitialReserve(smartTokenAddress, converterAddress, reserves, initialPoolTokenAmount);
             console.log("txs object : ", txs);
-            const { issuranceTx } = txs;
+            const { issuranceTx, addingReserve, funding  } = txs;
             const addInitialReserveClose = showProcessingModal("Please wait while your reserves are being funded ", `Tx : ${issuranceTx.hash}` );
-            await issuranceTx.wait()
 
+            const promises = (funding.map(item => item.wait())).concat([issuranceTx.wait()]).concat(addingReserve.map(item => item.wait()));
+            console.log("promises : ", promises)
+            try {
+                await Promise.all(promises);
+            } catch (error) {
+                throw new Error(error.message);
+                addInitialReserveClose();
+            }
+            
             addInitialReserveClose();
 
         } catch (error) {
@@ -679,7 +692,6 @@ const SetupConverter = (props) => {
 
     const handleChange = useCallback((e) => {
         e.preventDefault();
-
         switch (e.target.id) {
             case "maxConversionFee":
                 const regexp = /^[0-9]*(\.[0-9]{0,1})?$/;
@@ -692,50 +704,40 @@ const SetupConverter = (props) => {
                 setInitialPoolTokenAmount(poolTokenValue);
                 break;
         }
-
     }, [conversionFee, initialPoolTokenAmount])
 
     const updateReserves = useCallback((index, type, value) => {
-
         setReserves(reserves.map((item, i) => {
             if (i === index) {
                 return {
                     ...item,
                     [type]: value
                 }
-
             } else {
                 return item;
             }
         }));
-
-
     }, [reserves])
 
     const deleteReserve = useCallback((index) => {
-
         if (!state.setupConverter.completed) {
             setReserves(reserves.filter((item, i) => i !== index));
         }
-
     }, [reserves, state])
 
     const addReserve = useCallback((e) => {
         if (state.setupConverter.completed) {
             return;
         }
-
         let newReserves = [];
         for (let r of reserves) {
             newReserves.push(r)
         }
-
         if (newReserves.length >= 10) {
             return;
         }
-
         newReserves.push({
-            tokenAddress: "0x0000000000000000000000000000000000000000",
+            tokenAddress: "",
             weight: "50",
             initialAmount: "0"
         })
@@ -743,7 +745,6 @@ const SetupConverter = (props) => {
 
     }, [reserves, state])
 
-    
 
     return (
         <Fragment>
@@ -910,9 +911,7 @@ const SetupConverter = (props) => {
                         </tbody>
                     </table>
                 </WeightSetupWrapper>
-
             </Row>
-
             <Row
                 style={{
                     position: "relative",
@@ -989,8 +988,6 @@ const Activate = (props) => {
 
         const smartTokenAddress  = state['setupRelayToken']['tokenAddress'];
         // const converterAddress = state['setupConverter']['converterAddress'];
-
-
         if ((!smartTokenAddress) || (!converterAddress)) {
             setErrorMessage("State error.")
             return;
@@ -1000,17 +997,22 @@ const Activate = (props) => {
             const txs = await activateConverter(smartTokenAddress, converterAddress, tradingFee);
             
             console.log("txs object : ", txs);
-            const { activateTx } = txs;
-            const activateModalClose = showProcessingModal("Activating...", `Tx : ${activateTx.hash}` );
-            await activateTx.wait()
-
+            const { setConversionFeeTx, transferOwnershipTx,  activateTx} = txs;
+            const promises = [setConversionFeeTx.wait(), transferOwnershipTx.wait(), activateTx.wait()]
+            const activateModalClose = showProcessingModal("Activating...", `Tx : ${setConversionFeeTx.hash}` );
+            try {
+                await Promise.all(promises);
+            } catch (error) {
+                activateModalClose();
+                throw new Error(error.message);
+            }
+            
             activateModalClose();
         
         } catch (error) {
             setErrorMessage(error.message);
             return;
         }
-
 
         let updated = state;
         updated['activate']['completed'] = true;
@@ -1149,13 +1151,16 @@ const Register = (props) => {
     const onRegister = useCallback(async (e) => {
         e.preventDefault();
         setErrorMessage();
-
         try {
             const tx = await registerConverter(converterAddress);
-
             const onClose = showProcessingModal("Registering...", `Tx : ${tx.hash}`);
-            await tx.wait();
-
+            try {
+                await tx.wait();
+            } catch (error) {
+                onClose();
+                throw new Error(error.message);
+            }
+            
             onClose();
 
             setCompleted(true);
