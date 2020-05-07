@@ -54,7 +54,7 @@ export const NETWORKS = {
 export const HEADLINES = {
     HEADER : {
         SWAP : "Simple & Easy Token Swap",
-        POOLS: "Liquidity Pool Creation"
+        POOLS: "Pool Creation/Stake Liquidity"
     },
     TEXT : {
         SWAP : "Allow your site's visitor convert Ethereum's ERC-20 tokens for other & earn commission on each transaction",
