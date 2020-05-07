@@ -32,7 +32,7 @@ const ACTIONS = {
     UPDATE_BANCOR_CONTRACTS: "UPDATE_BANCOR_CONTRACTS"
 }
 
-const GAS_LIMIT = 1000000;
+// const GAS_LIMIT = 300000;
 
 
 const reducer = (state, { type, payload }) => {
@@ -183,7 +183,6 @@ export const useBancor = (web3context) => {
 
     const { networkId } = web3context;
     const { showProcessingModal } = useModal();
-
 
     const {
         loading,
@@ -513,15 +512,26 @@ export const useBancor = (web3context) => {
         const price = await signer.provider.getGasPrice();
         return price;
     }, [web3context])
-
+    /*
+    const getGasLimit = async (object, override = GAS_LIMIT) => {
+        try {
+            const value = Number(await object())+21000;
+            return value;
+        } catch (error) {
+            return override;
+        }
+    };
+    */
+    
     const constructTxOptions = useCallback(async () => {
         const estimatedGasPrice = await getGasPrice();
         const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
 
         const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
-
+        const estimatedGasLimit = (Number(ethers.utils.formatUnits(`${finalGasPrice}`, "gwei" ))*100000);
+        console.log("estimatedGasLimit : ", Math.floor(estimatedGasLimit) );
         let options = {
-            // gasLimit: GAS_LIMIT,
+            gasLimit: Math.floor(estimatedGasLimit * 0.5),
             gasPrice: finalGasPrice, // Minimum 3 Gwei
         };
 
@@ -650,56 +660,34 @@ export const useBancor = (web3context) => {
         // Check allowance 
         const allowance = await tokenContract.allowance(web3context.account, bancorContractBancorNetwork);
         console.log("allowance : ", ethers.utils.formatEther(allowance));
-
+        let txs = [];
         const diff = Number(ethers.utils.formatUnits(baseAmount, baseDecimal))-Number(ethers.utils.formatUnits(allowance, baseDecimal));
         if ((diff > 0 ) && (!fromETH)) {
             console.log("diff : ", diff);
             if ((Number(ethers.utils.formatEther(allowance)) > 0) && (!fromETH)) {
                 console.log("allowance is not zero need to clear it first...");
-                options = {
-                    ...options,
-                    gasLimit: await tokenContract.estimate.approve(bancorContractBancorNetwork, 0)
-                } 
                 const resetTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
                 const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
                 await resetTx.wait();
                 onClose();
             }
-            options = {
-                ...options,
-                gasLimit: await tokenContract.estimate.approve(bancorContractBancorNetwork, baseAmount)
-            }
-            await tokenContract.approve(bancorContractBancorNetwork, baseAmount, options);
+            const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, baseAmount, options);
+            txs.push(approvalTx)
         }
-
         if (fromETH) {
             options = {
                 ...options,
                 value: baseAmount
             }
         }
-
         let tx;
         if (!fromETH) {
-            // FIXME : FIND A BETTER WAY TO HANDLE THIS
-            options = {
-                ...options,
-                gasLimit: await networkContract.estimate.claimAndConvert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee)
-            }
             tx = await networkContract.claimAndConvert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee, options);
         } else {
-            options = {
-                ...options,
-                gasLimit: await networkContract.estimate.convert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee)
-            }
-
             tx = await networkContract.convert2(path, baseAmount, pairAmount, affiliateAccount, affiliateFee, options);
         }
-
-        return tx;
-
-
-
+        txs.push(tx);
+        return txs;
     },[web3context, bancorContractBancorNetwork])
 
     const getReserveRatio = useCallback(async (converterAddress, tokenAddress) => {
@@ -832,10 +820,7 @@ export const useBancor = (web3context) => {
 
             const supplyWei = await relayTokenContract.totalSupply();
             const relayTokenBalance = ethers.utils.formatUnits(relayTokenBalanceWei.toString(), decimal);
-            console.log("getAfforableAmount decimal : ", decimal);
             const supply = ethers.utils.formatUnits(supplyWei.toString(), decimal);
-
-
             // let percentage = 100 / (supply / 0.01);
 
             let maxAfforable = 1000;
@@ -859,11 +844,8 @@ export const useBancor = (web3context) => {
                     maxAfforable = tokenMaxAfforable
                 }
                 // const buyingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor(percentage * 1000000))).div(ethers.utils.bigNumberify(1000000));
-
-
             }
-
-
+            console.log("maxAfforable : ", maxAfforable===1000 ? 0 : maxAfforable);
             return {
                 totalPoolToken : relayTokenBalance,
                 totalPoolTokenSupply : supply,
@@ -880,16 +862,16 @@ export const useBancor = (web3context) => {
         
         console.log("fund... : ", poolObject, " % : ", amountInPercentage);
         const signer = web3context.library.getSigner();
-        const options = await constructTxOptions();
+        let options = await constructTxOptions();
         const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
         const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
         
-        const decimal = await relayTokenContract.decimals();
         const supplyWei = await relayTokenContract.totalSupply();
-        const supply = ethers.utils.formatUnits(`${supplyWei}`, decimal);
         const percentage = amountInPercentage;
         const tokenAmount = supplyWei.mul(ethers.utils.bigNumberify(Math.floor((amountInPercentage/100) * 1000000))).div(ethers.utils.bigNumberify(1000000));
   
+        let txs = [];
+
         for (let i = 0; i < poolObject.reserves.length; i += 1) {
             const reverse = poolObject.reserves[i];
             const thisReserveBalance = await converterContract.getConnectorBalance(reverse[1]);
@@ -914,47 +896,40 @@ export const useBancor = (web3context) => {
                     onClose(); 
                 }
                 const approvalTx = await token.approve(converterContract.address, buyingAmount, options);
+                txs.push(approvalTx);
             }
-
         }
-
+        console.log("before funding...", options, tokenAmount)
         const fundingTx = await converterContract.fund( tokenAmount , options);
         console.log("funding...");
-        return fundingTx;
-
+        txs.push(fundingTx)
+        return txs;
     },[web3context]);
 
-
     const withdrawLiquidityPool = useCallback(async (poolObject, amountInPercentage) => {
-        
         const signer = web3context.library.getSigner();
         const options = await constructTxOptions();
         const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
         const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
-
         const supplyWei = await relayTokenContract.totalSupply();
         const supply = ethers.utils.formatEther(supplyWei.toString());
-        
-        const percentage = amountInPercentage;
-        const tokenAmount = supplyWei.mul(ethers.utils.bigNumberify(Math.floor((amountInPercentage/100) * 1000000))).div(ethers.utils.bigNumberify(1000000));
-        console.log("selling amount : ", percentage, " token amount : ", ethers.utils.formatEther(tokenAmount) , " from supply : ", supply); 
-
+        const tokenAmount = supplyWei.mul(ethers.utils.bigNumberify(   Math.floor((amountInPercentage/100) * 1000000))  ).div(ethers.utils.bigNumberify(1000000));
+        console.log("selling amount : ", amountInPercentage, " token amount : ", ethers.utils.formatEther(tokenAmount) , " from supply : ", supply); 
         const tx =  await converterContract.liquidate( tokenAmount , options);
         return tx;
-
-
     },[web3context]);
-
 
     const createSmartToken = useCallback(async (symbol, fullName) => {
 
         try {
-
             const signer = web3context.library.getSigner();
-            const options = await constructTxOptions();
+            let options = await constructTxOptions();
             const factory = new ethers.ContractFactory(SmartTokenAbi , SmartTokenByteCode , signer);
+            options = {
+                ...options,
+                gasLimit : 3000000
+            }
             const contract = await factory.deploy(fullName, symbol ,18, options);
-
             return contract;
         } catch (error) {
             throw new Error(error.message)
@@ -995,7 +970,6 @@ export const useBancor = (web3context) => {
 
     const createConverter = useCallback(async (smartTokenAddress, conversionFee, reserves ) => {
 
-
         console.log("createConverter : ", bancorContractContractRegistry, smartTokenAddress, conversionFee, reserves)
 
         try {
@@ -1004,7 +978,10 @@ export const useBancor = (web3context) => {
             const signer = web3context.library.getSigner();
             let options = await constructTxOptions();
 
-            options.gasLimit = options.gasLimit*5;
+            options = {
+                ...options,
+                gasLimit : 5000000
+            }
 
             const factory = new ethers.ContractFactory(BancorConverterAbi , BancorConverterByteCode , signer);
             const contract = await factory.deploy(
@@ -1013,7 +990,7 @@ export const useBancor = (web3context) => {
                 normalizedMaxConversionFee, 
                 reserves[0].tokenAddress,
                 Number(reserves[0].weight) *  (1000000/100),
-                options // Increare GAS
+                options
             );
 
             console.log("contract : ", contract);
@@ -1050,15 +1027,12 @@ export const useBancor = (web3context) => {
             }
 
             const tokenContract = getContract(reserve.tokenAddress, ERC20TokenAbi, signer);
-            const fundingTx =  await tokenContract.transfer(converterAddress, ethers.utils.parseEther(`${reserve.initialAmount}`) , options);
-
+            const tokenDecimals = await tokenContract.decimals();
+            const fundingTx =  await tokenContract.transfer(converterAddress, ethers.utils.parseUnits(`${reserve.initialAmount}`,tokenDecimals) , options);
             fundingTxs.push(fundingTx);
-
             count +=1;
         }
-
         const issuranceTx = await relayTokenContract.issue(web3context.account, ethers.utils.parseEther(`${initialPoolTokenAmount}`) , options);
-
         // const transferOwnershipTx = await relayTokenContract.transferOwnership();
         return {
             addingReserve : addingReserveTxs,
@@ -1113,12 +1087,11 @@ export const useBancor = (web3context) => {
 
         console.log("activateConverter : ", smartTokenAddress, converterAddress, tradingFee );
         const signer = web3context.library.getSigner();
-        const options = await constructTxOptions();
+        let options = await constructTxOptions();
 
         const relayTokenContract = getContract(smartTokenAddress , SmartTokenAbi, signer);
         const converterContract = getContract(converterAddress, BancorConverterAbi, signer);
         const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer );
-
         const setConversionFeeTx = await converterContract.setConversionFee( Number(tradingFee) * (1000000/100) ,options);
         const transferOwnershipTx = await relayTokenContract.transferOwnership(converterAddress,options);
         const activateTx = await converterContract.acceptTokenOwnership(options);
@@ -1133,10 +1106,9 @@ export const useBancor = (web3context) => {
     }, [web3context, bancorContractBancorConverterRegistry]);
 
     const registerConverter = useCallback(async (converterAddress) => {
-
         console.log("register : ", converterAddress);
         const signer = web3context.library.getSigner();
-        const options = await constructTxOptions();
+        let options = await constructTxOptions();
 
         const converterRegistry = getContract(bancorContractBancorConverterRegistry, BancorConverterRegistryAbi, signer );
         const isValid = await converterRegistry.isConverterValid(converterAddress);

@@ -109,16 +109,6 @@ export const useModal = () => {
 
     const [{ message, title, showModal, type, tick }, { updateMessage, updateShowModal, updateTick }] = useModalContext();
 
-    useEffect(() => {
-        // updateShowModal(true);
-        /*
-        setTimeout(() => {
-            updateShowModal(false);
-        }, 5000)
-        */
-    }, [])
-
-
     const onClose = () => {
         updateShowModal(false);
         // setType(MODAL_TYPES.NONE);
@@ -172,14 +162,14 @@ export const useModal = () => {
 
     const getTxOptions = useCallback(async (web3context) => {
         const signer = web3context.library.getSigner();
-        const price = await signer.provider.getGasPrice();
+        const estimatedGasPrice =  await signer.provider.getGasPrice()
         const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
-        const finalGasPrice = price.lt(minimumGasPrice) ? minimumGasPrice : price;
+        const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
+        const estimatedGasLimit = (Number(ethers.utils.formatUnits(`${finalGasPrice}`, "gwei" ))*100000);
         let options = {
-            gasLimit: 1000000,
+            gasLimit: Math.floor(estimatedGasLimit * 0.5),
             gasPrice: finalGasPrice, // Minimum 3 Gwei
         };
-
         return options;
     }, []) 
 
@@ -223,10 +213,8 @@ export const useModal = () => {
         };
         const tokenContract = getContract(contractAddress,EtherTokenAbi, signer );
         const tx = await tokenContract.withdraw(ethers.utils.parseEther(`${withdrawAmount}`), options);
-
         return tx;
     }, []);
-
 
     return {
         showModal,

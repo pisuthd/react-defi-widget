@@ -138,7 +138,7 @@ const SwapPanel = (props) => {
                 const detinationAmount = rateResult[0];
                 console.log("defaultAffiliateAccount : ", defaultAffiliateAccount, " rate : ", defaultAffiliateFee);
 
-                const tx = await convert(
+                const txs = await convert(
                     path,
                     baseToken.address,
                     normalizedAmount,
@@ -149,18 +149,15 @@ const SwapPanel = (props) => {
                     defaultAffiliateAccount,
                     defaultAffiliateFee
                 );
-
-                if (tx.hash) {
-                    const { hash } = tx;
-                    const onClose = showProcessingModal("Please wait while your transaction is being processed", `Tx : ${hash}`);
-                    try {
-                        await tx.wait(); // shows an error if it's failed
-                    } catch (error) {
-                        alert(error.message);
-                    }
-                    onClose();
-                    console.log("done...");
+                
+                const onClose = showProcessingModal("Pleae wait while all transactions are being confirmed", `Number of transactions : ${txs.length}`);
+                try {
+                    await Promise.all(txs.map(item => item.wait()));
+                    setBaseAmountByPercent(0,0);
+                } catch (error) {
+                    alert(error.message);
                 }
+                onClose();
             } catch (error) {
                 console.log("onConvert error : ", error)
             }

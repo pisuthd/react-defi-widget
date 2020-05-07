@@ -883,13 +883,12 @@ const ActionInputPanel = (props) => {
                 if (inputAmount === 0) {
                     return;
                 }
-
                 const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
                 try {
-                    const tx = await fundLiquidityPool(currentPool, input);
-                    const onClose = showProcessingModal("Funding...", `Tx : ${tx.hash}`);
+                    const txs = await fundLiquidityPool(currentPool, input);
+                    const onClose = showProcessingModal("Funding...", `Number of transactions : ${txs.length}`);
                     try {
-                        await tx.wait();
+                        await Promise.all(txs.map(item => item.wait()));
                         console.log("funded.");
                         await updateBalance();
                         await updateDepositAmount();
@@ -898,13 +897,10 @@ const ActionInputPanel = (props) => {
                         throw new Error(error.message);
                     }  
                     onClose(); 
-                    
                 } catch (error) {
                     console.log("error : ", error);
                     alert(error.message);
                 }
-
-
                 break;
             case ACTION_PANELS.REMOVE_LIQUIDITY:
                 console.log("REMOVE_LIQUIDITY ...");
@@ -1035,19 +1031,9 @@ const ActionInputPanel = (props) => {
                         <PoolNavigation 
                             width={width}
                             wrapAt={wrapAt}
+                            isAddLiquidity={true}
                         />
-                        {/*
-                    <ChartLeftPanel style={{  fontSize: "12px" }}>
                         
-                        <b>Balance</b>
-                        {balances.map((item, index) => {
-                            return (
-                                <TokenAmount danger={item.balance === "0.000000"} key={index}>
-                                    {item.balance}{` `}{item.symbol}
-                                </TokenAmount>
-                            )
-                        })}
-                    </ChartLeftPanel>*/}
                         <LiquidityInputPanel>
                             <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
                                 <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
@@ -1116,7 +1102,11 @@ const ActionInputPanel = (props) => {
             {actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY &&
                 (
                     <Fragment>
-                        <PoolNavigation />
+                        <PoolNavigation 
+                            width={width}
+                            wrapAt={wrapAt}
+                            isAddLiquidity={false}
+                        />
 
                         <LiquidityInputPanel>
                             <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
@@ -1227,38 +1217,26 @@ const TokenAmount = styled.div`
     `}
 `;
 
-const PoolNavigation = ({width, wrapAt}) => {
-
-    const [ active, setActive  ] = useState(false);
-
-    const toggle = useCallback((e) => {
-        e.preventDefault();
-        setActive(!active);
-    },[active])
-
+const PoolNavigation = ({width, wrapAt, isAddLiquidity}) => {
     return (
         <ChartLeftPanel
             style={{
                 width : width > wrapAt ? "30%" : "20%",
-                fontSize: "12px"
+                fontSize: width > wrapAt ? "12px" : "10px"
             }}
-            
         >
-                <b style={{cursor : "pointer"}} onClick={toggle}>
-                    By Equal Weight Each{` `}&#9660;
-                </b>
-                <DropdownContainer style={{height : "45px"}} active={active}>
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td>By Equal Weight Each</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </DropdownContainer>
-                <p style={{fontSize: "10px"}}>
-                    Weights every token equally by the given percentage that refers to the pool's total supply.
+                {  isAddLiquidity
+                ?
+                <p>
+                    Buys pool tokens with all reserve tokens using the same percentage.
                 </p>
+                :
+                <p>
+                    Sells pool tokens for all reserve tokens using the same percentage.
+                </p>
+                }
+
+                
         </ChartLeftPanel>
     )
 }
