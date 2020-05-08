@@ -269,7 +269,7 @@ const SwapPanel = (props) => {
     const setBaseAmountByPercent = useCallback((percent, amount) => {
 
         if (isLoadingRate) {
-            alert("Not ready!")
+            // alert("Not ready!")
             return;
         }
 
