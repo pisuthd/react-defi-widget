@@ -523,7 +523,7 @@ export const useBancor = (web3context) => {
     };
     */
     
-    const constructTxOptions = useCallback(async () => {
+    const constructTxOptions = useCallback(async (normalizedRate = 0.5) => {
         const estimatedGasPrice = await getGasPrice();
         const minimumGasPrice = ethers.utils.parseEther("0.000000003"); // 3 Gwei
 
@@ -531,7 +531,7 @@ export const useBancor = (web3context) => {
         const estimatedGasLimit = (Number(ethers.utils.formatUnits(`${finalGasPrice}`, "gwei" ))*100000);
         console.log("estimatedGasLimit : ", Math.floor(estimatedGasLimit) );
         let options = {
-            gasLimit: Math.floor(estimatedGasLimit * 0.5),
+            gasLimit: Math.floor(estimatedGasLimit * normalizedRate),
             gasPrice: finalGasPrice, // Minimum 3 Gwei
         };
 
@@ -666,12 +666,12 @@ export const useBancor = (web3context) => {
             console.log("diff : ", diff);
             if ((Number(ethers.utils.formatEther(allowance)) > 0) && (!fromETH)) {
                 console.log("allowance is not zero need to clear it first...");
-                const resetTx = await tokenContract.approve(bancorContractBancorNetwork, 0, options);
+                const resetTx = await tokenContract.approve(bancorContractBancorNetwork, 0, await constructTxOptions(0.1));
                 const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
                 await resetTx.wait();
                 onClose();
             }
-            const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, baseAmount, options);
+            const approvalTx = await tokenContract.approve(bancorContractBancorNetwork, baseAmount, await constructTxOptions(0.1));
             txs.push(approvalTx)
         }
         if (fromETH) {
@@ -890,12 +890,12 @@ export const useBancor = (web3context) => {
                 console.log("diff : ", diff);
                 if (Number(ethers.utils.formatUnits(allowance, thisReserveDecimal)> 0)) {
                     console.log("allowance is not zero need to clear it first...");
-                    const resetTx = await token.approve(converterContract.address, 0, options);
+                    const resetTx = await token.approve(converterContract.address, 0, await constructTxOptions(0.1));
                     const onClose  = showProcessingModal("Your transaction might take a while since the token allowance will need to be adjusted", `tx : ${resetTx.hash}`);
                     await resetTx.wait();
                     onClose(); 
                 }
-                const approvalTx = await token.approve(converterContract.address, buyingAmount, options);
+                const approvalTx = await token.approve(converterContract.address, buyingAmount, await constructTxOptions(0.1));
                 txs.push(approvalTx);
             }
         }

@@ -33,6 +33,7 @@ const SwapPanel = (props) => {
     const networkId = web3ReactContext.networkId;
 
     const [tokens, setTokens] = useState();
+    const [resetRate, setResetRate ] = useState(0);
     const [liquidityPools, setLiquidityPools] = useState([]);
     const [isBaseTokenModalOpen, setBaseTokenModal] = useState(false);
     const [isPairTokenModalOpen, setPairTokenModal] = useState(false);
@@ -156,6 +157,7 @@ const SwapPanel = (props) => {
                     setBaseAmountByPercent(0,0);
                 } catch (error) {
                     alert(error.message);
+                    setResetRate(resetRate+1);
                 }
                 onClose();
             } catch (error) {
@@ -165,7 +167,7 @@ const SwapPanel = (props) => {
                 await updateBalance(baseToken);
             }, 3000)
         }
-    }, [baseTokenAmount, baseToken, pairToken, path, web3ReactContext])
+    }, [baseTokenAmount, baseToken, pairToken, path, web3ReactContext, resetRate])
 
     useEffect(() => {
 
@@ -191,8 +193,7 @@ const SwapPanel = (props) => {
                         setFee(Number((100 * Number(finalFee)) / Number(finalRate)));
                         setPath(path);
 
-                        // updateDestinationAmount(finalRate);
-
+                        updatePairTokenAmount(finalRate);
 
                     } catch (error) {
                         console.log("Find a shortest path error : ", error);
@@ -202,7 +203,7 @@ const SwapPanel = (props) => {
                 })();
             }
         }
-    }, [baseToken, pairToken, loading, liquidityPools, networkId]);
+    }, [baseToken, pairToken, loading, liquidityPools, networkId, resetRate]);
 
     const toggleBaseModal = useCallback(() => {
         setBaseTokenModal(!isBaseTokenModalOpen);
@@ -265,6 +266,11 @@ const SwapPanel = (props) => {
             setBaseTokenAmount(result);
         }
     }, [rate, isLoadingRate, baseTokenAmount, pairTokenAmount])
+
+    const updatePairTokenAmount = useCallback((rate) => {
+        const result = (Number(baseTokenAmount) * Number(rate));
+        setPairTokenAmount(result);
+    },[baseTokenAmount])
 
     const setBaseAmountByPercent = useCallback((percent, amount) => {
 

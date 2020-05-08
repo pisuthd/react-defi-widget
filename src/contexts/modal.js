@@ -167,7 +167,7 @@ export const useModal = () => {
         const finalGasPrice = estimatedGasPrice.lt(minimumGasPrice) ? minimumGasPrice : estimatedGasPrice
         const estimatedGasLimit = (Number(ethers.utils.formatUnits(`${finalGasPrice}`, "gwei" ))*100000);
         let options = {
-            gasLimit: Math.floor(estimatedGasLimit * 0.5),
+            gasLimit: Math.floor(estimatedGasLimit * 0.2),
             gasPrice: finalGasPrice, // Minimum 3 Gwei
         };
         return options;
