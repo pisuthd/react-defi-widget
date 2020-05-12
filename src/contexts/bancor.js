@@ -175,6 +175,26 @@ export const getContract = (address, ABI, signer) => {
     return new ethers.Contract(address, ABI, signer);
 };
 
+export const fetchData = async (url) => {
+    return new Promise((resolve, reject) => {
+        fetch(url).then(
+            response => {
+                if (!response.ok) {
+                    throw new Error();
+                } else {
+                    resolve(response.json())
+                }
+            }
+        ).catch(error => {
+            reject();
+        })
+
+        setTimeout(() => {
+            reject();
+        }, 3000)
+
+    })
+}
 
 export const useBancor = (web3context) => {
     const [state, { updateBancorContracts, updateBalance }] = useBancorContext();
@@ -234,11 +254,7 @@ export const useBancor = (web3context) => {
             // load contract addresses from cache
             if (network === NETWORKS.MAINNET) {
                 try {
-                    const response = await fetch(`${CACHE_URL}/address_book/bancor_systems`);
-                    if (!response.ok) {
-                        throw new Error();
-                    }
-                    const data = await response.json();
+                    const data = await fetchData(`${CACHE_URL}/address_book/bancor_systems`);
                     updateBancorContracts(data);
                     setLoadedContracts(true);
                     console.log("contracts loaded. (from cache)");
@@ -444,14 +460,10 @@ export const useBancor = (web3context) => {
 
     const getConvertibleTokens = useCallback(async () => {
         try {
-            if (web3context.network !== NETWORKS.MAINNET) {
+            if (web3context.networkId !== NETWORKS.MAINNET) {
                 throw new Error();
             }
-            const response = await fetch(`${CACHE_URL}/address_book/bancor_tokens`);
-            if (!response.ok) {
-                throw new Error();
-            }
-            const data = await response.json();
+            const data = await fetchData(`${CACHE_URL}/address_book/bancor_tokens`);
             console.log("tokens loaded (from cache)")
             let result = [];
             for (let token of Object.keys(data)) {
