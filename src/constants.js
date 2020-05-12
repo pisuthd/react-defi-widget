@@ -19,8 +19,7 @@ export const COLORS = {
 export const PAGES = {
     DEFAULT: "SWAP",
     SWAP: "SWAP",
-    POOLS: "POOLS",
-    STABLECOINS: "STABLECOINS"
+    POOLS: "POOLS"
 }
 
 export const BANCOR_CONTRACTS = {
