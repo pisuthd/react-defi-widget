@@ -1,4 +1,4 @@
-import React, { useState , Fragment } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import Widget from "./components/Widget";
@@ -129,13 +129,5 @@ LiquidityPoolsWidget.propTypes = {
 
 };
 
-export const StablecoinsWidget = (props) => {
-    const { web3ReactContext } = props;
-
-    return <ConnectedWidget
-                web3ReactContext={web3ReactContext}
-                currentPage={PAGES.STABLECOINS}
-            />
-}
 
 export default ConnectedWidget;

@@ -1,8 +1,7 @@
-import ConnectedWidget, { TokenConversionWidget, LiquidityPoolsWidget, StablecoinsWidget } from "./widget";
+import ConnectedWidget, { TokenConversionWidget, LiquidityPoolsWidget } from "./widget";
 
 export {
   ConnectedWidget as Widget,
   TokenConversionWidget,
-  LiquidityPoolsWidget,
-  StablecoinsWidget
+  LiquidityPoolsWidget
 };
