@@ -8,7 +8,7 @@ import { PAGES, HEADLINES, COLORS } from "../../constants";
 import SwapPanel from "./components/panels/swap";
 import LiquidityPoolPanel, { ACTION_PANELS } from "./components/panels/liquidityPool";
 
-import Modal from "./modal";
+import Modal from "./components/modals";
 
 import styled from "styled-components"
 import ContainerDimensions from 'react-container-dimensions'
