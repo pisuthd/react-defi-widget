@@ -65,7 +65,13 @@ const LiquidityPoolPanel = (props) => {
         registerConverter
     } = useBancor(web3ReactContext);
 
-    const { showProcessingModal, showEtherTokenModal, showModal, tick } = useModal();
+    const { 
+        showProcessingModal, 
+        showEtherTokenModal, 
+        showModal, 
+        tick,
+        showErorMessageModal
+    } = useModal();
 
     useEffect(() => {
         (async () => {
@@ -96,7 +102,6 @@ const LiquidityPoolPanel = (props) => {
 
                         Promise.all(poolPromises).then(
                             poolResult => {
-
                                 // console.log("poolResult : ", poolResult);
                                 let promisesPool = [];
 
@@ -118,7 +123,6 @@ const LiquidityPoolPanel = (props) => {
                                                 formalName = formalName + "/" + tokenName;
                                             }
                                         }
-
                                     }
 
                                     return {
@@ -140,17 +144,12 @@ const LiquidityPoolPanel = (props) => {
 
                                 Promise.all(promisesPool).then(
                                     finalResult => {
-
                                         console.log("finalResult : ", finalResult);
-
                                         setPools(finalResult.filter(item => item.reserves.length !== 1).sort((a, b) => (Number(a.totalSupply) > Number(b.totalSupply)) ? -1 : 1));
                                         setLoadingPools(false);
                                         onClose();
                                     }
                                 )
-
-
-
                             }
                         )
 
@@ -597,7 +596,6 @@ const DropdownContainer = styled.div`
         :hover {
             background-color: #f1f1f1
         }
-
     }
 
     table {
@@ -605,26 +603,17 @@ const DropdownContainer = styled.div`
     }
 
     th, td {
-
-        
-
         padding-top: 10px;
         padding-bottom: 10px;
-
-
     }
 
     tr {
-
         cursor: pointer;
-
         ${props => props.skipSearch && `
             :first-child) {
                 cursor: default;
             }
         `}
-        
-
         &:not(:last-child) {
             border-bottom: 1px solid #ddd;
         }
@@ -671,12 +660,9 @@ const DropdownListContainer = styled(DropdownContainer)`
     height: 250px;
     margin-left: 0px;
     min-width: 300px;
-    
 `
 
 const TableSearchRow = styled.tr`
-
-
     td {
         font-size: 14px;
 
@@ -879,7 +865,6 @@ const ActionInputPanel = (props) => {
         switch (actionPanel) {
             case ACTION_PANELS.ADD_LIQUIDITY:
                 console.log("ADD_LIQUIDITY ....");
-
                 if (inputAmount === 0) {
                     return;
                 }
@@ -899,7 +884,7 @@ const ActionInputPanel = (props) => {
                     onClose(); 
                 } catch (error) {
                     console.log("error : ", error);
-                    alert(error.message);
+                    showErorMessageModal(error.message, "Price may surge during confirmation period, you can try it again.");
                 }
                 break;
             case ACTION_PANELS.REMOVE_LIQUIDITY:
@@ -926,9 +911,8 @@ const ActionInputPanel = (props) => {
 
                 } catch (error) {
                     console.log("error : ", error);
-                    alert(error.message);
+                    showErorMessageModal(error.message, "Possibly you can reduce a percentage and try it again.");
                 }
-
                 break;
         }
 
@@ -976,7 +960,6 @@ const ActionInputPanel = (props) => {
             console.log("get affordable amount...")
             const { maxAfforable, totalPoolToken, totalPoolTokenSupply } = await getAfforableAmount(currentPool, tokenList);
             console.log("result --> ", maxAfforable, totalPoolToken, totalPoolTokenSupply);
-
 
             setPoolTokenAmount(Number(totalPoolToken));
             setPoolTokenSupply(Number(totalPoolTokenSupply));

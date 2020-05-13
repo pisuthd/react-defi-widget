@@ -653,8 +653,8 @@ const SetupConverter = (props) => {
             try {
                 await Promise.all(promises);
             } catch (error) {
-                throw new Error(error.message);
                 addInitialReserveClose();
+                throw new Error(error.message);
             }
             
             addInitialReserveClose();

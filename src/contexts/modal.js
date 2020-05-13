@@ -104,7 +104,6 @@ const provider = ({ children }) => {
     )
 }
 
-
 export const useModal = () => {
 
     const [{ message, title, showModal, type, tick }, { updateMessage, updateShowModal, updateTick }] = useModalContext();
@@ -121,6 +120,11 @@ export const useModal = () => {
         return onClose;
     },[])
 
+    const showErorMessageModal = useCallback((title, message) => { 
+        updateShowModal(true);
+        updateMessage( MODAL_TYPES.ERROR ,title, message);
+    },[])
+
     const showEtherTokenModal = useCallback((title, message) => {
         updateShowModal(true);
         updateMessage(MODAL_TYPES.ETHERTOKEN, title, message);
@@ -130,6 +134,10 @@ export const useModal = () => {
         onClose();
         updateTick(tick+1);
     }, [tick]);
+
+    const closeErrorModal = useCallback(() => {
+        onClose();
+    },[]);
 
     const getNativeETHBalance = useCallback(async (web3context) => {
         const signer = web3context.library.getSigner();
@@ -224,10 +232,12 @@ export const useModal = () => {
         tick,
         showProcessingModal,
         showEtherTokenModal,
+        showErorMessageModal,
         closeEtherTokenModal,
         getNativeETHBalance,
         getETHTokenBalance,
         depositETHToken,
+        closeErrorModal,
         withdrawETHToken
     }
 
