@@ -22,6 +22,11 @@ export const PAGES = {
     POOLS: "POOLS"
 }
 
+export const TRANSACTION_TYPE = {
+    SWAP : "SWAP",
+    ADD_LIQUIDITY: "ADD_LIQUIDITY"
+}
+
 export const BANCOR_CONTRACTS = {
     ROPSTEN : {
         ContractRegistry : "0xFD95E724962fCfC269010A0c6700Aa09D5de3074"

@@ -18,6 +18,7 @@ const ACTIONS = {
 
 export const MODAL_TYPES = {
     PROCESSING: "PROCESSING",
+    CONFIRM : "CONFIRM",
     WARNING: "WARNING",
     ERROR: "ERROR",
     NONE: "NONE",
@@ -108,11 +109,13 @@ export const useModal = () => {
 
     const [{ message, title, showModal, type, tick }, { updateMessage, updateShowModal, updateTick }] = useModalContext();
 
+    const [ confirmation, setConfirmation ] = useState();
+
     const onClose = () => {
         updateShowModal(false);
         // setType(MODAL_TYPES.NONE);
     }
-
+    
     const showProcessingModal = useCallback((title, message) => { 
         updateShowModal(true);
         // setType(MODAL_TYPES.PROCESSING);
@@ -124,6 +127,11 @@ export const useModal = () => {
         updateShowModal(true);
         updateMessage( MODAL_TYPES.ERROR ,title, message);
     },[])
+
+    const showConfirmModal = useCallback((title, message) => { 
+        updateShowModal(true);
+        updateMessage( MODAL_TYPES.CONFIRM ,title, message);
+    },[showModal])
 
     const showEtherTokenModal = useCallback((title, message) => {
         updateShowModal(true);
@@ -138,6 +146,13 @@ export const useModal = () => {
     const closeErrorModal = useCallback(() => {
         onClose();
     },[]);
+
+    const closeConfirmModal = useCallback((next) => {
+        onClose();
+        if (next) {
+            updateTick(tick+1);
+        }
+    }, [confirmation])
 
     const getNativeETHBalance = useCallback(async (web3context) => {
         const signer = web3context.library.getSigner();
@@ -238,7 +253,9 @@ export const useModal = () => {
         getETHTokenBalance,
         depositETHToken,
         closeErrorModal,
-        withdrawETHToken
+        withdrawETHToken,
+        showConfirmModal,
+        closeConfirmModal
     }
 
 

@@ -11,6 +11,7 @@ import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 
 import { toFixed } from "../../../../utils/conversion";
+import { TRANSACTION_TYPE } from "../../../../constants"; 
 
 export const ACTION_PANELS = {
     ADD_LIQUIDITY: "Add Liquidity",
@@ -57,6 +58,7 @@ const LiquidityPoolPanel = (props) => {
         createSmartToken,
         getSmartToken,
         createConverter,
+        estimateTotalTransactions,
         checkIfAccountHasSufficientBalance,
         addInitialReserve,
         activateConverter,
@@ -70,6 +72,7 @@ const LiquidityPoolPanel = (props) => {
         showEtherTokenModal, 
         showModal, 
         tick,
+        showConfirmModal,
         showErorMessageModal
     } = useModal();
 
@@ -449,6 +452,9 @@ const LiquidityPoolPanel = (props) => {
                                 showEtherTokenModal={showEtherTokenModal}
                                 isModalActive={showModal}
                                 wrapAt={wrapAt}
+                                estimateTotalTransactions={estimateTotalTransactions}
+                                showConfirmModal={showConfirmModal}
+                                showErorMessageModal={showErorMessageModal}
                             />
 
 
@@ -818,11 +824,14 @@ const ActionInputPanel = (props) => {
         showProcessingModal,
         showEtherTokenModal,
         isModalActive,
-        wrapAt
-        
+        wrapAt,
+        estimateTotalTransactions,
+        showConfirmModal,
+        showErorMessageModal
     } = props;
 
     const [isLoadingBalance, setLoadingBalance] = useState(false);
+    const [isWrapping, setWrapping ] = useState(false);
     const [balances, setBalances] = useState([]);
 
     const [inputMax, setInputMax] = useState(1000000);
@@ -844,24 +853,43 @@ const ActionInputPanel = (props) => {
     }, [currentPool]);
 
     useEffect(() => {
-        if (tick > 0) {
+        if (tick > 0)  {
             (async () => {
                 await updateBalance();
             })()
         }
     }, [tick])
-
+    
+    useEffect(() => {
+        if ((tick > 0) ) {
+            setWrapping(false);
+        }
+    }, [tick])
+    
     useEffect(() => {
         // Handle click event from Parent Component
-        onProceed();
+        // onProceed();
+        onProceedDryrun();
     }, [clickCount])
 
+    useEffect(() => {
+        if (tick > 0) {
+            (async () => {
+                onProceed();
+            })()
+        }
+    }, [tick])
+
     const onProceed = useCallback(async () => {
+
+        if (isWrapping) {
+            return
+        }
 
         if (!currentPool) {
             return;
         }
-
+        
         switch (actionPanel) {
             case ACTION_PANELS.ADD_LIQUIDITY:
                 console.log("ADD_LIQUIDITY ....");
@@ -884,7 +912,7 @@ const ActionInputPanel = (props) => {
                     onClose(); 
                 } catch (error) {
                     console.log("error : ", error);
-                    showErorMessageModal(error.message, "Price may surge during confirmation period, you can try it again.");
+                    showErorMessageModal("Unknow error occurs, may caused by the token's allowance changing in a short time period", "We are advise you to try again with the same percentage");
                 }
                 break;
             case ACTION_PANELS.REMOVE_LIQUIDITY:
@@ -911,15 +939,39 @@ const ActionInputPanel = (props) => {
 
                 } catch (error) {
                     console.log("error : ", error);
-                    showErorMessageModal(error.message, "Possibly you can reduce a percentage and try it again.");
+                    showErorMessageModal("Unknow error occurs", "You can try to reduce the percentage and proceed again.");
                 }
                 break;
         }
 
-    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount, poolTokenAmount, poolTokenSupply])
+
+    }, [actionPanel, isWrapping, currentPool, maxAffordablePercentage, inputAmount, poolTokenAmount, poolTokenSupply])
+
+
+    const onProceedDryrun = useCallback(async () => {
+
+        switch(actionPanel) {
+            case ACTION_PANELS.ADD_LIQUIDITY:
+                if (inputAmount === 0) {
+                    return;
+                }
+                const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
+                const totalAddingTransactions = await estimateTotalTransactions(TRANSACTION_TYPE.ADD_LIQUIDITY, {
+                    pool : currentPool,
+                    percentage : input
+                });
+                showConfirmModal("Please be informed that you will need to approve a number of transactions on Metamask", `Total transactions to be signed : ${totalAddingTransactions}`)
+                break;
+            case ACTION_PANELS.REMOVE_LIQUIDITY:
+                showConfirmModal("Please be informed that you will need to approve a number of transactions on Metamask", `Total transactions to be signed : ${1}`)
+                break;
+        }
+
+    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount ]);
 
     const updateBalance = useCallback(async () => {
-
+        
+            
         if (currentPool) {
             setLoadingBalance(true);
             const onClose = showProcessingModal("Loading balances...");
@@ -945,7 +997,7 @@ const ActionInputPanel = (props) => {
             onClose();
         }
 
-    }, [currentPool])
+    }, [currentPool, isWrapping])
 
     const updateAffordableToken = useCallback(async (tokenList) => {
 
@@ -979,9 +1031,7 @@ const ActionInputPanel = (props) => {
 
 
     const handleChange = useCallback((e) => {
-        e.preventDefault();
-
-
+        // e.preventDefault();
 
         if (actionPanel === ACTION_PANELS.ADD_LIQUIDITY) {
             if (maxAffordablePercentage !== 0 && isLoadingBalance === false) {
@@ -1001,9 +1051,6 @@ const ActionInputPanel = (props) => {
     if (!currentPool) {
         return <Fragment></Fragment>
     }
-
-
-
 
     return (
         <LiquiditySummaryContainer isMobile={width <= 800} >
@@ -1069,13 +1116,12 @@ const ActionInputPanel = (props) => {
                                             <WrappedEtherBar
                                                 showEtherTokenModal={showEtherTokenModal}
                                                 isModalActive={isModalActive || isLoadingBalance}
+                                                setWrapping={setWrapping}
                                             />
                                         )}
                                     </div>
                                 )
                             })}
-                            
-
                         </ChartRightPanel>
                     </Fragment>
                 )
@@ -1137,15 +1183,14 @@ const ActionInputPanel = (props) => {
                                             (+{((Number(item[0]) * 0.01 * ((((Number(poolTokenAmount*100) / Number(poolTokenSupply))) * Number(inputAmount)) / 1000000)) ).toFixed(6)}{` `}{symbol})
                                         </div>
                                     )
-
                                     }
                                     { symbol ==="ETH" && (
                                             <WrappedEtherBar
                                                 showEtherTokenModal={showEtherTokenModal}
                                                 isModalActive={isModalActive || isLoadingBalance}
+                                                setWrapping={setWrapping}
                                             />
                                     )}
-                                    
                                 </div>
                                 )
                             })}
@@ -1164,10 +1209,11 @@ const ActionInputPanel = (props) => {
     )
 }
 
-const WrappedEtherBar = ({showEtherTokenModal, isModalActive}) => {
+const WrappedEtherBar = ({showEtherTokenModal, isModalActive, setWrapping}) => {
 
     const showModal = useCallback((e) => {
         if (!isModalActive) {
+            setWrapping(true)
             showEtherTokenModal("", "")
         }
     },[isModalActive])

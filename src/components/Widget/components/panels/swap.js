@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { useBancor, INITIAL_TOKENS, ROPSTEN_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress, getRopstenTokenAddress } from "../../../../utils/token";
 import { getAddress, parseFee } from "../../../../utils/account";
-import { HEADLINES, PAGES, SLIPPAGE_RATE } from "../../../../constants";
+import { HEADLINES, PAGES, SLIPPAGE_RATE, TRANSACTION_TYPE } from "../../../../constants";
 import { useModal } from "../../../../contexts/modal";
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
@@ -27,13 +27,13 @@ const SwapPanel = (props) => {
         affiliateFee,
         width
     } = props;
-    const { showProcessingModal , showErorMessageModal } = useModal();
+    const { showProcessingModal, showErorMessageModal, showConfirmModal, tick } = useModal();
     const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
     const defaultAffiliateFee = affiliateFee ? parseFee(affiliateFee) : "0";
     const networkId = web3ReactContext.networkId;
 
     const [tokens, setTokens] = useState();
-    const [resetRate, setResetRate ] = useState(0);
+    const [resetRate, setResetRate] = useState(0);
     const [liquidityPools, setLiquidityPools] = useState([]);
     const [isBaseTokenModalOpen, setBaseTokenModal] = useState(false);
     const [isPairTokenModalOpen, setPairTokenModal] = useState(false);
@@ -51,7 +51,8 @@ const SwapPanel = (props) => {
         getTokenName,
         getTokenBalance,
         generatePath,
-        getConvertibleTokens
+        getConvertibleTokens,
+        estimateTotalTransactions
     } = useBancor(web3ReactContext);
 
     const [baseToken, setBaseToken] = useState();
@@ -67,8 +68,17 @@ const SwapPanel = (props) => {
 
     useEffect(() => {
         // Handle click event from Parent Component
-        onConvert();
+        // onConvert();
+        onConvertDryrun();
     }, [clickCount])
+
+    useEffect(() => {
+        if (tick > 0) {
+            (async () => {
+                onConvert();
+            })()
+        }
+    }, [tick])
 
     useEffect(() => {
         if (!loading) {
@@ -150,14 +160,14 @@ const SwapPanel = (props) => {
                     defaultAffiliateAccount,
                     defaultAffiliateFee
                 );
-                
+
                 const onClose = showProcessingModal("Pleae wait while all transactions are being confirmed", `Number of transactions : ${txs.length}`);
                 try {
                     await Promise.all(txs.map(item => item.wait()));
-                    setBaseAmountByPercent(0,0);
+                    setBaseAmountByPercent(0, 0);
                 } catch (error) {
                     showErorMessageModal(error.message, "Possibly because of congestion on the network. You can try it again with the same amount.")
-                    setResetRate(resetRate+1);
+                    setResetRate(resetRate + 1);
                 }
                 onClose();
             } catch (error) {
@@ -169,6 +179,19 @@ const SwapPanel = (props) => {
             }, 3000)
         }
     }, [baseTokenAmount, baseToken, pairToken, path, web3ReactContext, resetRate])
+
+
+    const onConvertDryrun = useCallback(async () => {
+        if ((baseToken) && (path.length > 0) && (baseTokenAmount !== 0)) {
+            const totalConvertTransactions = await estimateTotalTransactions(TRANSACTION_TYPE.SWAP, {
+                amount : baseTokenAmount,
+                baseToken : baseToken,
+                pairToken : pairToken
+            });
+
+            showConfirmModal("Please be informed that you will need to approve a number of transactions on Metamask", `Total transactions to be signed : ${totalConvertTransactions}`)
+        }
+    },[baseTokenAmount, baseToken, pairToken, web3ReactContext])
 
     useEffect(() => {
 
@@ -271,7 +294,7 @@ const SwapPanel = (props) => {
     const updatePairTokenAmount = useCallback((rate) => {
         const result = (Number(baseTokenAmount) * Number(rate));
         setPairTokenAmount(result);
-    },[baseTokenAmount])
+    }, [baseTokenAmount])
 
     const setBaseAmountByPercent = useCallback((percent, amount) => {
 

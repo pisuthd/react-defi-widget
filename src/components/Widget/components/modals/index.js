@@ -8,6 +8,7 @@ import { toFixed } from "../../../../utils/conversion";
 
 import EtherTokenModal from "./etherToken";
 import ErrorMessageModal from "./errorMessage";
+import ConfirmModal from "./confirm";
 
 const Modal = (props) => {
 
@@ -22,7 +23,9 @@ const Modal = (props) => {
         getETHTokenBalance,
         depositETHToken,
         withdrawETHToken,
-        closeErrorModal
+        closeErrorModal,
+        closeConfirmModal,
+        showConfirmModal
     } = useModal();
     const [showLoadingIcon, setShowLoadingIcon] = useState(false);
     const [errorMessage, setErrorMessage] = useState();
@@ -61,6 +64,14 @@ const Modal = (props) => {
                         title={title}
                         message={message}
                         closeErrorModal={closeErrorModal}
+                    />
+        case MODAL_TYPES.CONFIRM:
+            return <ConfirmModal
+                        width={width}
+                        color={color}
+                        title={title}
+                        message={message}
+                        closeConfirmModal={closeConfirmModal}
                     />
         default:
             return (
