@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect, Fragment } from 'react';
 import PieChart from 'react-minimal-pie-chart';
 import { useBancor } from "../../../../contexts/bancor";
 import { useModal } from "../../../../contexts/modal";
+import { useRate } from "../../../../contexts/rate";
 import { getIcon } from "../../../../utils/token";
 import { Header } from "../../../Common";
 import PoolCreationPanel from "./poolCreation";
@@ -11,7 +12,7 @@ import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 
 import { toFixed } from "../../../../utils/conversion";
-import { TRANSACTION_TYPE } from "../../../../constants"; 
+import { TRANSACTION_TYPE } from "../../../../constants";
 
 export const ACTION_PANELS = {
     ADD_LIQUIDITY: "Add Liquidity",
@@ -39,7 +40,8 @@ const LiquidityPoolPanel = (props) => {
     const networkId = web3ReactContext.networkId;
     const [pools, setPools] = useState([]);
     const [loadingPools, setLoadingPools] = useState(false);
-    
+    const { getUsdRate } = useRate();
+
     const {
         loading,
         listLiquidityPools,
@@ -67,10 +69,10 @@ const LiquidityPoolPanel = (props) => {
         registerConverter
     } = useBancor(web3ReactContext);
 
-    const { 
-        showProcessingModal, 
-        showEtherTokenModal, 
-        showModal, 
+    const {
+        showProcessingModal,
+        showEtherTokenModal,
+        showModal,
         tick,
         showConfirmModal,
         showErrorMessageModal
@@ -178,6 +180,7 @@ const LiquidityPoolPanel = (props) => {
     const [showActionListModal, setActionListModal] = useState(false);
     const [showPoolListModal, setPoolListModal] = useState(false);
     const [deposit, setDeposit] = useState([]);
+    const [usdRates, setUsdRates] = useState([]);
 
     const [isLoadingDeposited, setLoadingDeposited] = useState(false);
 
@@ -210,7 +213,21 @@ const LiquidityPoolPanel = (props) => {
 
                 // Checks a deposit amount on this pool
                 await updateDepositAmount();
+                // checking rates of each reserve in USD
+                let rates = [];
+                if (currentPool.symbols.length > 0) {
+                    for (let symbol of currentPool.symbols) {
+                        const price = await getUsdRate(symbol);
+                        if (price) {
+                            rates.push({
+                                symbol: symbol,
+                                usdPrice: price
+                            })
+                        }
 
+                    }
+                    setUsdRates(rates);
+                }
 
             })()
 
@@ -397,11 +414,19 @@ const LiquidityPoolPanel = (props) => {
                                     <Fragment>
                                         <ChartLeftPanel>
                                             {currentPool.symbols.map((item, index) => {
+                                                const usdRate = usdRates.find(rate => rate.symbol === item);
                                                 return (
                                                     <div key={index}>
-                                                        <div>
-                                                            <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` `}{Number(currentPool.reserves[index][0]).toFixed(6)}
-                                                        </div>
+                                                        {usdRate
+                                                            ?
+                                                            <div>
+                                                                <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` $`}{(Number(currentPool.reserves[index][0])*Number(usdRate.usdPrice)).toFixed(2).toLocaleString() }
+                                                            </div>
+                                                        :
+                                                            <div>
+                                                                <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` `}{Number(currentPool.reserves[index][0]).toFixed(6)}
+                                                            </div>
+                                                        }
 
                                                     </div>
                                                 )
@@ -831,7 +856,7 @@ const ActionInputPanel = (props) => {
     } = props;
 
     const [isLoadingBalance, setLoadingBalance] = useState(false);
-    const [isWrapping, setWrapping ] = useState(false);
+    const [isWrapping, setWrapping] = useState(false);
     const [balances, setBalances] = useState([]);
 
     const [inputMax, setInputMax] = useState(1000000);
@@ -853,19 +878,19 @@ const ActionInputPanel = (props) => {
     }, [currentPool]);
 
     useEffect(() => {
-        if (tick > 0)  {
+        if (tick > 0) {
             (async () => {
                 await updateBalance();
             })()
         }
     }, [tick])
-    
+
     useEffect(() => {
-        if ((tick > 0) ) {
+        if ((tick > 0)) {
             setWrapping(false);
         }
     }, [tick])
-    
+
     useEffect(() => {
         // Handle click event from Parent Component
         // onProceed();
@@ -890,7 +915,7 @@ const ActionInputPanel = (props) => {
         if (!currentPool) {
             return;
         }
-        
+
         switch (actionPanel) {
             case ACTION_PANELS.ADD_LIQUIDITY:
                 console.log("ADD_LIQUIDITY ....");
@@ -907,10 +932,10 @@ const ActionInputPanel = (props) => {
                         await updateBalance();
                         await updateDepositAmount();
                     } catch (error) {
-                        onClose(); 
+                        onClose();
                         throw new Error(error.message);
-                    }  
-                    onClose(); 
+                    }
+                    onClose();
                 } catch (error) {
                     console.log("error : ", error);
                     showErrorMessageModal("Unknow error occurs, may caused by the token's allowance changing in a short time period", "We are advise you to try again with the same percentage");
@@ -933,10 +958,10 @@ const ActionInputPanel = (props) => {
                         await updateBalance();
                         await updateDepositAmount();
                     } catch (error) {
-                        onClose(); 
+                        onClose();
                         throw new Error(error.message);
-                    }  
-                    onClose(); 
+                    }
+                    onClose();
 
                 } catch (error) {
                     console.log("error : ", error);
@@ -953,12 +978,12 @@ const ActionInputPanel = (props) => {
         if (inputAmount === 0) {
             return;
         }
-        switch(actionPanel) {
+        switch (actionPanel) {
             case ACTION_PANELS.ADD_LIQUIDITY:
                 const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
                 const totalAddingTransactions = await estimateTotalTransactions(TRANSACTION_TYPE.ADD_LIQUIDITY, {
-                    pool : currentPool,
-                    percentage : input
+                    pool: currentPool,
+                    percentage: input
                 });
                 showConfirmModal("Please be informed that you will need to approve a number of transactions on Metamask", `Total transactions to be signed : ${totalAddingTransactions}`)
                 break;
@@ -967,11 +992,11 @@ const ActionInputPanel = (props) => {
                 break;
         }
 
-    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount ]);
+    }, [actionPanel, currentPool, maxAffordablePercentage, inputAmount]);
 
     const updateBalance = useCallback(async () => {
-        
-            
+
+
         if (currentPool) {
             setLoadingBalance(true);
             const onClose = showProcessingModal("Loading balances...");
@@ -982,9 +1007,9 @@ const ActionInputPanel = (props) => {
                     const symbolName = currentPool.symbols[i] || "";
 
                     const amount = await getTokenBalance(currentPool.reserves[i][1]);
-                        result.push({
-                            symbol: symbolName,
-                            balance: `${toFixed(Number(amount), 6)}` 
+                    result.push({
+                        symbol: symbolName,
+                        balance: `${toFixed(Number(amount), 6)}`
                     })
                 }
             } catch (error) {
@@ -1058,12 +1083,12 @@ const ActionInputPanel = (props) => {
             {actionPanel === ACTION_PANELS.ADD_LIQUIDITY &&
                 (
                     <Fragment>
-                        <PoolNavigation 
+                        <PoolNavigation
                             width={width}
                             wrapAt={wrapAt}
                             isAddLiquidity={true}
                         />
-                        
+
                         <LiquidityInputPanel>
                             <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
                                 <input type="range" onChange={handleChange} min={inputMin} max={inputMax} value={inputAmount} className="slider" id="myRange" />
@@ -1093,7 +1118,7 @@ const ActionInputPanel = (props) => {
                                 </div>
                             </div>
                         </LiquidityInputPanel>
-                        <ChartRightPanel style={{ fontSize: "12px" }}>   
+                        <ChartRightPanel style={{ fontSize: "12px" }}>
                             <b>Balances</b>
                             {currentPool.reserves.map((item, index) => {
                                 const symbol = currentPool.symbols[index];
@@ -1104,15 +1129,15 @@ const ActionInputPanel = (props) => {
                                         <div>
                                             {balanceAmount}{` `}{symbol}
                                         </div>
-                                        { (Number(inputAmount) !== 0) &&
-                                        (
-                                            <div style={{color: "red", fontWeight: "600"}}>
-                                                (-{((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{symbol})
-                                            </div>
-                                        )
+                                        {(Number(inputAmount) !== 0) &&
+                                            (
+                                                <div style={{ color: "red", fontWeight: "600" }}>
+                                                    (-{((Number(item[0]) * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000)) / 100).toFixed(6)}{` `}{symbol})
+                                                </div>
+                                            )
 
                                         }
-                                        { symbol ==="ETH" && (
+                                        {symbol === "ETH" && (
                                             <WrappedEtherBar
                                                 showEtherTokenModal={showEtherTokenModal}
                                                 isModalActive={isModalActive || isLoadingBalance}
@@ -1131,7 +1156,7 @@ const ActionInputPanel = (props) => {
             {actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY &&
                 (
                     <Fragment>
-                        <PoolNavigation 
+                        <PoolNavigation
                             width={width}
                             wrapAt={wrapAt}
                             isAddLiquidity={false}
@@ -1169,29 +1194,29 @@ const ActionInputPanel = (props) => {
                         <ChartRightPanel style={{ fontSize: "12px" }}>
                             <b>Balance</b>
                             {currentPool.reserves.map((item, index) => {
-                            const symbol = currentPool.symbols[index];
-                            const balance = (balances.find(item => item.symbol === symbol));
-                            const balanceAmount = balance ? balance.balance : "0.00";
-                            return (
-                                <div key={index}>
-                                    <div>
-                                        {balanceAmount}{` `}{symbol}
-                                    </div>
-                                    { (Number(inputAmount) !== 0) &&
-                                    (
-                                        <div style={{color: "green", fontWeight: "600"}}>
-                                            (+{((Number(item[0]) * 0.01 * ((((Number(poolTokenAmount*100) / Number(poolTokenSupply))) * Number(inputAmount)) / 1000000)) ).toFixed(6)}{` `}{symbol})
+                                const symbol = currentPool.symbols[index];
+                                const balance = (balances.find(item => item.symbol === symbol));
+                                const balanceAmount = balance ? balance.balance : "0.00";
+                                return (
+                                    <div key={index}>
+                                        <div>
+                                            {balanceAmount}{` `}{symbol}
                                         </div>
-                                    )
-                                    }
-                                    { symbol ==="ETH" && (
+                                        {(Number(inputAmount) !== 0) &&
+                                            (
+                                                <div style={{ color: "green", fontWeight: "600" }}>
+                                                    (+{((Number(item[0]) * 0.01 * ((((Number(poolTokenAmount * 100) / Number(poolTokenSupply))) * Number(inputAmount)) / 1000000))).toFixed(6)}{` `}{symbol})
+                                                </div>
+                                            )
+                                        }
+                                        {symbol === "ETH" && (
                                             <WrappedEtherBar
                                                 showEtherTokenModal={showEtherTokenModal}
                                                 isModalActive={isModalActive || isLoadingBalance}
                                                 setWrapping={setWrapping}
                                             />
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
                                 )
                             })}
                         </ChartRightPanel>
@@ -1209,22 +1234,22 @@ const ActionInputPanel = (props) => {
     )
 }
 
-const WrappedEtherBar = ({showEtherTokenModal, isModalActive, setWrapping}) => {
+const WrappedEtherBar = ({ showEtherTokenModal, isModalActive, setWrapping }) => {
 
     const showModal = useCallback((e) => {
         if (!isModalActive) {
             setWrapping(true)
             showEtherTokenModal("", "")
         }
-    },[isModalActive])
-    
+    }, [isModalActive])
+
     return (
         <div
             style={{
-                fontSize : "10px",
-                fontWeight : "600",
-                fontStyle : "italic",
-                cursor:"pointer",
+                fontSize: "10px",
+                fontWeight: "600",
+                fontStyle: "italic",
+                cursor: "pointer",
                 opacity: isModalActive ? "0.6" : "1.0"
             }}
             onClick={showModal}
@@ -1246,15 +1271,15 @@ const TokenAmount = styled.div`
     `}
 `;
 
-const PoolNavigation = ({width, wrapAt, isAddLiquidity}) => {
+const PoolNavigation = ({ width, wrapAt, isAddLiquidity }) => {
     return (
         <ChartLeftPanel
             style={{
-                width : width > wrapAt ? "30%" : "20%",
+                width: width > wrapAt ? "30%" : "20%",
                 fontSize: width > wrapAt ? "12px" : "10px"
             }}
         >
-                {  isAddLiquidity
+            {isAddLiquidity
                 ?
                 <p>
                     Buys pool tokens with all reserve tokens using the same percentage.
@@ -1263,9 +1288,9 @@ const PoolNavigation = ({width, wrapAt, isAddLiquidity}) => {
                 <p>
                     Sells pool tokens for all reserve tokens using the same percentage.
                 </p>
-                }
+            }
 
-                
+
         </ChartLeftPanel>
     )
 }
@@ -1356,7 +1381,7 @@ const PoolListPanel = (props) => {
                                             Bancor
                                         </TableBox>
                                         <TableBox>
-                                            Size ~${Number(Math.floor(item.totalSupply)).toLocaleString()}
+                                            Supply {Number(Math.floor(item.totalSupply)).toLocaleString()}
                                         </TableBox>
                                     </TableInnerRow>
                                 </td>

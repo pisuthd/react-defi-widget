@@ -7,6 +7,7 @@ import { getIcon, getDefaultTokenAddress, getRopstenTokenAddress } from "../../.
 import { getAddress, parseFee } from "../../../../utils/account";
 import { HEADLINES, PAGES, SLIPPAGE_RATE, TRANSACTION_TYPE } from "../../../../constants";
 import { useModal } from "../../../../contexts/modal";
+import { useRate } from "../../../../contexts/rate";
 import loadingIcon from "../../../../../assets/loading.gif"
 import SearchIcon from "../../../../../assets/search.svg";
 import { toFixed } from "../../../../utils/conversion";
@@ -55,6 +56,7 @@ const SwapPanel = (props) => {
         estimateTotalTransactions
     } = useBancor(web3ReactContext);
 
+    const { getUsdRate } = useRate();
     const [baseToken, setBaseToken] = useState();
     const [pairToken, setPairToken] = useState();
     const [sourceBalance, setSourceBalance] = useState("0.0");
@@ -65,6 +67,7 @@ const SwapPanel = (props) => {
     const [isLoadingRate, setLoadingRate] = useState(true);
     const [baseTokenAmount, setBaseTokenAmount] = useState(0);
     const [pairTokenAmount, setPairTokenAmount] = useState(0);
+    const [usdRates, setUsdRates] = useState([]);
 
     useEffect(() => {
         // Handle click event from Parent Component
@@ -95,6 +98,7 @@ const SwapPanel = (props) => {
                     const defaultPairToken = available.find(item => item.symbol === defaultPairSymbol);
                     setBaseToken(defaultBaseToken);
                     setPairToken(defaultPairToken);
+
                 } catch (error) {
                     console.log("Load tokens error : ", error.message);
                 };
@@ -103,6 +107,9 @@ const SwapPanel = (props) => {
                 const poolList = await listLiquidityPools();
                 setLiquidityPools(poolList);
                 onClose();
+
+
+
             })();
         }
 
@@ -184,14 +191,14 @@ const SwapPanel = (props) => {
     const onConvertDryrun = useCallback(async () => {
         if ((baseToken) && (path.length > 0) && (baseTokenAmount !== 0)) {
             const totalConvertTransactions = await estimateTotalTransactions(TRANSACTION_TYPE.SWAP, {
-                amount : baseTokenAmount,
-                baseToken : baseToken,
-                pairToken : pairToken
+                amount: baseTokenAmount,
+                baseToken: baseToken,
+                pairToken: pairToken
             });
 
             showConfirmModal("Please be informed that you will need to approve a number of transactions on Metamask", `Total transactions to be signed : ${totalConvertTransactions}`)
         }
-    },[baseTokenAmount, baseToken, pairToken, web3ReactContext])
+    }, [baseTokenAmount, baseToken, pairToken, web3ReactContext])
 
     useEffect(() => {
 
@@ -224,6 +231,23 @@ const SwapPanel = (props) => {
                     }
                     setLoadingRate(false);
                     onClose();
+
+                    // Check rates in USD
+                    const symbols = [baseToken.symbol, pairToken.symbol]
+                    let rates = [];
+
+                    for (let symbol of symbols) {
+                        const price = await getUsdRate(symbol);
+                        if (price) {
+                            rates.push({
+                                symbol: symbol,
+                                usdPrice: price
+                            })
+                        }
+                    }
+                    console.log("setUsdRates : ", setUsdRates);
+                    setUsdRates(rates);
+
                 })();
             }
         }
@@ -327,7 +351,26 @@ const SwapPanel = (props) => {
                 :
                 <Fragment>
                     <Column>
-                        <h3>Pay</h3>
+                        <HeadingRow>
+                            <HeadingLeft>
+                                <h3>Pay</h3>
+                            </HeadingLeft>
+                            <HeadingRight>
+                                { (usdRates.length > 0) && (usdRates.map((item,index) => {
+                                    if ((item.symbol === baseToken.symbol) && (baseTokenAmount!==0)) {
+                                        return (
+                                        <div key={index}>${(Number(baseTokenAmount)*Number(item.usdPrice)).toFixed(2).toLocaleString()}{` `}(1{` `}{baseToken.symbol}{` = $`}{(item.usdPrice).toFixed(2)})</div>
+                                        )
+                                    } else {
+                                        return
+                                    }
+                                })) 
+                                    
+                                }
+                                
+                            </HeadingRight>
+                        </HeadingRow>
+
                         <InputGroup>
                             <InputGroupIcon>
                                 {baseToken &&
@@ -365,7 +408,23 @@ const SwapPanel = (props) => {
                         </AccountSection>
                     </Column>
                     <Column>
-                        <h3>Receive</h3>
+                        <HeadingRow>
+                            <HeadingLeft>
+                                <h3>Receive</h3>
+                            </HeadingLeft>
+                            <HeadingRight>
+                                { (usdRates.length > 0) && (usdRates.map((item,index) => {
+                                    if ((item.symbol === pairToken.symbol) && (pairTokenAmount!==0)) {
+                                        return (
+                                        <div key={index}>${(Number(pairTokenAmount)*Number(item.usdPrice)).toFixed(2).toLocaleString()}{` `}(1{` `}{pairToken.symbol}{` = $`}{(item.usdPrice).toFixed(2)})</div>
+                                        )
+                                    } else {
+                                        return
+                                    }
+                                }))  }
+                            </HeadingRight>
+                        </HeadingRow>
+
                         <InputGroup>
                             <InputGroupIcon>
                                 {pairToken &&
@@ -522,6 +581,26 @@ const ReservePoolAmount = styled.div`
         `)
 
     }
+`;
+
+const HeadingRow = styled.div`
+    display: flex;
+`;
+
+const HeadingLeft = styled.div`
+    flex: 50%;
+`;
+
+const HeadingRight = styled(HeadingLeft)`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    div { 
+        margin-left: auto;
+        font-size: 10px;
+        align-self: flex-end;
+        padding-bottom: 10px;
+    } 
 `;
 
 const AccountLeft = styled.div`
