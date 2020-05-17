@@ -144,6 +144,7 @@ export const Content = styled.div`
     text-align: center;
     font-size: 14px;
     word-wrap: break-word;
+    border: 0.3px solid rgba(0, 0, 0, 0.6);
     width: ${props => (props.width && props.width > 600) ? `${(props.width) / 2}px` : `${props.width * 0.8}px`};
 `;
 
