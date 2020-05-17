@@ -73,7 +73,7 @@ const LiquidityPoolPanel = (props) => {
         showModal, 
         tick,
         showConfirmModal,
-        showErorMessageModal
+        showErrorMessageModal
     } = useModal();
 
     useEffect(() => {
@@ -454,7 +454,7 @@ const LiquidityPoolPanel = (props) => {
                                 wrapAt={wrapAt}
                                 estimateTotalTransactions={estimateTotalTransactions}
                                 showConfirmModal={showConfirmModal}
-                                showErorMessageModal={showErorMessageModal}
+                                showErrorMessageModal={showErrorMessageModal}
                             />
 
 
@@ -827,7 +827,7 @@ const ActionInputPanel = (props) => {
         wrapAt,
         estimateTotalTransactions,
         showConfirmModal,
-        showErorMessageModal
+        showErrorMessageModal
     } = props;
 
     const [isLoadingBalance, setLoadingBalance] = useState(false);
@@ -869,6 +869,7 @@ const ActionInputPanel = (props) => {
     useEffect(() => {
         // Handle click event from Parent Component
         // onProceed();
+        console.log("clickCount : ", clickCount);
         onProceedDryrun();
     }, [clickCount])
 
@@ -912,7 +913,7 @@ const ActionInputPanel = (props) => {
                     onClose(); 
                 } catch (error) {
                     console.log("error : ", error);
-                    showErorMessageModal("Unknow error occurs, may caused by the token's allowance changing in a short time period", "We are advise you to try again with the same percentage");
+                    showErrorMessageModal("Unknow error occurs, may caused by the token's allowance changing in a short time period", "We are advise you to try again with the same percentage");
                 }
                 break;
             case ACTION_PANELS.REMOVE_LIQUIDITY:
@@ -939,7 +940,7 @@ const ActionInputPanel = (props) => {
 
                 } catch (error) {
                     console.log("error : ", error);
-                    showErorMessageModal("Unknow error occurs", "You can try to reduce the percentage and proceed again.");
+                    showErrorMessageModal("Unknow error occurs", "You can try to reduce the percentage and proceed again.");
                 }
                 break;
         }
@@ -949,12 +950,11 @@ const ActionInputPanel = (props) => {
 
 
     const onProceedDryrun = useCallback(async () => {
-
+        if (inputAmount === 0) {
+            return;
+        }
         switch(actionPanel) {
             case ACTION_PANELS.ADD_LIQUIDITY:
-                if (inputAmount === 0) {
-                    return;
-                }
                 const input = (Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000;
                 const totalAddingTransactions = await estimateTotalTransactions(TRANSACTION_TYPE.ADD_LIQUIDITY, {
                     pool : currentPool,

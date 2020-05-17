@@ -123,7 +123,7 @@ export const useModal = () => {
         return onClose;
     },[])
 
-    const showErorMessageModal = useCallback((title, message) => { 
+    const showErrorMessageModal = useCallback((title, message) => { 
         updateShowModal(true);
         updateMessage( MODAL_TYPES.ERROR ,title, message);
     },[])
@@ -247,7 +247,7 @@ export const useModal = () => {
         tick,
         showProcessingModal,
         showEtherTokenModal,
-        showErorMessageModal,
+        showErrorMessageModal,
         closeEtherTokenModal,
         getNativeETHBalance,
         getETHTokenBalance,

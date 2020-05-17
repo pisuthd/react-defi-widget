@@ -27,7 +27,7 @@ const SwapPanel = (props) => {
         affiliateFee,
         width
     } = props;
-    const { showProcessingModal, showErorMessageModal, showConfirmModal, tick } = useModal();
+    const { showProcessingModal, showErrorMessageModal, showConfirmModal, tick } = useModal();
     const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
     const defaultAffiliateFee = affiliateFee ? parseFee(affiliateFee) : "0";
     const networkId = web3ReactContext.networkId;
@@ -166,12 +166,12 @@ const SwapPanel = (props) => {
                     await Promise.all(txs.map(item => item.wait()));
                     setBaseAmountByPercent(0, 0);
                 } catch (error) {
-                    showErorMessageModal(error.message, "Possibly because of congestion on the network. You can try it again with the same amount.")
+                    showErrorMessageModal(error.message, "Possibly because of congestion on the network. You can try it again with the same amount.")
                     setResetRate(resetRate + 1);
                 }
                 onClose();
             } catch (error) {
-                showErorMessageModal("Error", error.message)
+                showErrorMessageModal("Error", error.message)
                 console.log("onConvert error : ", error)
             }
             setTimeout(async () => {

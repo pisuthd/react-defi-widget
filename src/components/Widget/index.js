@@ -31,7 +31,7 @@ const Widget = (props) => {
         affiliateFee
     } = props;
 
-    const { showModal, showErorMessageModal } = useModal();
+    const { showModal, showErrorMessageModal } = useModal();
 
     const widgetTitle = title || HEADLINES.HEADER[currentPage];
     const widgetSubtitle = subtitle || HEADLINES.TEXT[currentPage];
@@ -106,7 +106,7 @@ const Widget = (props) => {
 
         if (web3ReactContext.networkId) {
             if ([ 1, 3].indexOf(web3ReactContext.networkId) === -1 ) {
-                showErorMessageModal("Unsupported Network","Please switch to Mainnet or Ropsten network");
+                showErrorMessageModal("Unsupported Network","Please switch to Mainnet or Ropsten network");
                 return;
             }
             setNetworkId(web3ReactContext.networkId);

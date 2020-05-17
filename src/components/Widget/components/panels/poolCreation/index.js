@@ -53,7 +53,7 @@ const PoolCreationPanel = (props) => {
         registerConverter
     } = props;
 
-    const { showProcessingModal } = useModal();
+    const { showProcessingModal, showErrorMessageModal } = useModal();
 
     const [active, setActive] = useState(false);
     const [step, setStep] = useState(1);
@@ -143,6 +143,7 @@ const PoolCreationPanel = (props) => {
                             getMaxConversionFee={getMaxConversionFee}
                             getReserves={getReserves}
                             getTotalSupplyByConverter={getTotalSupplyByConverter}
+                            showErrorMessageModal={showErrorMessageModal}
                         />
                     )
                 }
@@ -158,6 +159,7 @@ const PoolCreationPanel = (props) => {
                             checkIfAccountHasSufficientBalance={checkIfAccountHasSufficientBalance}
                             createConverter={createConverter}
                             addInitialReserve={addInitialReserve}
+                            showErrorMessageModal={showErrorMessageModal}
                         />
                     )
                 }
@@ -210,7 +212,9 @@ const SetupRelayToken = (props) => {
         getSmartToken,
         getMaxConversionFee,
         getReserves,
-        getTotalSupplyByConverter
+        getTotalSupplyByConverter,
+        showErrorMessageModal,
+        showConfirmModal
     } = props;
 
     const [poolName, setPoolName] = useState("");
@@ -266,8 +270,6 @@ const SetupRelayToken = (props) => {
                 setCreateNew(false);
             }
         }
-
-
     }
 
     const onCreateNewToken = useCallback(async (e) => {
@@ -290,7 +292,7 @@ const SetupRelayToken = (props) => {
             if (!state['setupRelayToken']['completed']) {
                 const contract = await createSmartToken(poolName, poolFullName);
                 console.log("contract : ", contract);
-                const onClose = showProcessingModal("Please wait while your relay token is being deployed ", `Tx : ${contract.deployTransaction.hash}`);
+                const onClose = showProcessingModal("Deploying your relay token... ", `Tx : ${contract.deployTransaction.hash}`);
                 await contract.deployed()
 
                 onClose();
@@ -388,7 +390,7 @@ const SetupRelayToken = (props) => {
 
                     </select>
                     {` `}
-                    <Button onClick={onCreateNewToken} color={color}>?</Button>
+                    <Button onClick={() => showErrorMessageModal("How to create a pool on Bancor", "To make a liquidity pool, it's essentially to have one or more token reserves, make sure you have ERC20 tokens your wallet and know its address before proceed.")} color={color}>?</Button>
                 </Column>
             </Row>
             {isCreateNew ? (
@@ -529,7 +531,8 @@ const SetupConverter = (props) => {
         checkIfAccountHasSufficientBalance,
         showProcessingModal,
         createConverter,
-        addInitialReserve
+        addInitialReserve,
+        showErrorMessageModal
     } = props;
 
     const defaultConversionFee = state.setupConverter.completed ? state.setupConverter.conversionFee : 3.0;
@@ -767,6 +770,8 @@ const SetupConverter = (props) => {
                         step="0.1"
                         pattern="^\d+(?:\.\d{1,2})?$"
                     />
+                    {` `}
+                    <Button onClick={() => showErrorMessageModal("Max Conversion Fee", "This is the maximum value that is allowed, the actual fee will setup on the next step.")} color={color}>?</Button>
                 </Column>
                 {/*
                 <Column>
@@ -841,6 +846,8 @@ const SetupConverter = (props) => {
                         step="0.1"
                         pattern="^\d+(?:\.\d{1,2})?$"
                     />
+                    {` `}
+                    <Button onClick={() => showErrorMessageModal("Initial Pool Token Amount", "This is the initial amount to be issued of your pool token, it's recommended to use total value in USD of your initial reserves.")} color={color}>?</Button>
                 </Column>
             </Row>
 
@@ -893,6 +900,9 @@ const SetupConverter = (props) => {
                                             />
                                         </td>
                                         <td>
+                                            { index === 0 &&
+                                                <Button onClick={() => showErrorMessageModal("Fund Token Reserves", "You need to initially fund the pool that corresponding to the given ratio, for instance, to setup 50:50 pool with initial value of $1,000 would need to be funded with $500 of your first token and $500 of your second token.")} color={color}>?</Button>
+                                            }
                                             {index !== 0 &&
                                                 <Button
                                                     color={"red"}
