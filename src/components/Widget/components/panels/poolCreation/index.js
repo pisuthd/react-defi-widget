@@ -11,8 +11,8 @@ const initialState = {
     setupRelayToken: {
         step: 1,
         tokenAddress: "",
-        tokenSymbol : "",
-        tokenName : "",
+        tokenSymbol: "",
+        tokenName: "",
         isNewToken: true,
         isNewConverter: true,
         completed: false
@@ -35,14 +35,14 @@ const initialState = {
 
 const PoolCreationPanel = (props) => {
 
-    const { 
-        title, 
-        onActionPanelUpdate, 
-        width, 
-        color, 
-        createSmartToken, 
-        getSmartToken, 
-        createConverter, 
+    const {
+        title,
+        onActionPanelUpdate,
+        width,
+        color,
+        createSmartToken,
+        getSmartToken,
+        createConverter,
         checkIfAccountHasSufficientBalance,
         addInitialReserve,
         activateConverter,
@@ -110,7 +110,7 @@ const PoolCreationPanel = (props) => {
                     </Column>
                     <Column>
                         <p>
-                        The Bancor Protocol is a fully on-chain liquidity protocol provides an endpoint for automated market-making against a smart contract.
+                            The Bancor Protocol is a fully on-chain liquidity protocol provides an endpoint for automated market-making against a smart contract.
                         </p>
                     </Column>
                 </Row>
@@ -200,14 +200,14 @@ export default PoolCreationPanel;
 
 const SetupRelayToken = (props) => {
 
-    const { 
-        color, 
-        state, 
-        updateState, 
-        updateStep, 
-        showProcessingModal, 
-        createSmartToken, 
-        getSmartToken, 
+    const {
+        color,
+        state,
+        updateState,
+        updateStep,
+        showProcessingModal,
+        createSmartToken,
+        getSmartToken,
         getMaxConversionFee,
         getReserves,
         getTotalSupplyByConverter
@@ -225,9 +225,9 @@ const SetupRelayToken = (props) => {
     const defaultConverterOption = state ? state.setupRelayToken.isNewConverter : true;
 
     const [isCreateNew, setCreateNew] = useState(initialOption);
-    const [isNewConverter, setNewConverter ] = useState(defaultConverterOption);
-     
-    const [ errorMessage , setErrorMessage ] = useState();
+    const [isNewConverter, setNewConverter] = useState(defaultConverterOption);
+
+    const [errorMessage, setErrorMessage] = useState();
 
     const handleChange = (e) => {
         e.preventDefault();
@@ -267,7 +267,7 @@ const SetupRelayToken = (props) => {
             }
         }
 
-       
+
     }
 
     const onCreateNewToken = useCallback(async (e) => {
@@ -288,9 +288,9 @@ const SetupRelayToken = (props) => {
         try {
 
             if (!state['setupRelayToken']['completed']) {
-                const contract = await createSmartToken( poolName, poolFullName);
+                const contract = await createSmartToken(poolName, poolFullName);
                 console.log("contract : ", contract);
-                const onClose = showProcessingModal("Please wait while your relay token is being deployed ", `Tx : ${contract.deployTransaction.hash}` );
+                const onClose = showProcessingModal("Please wait while your relay token is being deployed ", `Tx : ${contract.deployTransaction.hash}`);
                 await contract.deployed()
 
                 onClose();
@@ -311,8 +311,8 @@ const SetupRelayToken = (props) => {
             setErrorMessage(error.message);
         }
 
-        
-        
+
+
     }, [state, poolName, poolFullName])
 
     const onLoadToken = useCallback(async (e) => {
@@ -332,7 +332,7 @@ const SetupRelayToken = (props) => {
             }
         }
 
-        const onClose = showProcessingModal("Checking... ", "" );
+        const onClose = showProcessingModal("Checking... ", "");
 
         try {
 
@@ -349,7 +349,7 @@ const SetupRelayToken = (props) => {
                     updated['setupRelayToken']['isNewConverter'] = false;
                     updated['setupConverter']['converterAddress'] = customConverterAddress;
                     const maxConversionFee = await getMaxConversionFee(customConverterAddress);
-                    updated['setupConverter']['conversionFee'] = maxConversionFee*100;
+                    updated['setupConverter']['conversionFee'] = maxConversionFee * 100;
                     const reserves = await getReserves(customConverterAddress);
                     updated['setupConverter']['reserves'] = reserves;
                     const totalSupply = await getTotalSupplyByConverter(customConverterAddress);
@@ -360,7 +360,7 @@ const SetupRelayToken = (props) => {
                 updateState(updated);
 
             }
-            
+
             updateStep(2);
 
         } catch (error) {
@@ -369,7 +369,7 @@ const SetupRelayToken = (props) => {
 
         onClose();
 
-    }, [state, existTokenAddress,isNewConverter, customConverterAddress]);
+    }, [state, existTokenAddress, isNewConverter, customConverterAddress]);
 
     const isCompleted = state['setupRelayToken']['completed'] ? true : false;
 
@@ -385,8 +385,10 @@ const SetupRelayToken = (props) => {
                         {/*
                         <option value={false}>Use Existing Token</option>
                         */}
-                    
+
                     </select>
+                    {` `}
+                    <Button onClick={onCreateNewToken} color={color}>?</Button>
                 </Column>
             </Row>
             {isCreateNew ? (
@@ -429,21 +431,21 @@ const SetupRelayToken = (props) => {
                     >
                         <ButtonGroup>
                             <Button onClick={onCreateNewToken} color={color}>Next</Button>
-                            
+
                         </ButtonGroup>
-                       
+
                     </Row>
 
-                    { errorMessage && (
+                    {errorMessage && (
                         <ErrorMessage>
-                            {errorMessage }
+                            {errorMessage}
                         </ErrorMessage>
                     )}
-                    { isCompleted && (
-                        <ViewOnlyMessage/>
+                    {isCompleted && (
+                        <ViewOnlyMessage />
                     )}
-                    
-                    
+
+
                 </Fragment>
             ) :
                 <Fragment>
@@ -472,23 +474,23 @@ const SetupRelayToken = (props) => {
                             </select>
                         </Column>
                     </Row>
-                    { !isNewConverter &&
-                    (
-                        <Row>
-                            <Column>
-                                Converter Address
+                    {!isNewConverter &&
+                        (
+                            <Row>
+                                <Column>
+                                    Converter Address
                             </Column>
-                            <Column>
-                                <input
-                                    type="text"
-                                    id="customConverterAddress"
-                                    disabled={state['setupRelayToken']['completed']}
-                                    value={customConverterAddress}
-                                    onChange={handleChange}
-                                />
-                            </Column>
-                        </Row>
-                    )
+                                <Column>
+                                    <input
+                                        type="text"
+                                        id="customConverterAddress"
+                                        disabled={state['setupRelayToken']['completed']}
+                                        value={customConverterAddress}
+                                        onChange={handleChange}
+                                    />
+                                </Column>
+                            </Row>
+                        )
 
                     }
                     <Row
@@ -500,15 +502,15 @@ const SetupRelayToken = (props) => {
                         <ButtonGroup>
                             <Button onClick={onLoadToken} color={color}>Next</Button>
                         </ButtonGroup>
-                        
+
                     </Row>
-                    { errorMessage && (
+                    {errorMessage && (
                         <ErrorMessage>
-                            {errorMessage }
+                            {errorMessage}
                         </ErrorMessage>
                     )}
-                    { isCompleted && (
-                        <ViewOnlyMessage/>
+                    {isCompleted && (
+                        <ViewOnlyMessage />
                     )}
                 </Fragment>
             }
@@ -519,13 +521,13 @@ const SetupRelayToken = (props) => {
 
 const SetupConverter = (props) => {
 
-    const { 
-        color, 
-        state, 
-        updateState, 
-        updateStep, 
-        checkIfAccountHasSufficientBalance, 
-        showProcessingModal, 
+    const {
+        color,
+        state,
+        updateState,
+        updateStep,
+        checkIfAccountHasSufficientBalance,
+        showProcessingModal,
         createConverter,
         addInitialReserve
     } = props;
@@ -538,7 +540,7 @@ const SetupConverter = (props) => {
     const [conversionFee, setConversionFee] = useState(defaultConversionFee);
     const [reserves, setReserves] = useState(defaultReserves);
     const [initialPoolTokenAmount, setInitialPoolTokenAmount] = useState(defaultPoolTokenAmount);
-    const [ errorMessage , setErrorMessage ] = useState();
+    const [errorMessage, setErrorMessage] = useState();
 
     const isCompleted = state['setupConverter']['completed'] ? true : false;
 
@@ -570,7 +572,7 @@ const SetupConverter = (props) => {
             updateStep(3);
             return;
         }
-        
+
         if (!conversionFee || conversionFee < 0 || conversionFee > 100) {
             setErrorMessage("Conversion Fee is invalid")
             return;
@@ -581,7 +583,7 @@ const SetupConverter = (props) => {
             return;
         }
 
-        const onClose = showProcessingModal("Validating... ", "" );
+        const onClose = showProcessingModal("Validating... ", "");
         let totalWeight = 0;
         let addresses = [];
         try {
@@ -593,12 +595,12 @@ const SetupConverter = (props) => {
                 }
 
                 addresses.push(reserve.tokenAddress);
-                await checkIfAccountHasSufficientBalance( reserve.tokenAddress , reserve.initialAmount);
+                await checkIfAccountHasSufficientBalance(reserve.tokenAddress, reserve.initialAmount);
 
             }
         } catch (error) {
             let errorMessage = error.message;
-            if ((error.message.indexOf("ENS name not configured") !== -1 ) || (error.message.indexOf("Invalid address") !== -1)) {
+            if ((error.message.indexOf("ENS name not configured") !== -1) || (error.message.indexOf("Invalid address") !== -1)) {
                 errorMessage = "One of address is not valid ERC-20.";
             }
             setErrorMessage(errorMessage);
@@ -612,7 +614,7 @@ const SetupConverter = (props) => {
             return;
         }
 
-        const smartTokenAddress  = state['setupRelayToken']['tokenAddress'];
+        const smartTokenAddress = state['setupRelayToken']['tokenAddress'];
         if (!smartTokenAddress) {
             setErrorMessage("Can't identify your relay token address");
             return;
@@ -625,17 +627,17 @@ const SetupConverter = (props) => {
 
             const converterContract = await createConverter(smartTokenAddress, conversionFee, reserves);
             console.log("converterContract : ", converterContract);
-            const onClose = showProcessingModal("Please wait while your converter is being deployed ", `Tx : ${converterContract.deployTransaction.hash}` );
+            const onClose = showProcessingModal("Please wait while your converter is being deployed ", `Tx : ${converterContract.deployTransaction.hash}`);
             await converterContract.deployed();
             updated['setupConverter']['converterAddress'] = converterContract.address;
-            converterAddress = converterContract.address; 
+            converterAddress = converterContract.address;
             onClose();
 
         } catch (error) {
             setErrorMessage(error.message);
             return;
         }
-        
+
         if (!converterAddress) {
             setErrorMessage("Can't identify your converter address")
             return;
@@ -645,8 +647,8 @@ const SetupConverter = (props) => {
 
             const txs = await addInitialReserve(smartTokenAddress, converterAddress, reserves, initialPoolTokenAmount);
             console.log("txs object : ", txs);
-            const { issuranceTx, addingReserve, funding  } = txs;
-            const addInitialReserveClose = showProcessingModal("Please wait while your reserves are being funded ", `Tx : ${issuranceTx.hash}` );
+            const { issuranceTx, addingReserve, funding } = txs;
+            const addInitialReserveClose = showProcessingModal("Please wait while your reserves are being funded ", `Tx : ${issuranceTx.hash}`);
 
             const promises = (funding.map(item => item.wait())).concat([issuranceTx.wait()]).concat(addingReserve.map(item => item.wait()));
             console.log("promises : ", promises)
@@ -656,7 +658,7 @@ const SetupConverter = (props) => {
                 addInitialReserveClose();
                 throw new Error(error.message);
             }
-            
+
             addInitialReserveClose();
 
         } catch (error) {
@@ -670,17 +672,17 @@ const SetupConverter = (props) => {
         updated['setupConverter']['initialPoolTokenAmount'] = initialPoolTokenAmount;
         updateState(updated);
         updateStep(3);
-        
-       /*
-       let updated = state;
-       updated['setupConverter']['converterAddress'] = "0x3536B51FeB7d6Ad6fE56b470e37069974e82A0D6";
-       updated['setupConverter']['conversionFee'] = conversionFee;
-       updated['setupConverter']['initialPoolTokenAmount'] = initialPoolTokenAmount;
-       updated['setupConverter']['completed'] = true;
-       updateState(updated);
-       updateStep(3);
-       */
-       
+
+        /*
+        let updated = state;
+        updated['setupConverter']['converterAddress'] = "0x3536B51FeB7d6Ad6fE56b470e37069974e82A0D6";
+        updated['setupConverter']['conversionFee'] = conversionFee;
+        updated['setupConverter']['initialPoolTokenAmount'] = initialPoolTokenAmount;
+        updated['setupConverter']['completed'] = true;
+        updateState(updated);
+        updateStep(3);
+        */
+
 
     }, [state, conversionFee, reserves, initialPoolTokenAmount])
 
@@ -748,7 +750,7 @@ const SetupConverter = (props) => {
 
     return (
         <Fragment>
-            
+
             <Row style={{ marginTop: "10px" }}>
                 <Column>
                     Max Conversion Fee (%)
@@ -841,7 +843,7 @@ const SetupConverter = (props) => {
                     />
                 </Column>
             </Row>
-            
+
             <Row>
                 <WeightSetupWrapper>
                     <table>
@@ -924,13 +926,13 @@ const SetupConverter = (props) => {
                     <Button onClick={onConfirm} color={color}>Next</Button>
                 </ButtonGroup>
             </Row>
-            { errorMessage && (
+            {errorMessage && (
                 <ErrorMessage>
-                    {errorMessage }
+                    {errorMessage}
                 </ErrorMessage>
             )}
-            { isCompleted && (
-                <ViewOnlyMessage/>
+            {isCompleted && (
+                <ViewOnlyMessage />
             )}
         </Fragment>
     )
@@ -943,9 +945,9 @@ const Activate = (props) => {
     const defaultTradingFee = state.activate.completed ? state.activate.tradingFee : 0.1;
 
     const [tradingFee, setTradingFee] = useState(defaultTradingFee);
-    const [ errorMessage , setErrorMessage ] = useState();
-    const [isActivate, setActivate ] = useState(false);
-    const [ loading, setLoading ] = useState(false);
+    const [errorMessage, setErrorMessage] = useState();
+    const [isActivate, setActivate] = useState(false);
+    const [loading, setLoading] = useState(false);
 
 
     const converterAddress = state['setupConverter']['converterAddress'];
@@ -966,11 +968,11 @@ const Activate = (props) => {
                     console.log("eror : ", error);
                 }
                 setLoading(false);
- 
+
             })()
         }
 
-        
+
     }, [converterAddress])
 
     const onConfirm = useCallback(async (e) => {
@@ -986,7 +988,7 @@ const Activate = (props) => {
             return;
         }
 
-        const smartTokenAddress  = state['setupRelayToken']['tokenAddress'];
+        const smartTokenAddress = state['setupRelayToken']['tokenAddress'];
         // const converterAddress = state['setupConverter']['converterAddress'];
         if ((!smartTokenAddress) || (!converterAddress)) {
             setErrorMessage("State error.")
@@ -995,20 +997,20 @@ const Activate = (props) => {
 
         try {
             const txs = await activateConverter(smartTokenAddress, converterAddress, tradingFee);
-            
+
             console.log("txs object : ", txs);
-            const { setConversionFeeTx, transferOwnershipTx,  activateTx} = txs;
+            const { setConversionFeeTx, transferOwnershipTx, activateTx } = txs;
             const promises = [setConversionFeeTx.wait(), transferOwnershipTx.wait(), activateTx.wait()]
-            const activateModalClose = showProcessingModal("Activating...", `Tx : ${setConversionFeeTx.hash}` );
+            const activateModalClose = showProcessingModal("Activating...", `Tx : ${setConversionFeeTx.hash}`);
             try {
                 await Promise.all(promises);
             } catch (error) {
                 activateModalClose();
                 throw new Error(error.message);
             }
-            
+
             activateModalClose();
-        
+
         } catch (error) {
             setErrorMessage(error.message);
             return;
@@ -1080,22 +1082,22 @@ const Activate = (props) => {
             >
                 <ButtonGroup>
                     <Button onClick={back} color={color}>Back</Button>
-                    { !isActivate 
-                    ?
-                    <Button onClick={onConfirm} color={color}>Activate</Button>
-                    :
-                    <Button onClick={onSkip} color={color} >Skip</Button>
+                    {!isActivate
+                        ?
+                        <Button onClick={onConfirm} color={color}>Activate</Button>
+                        :
+                        <Button onClick={onSkip} color={color} >Skip</Button>
                     }
-                    
+
                 </ButtonGroup>
             </Row>
-            { (errorMessage && (!isCompleted)) && (
+            {(errorMessage && (!isCompleted)) && (
                 <ErrorMessage>
-                    {errorMessage }
+                    {errorMessage}
                 </ErrorMessage>
             )}
-            { isCompleted && (
-                <ViewOnlyMessage/>
+            {isCompleted && (
+                <ViewOnlyMessage />
             )}
         </Fragment>
     )
@@ -1106,8 +1108,8 @@ const Register = (props) => {
 
     const { color, state, updateState, updateStep, registerConverter, showProcessingModal } = props;
 
-    const [ isCompleted, setCompleted ] = useState(false);
-    const [ errorMessage, setErrorMessage ] = useState();
+    const [isCompleted, setCompleted] = useState(false);
+    const [errorMessage, setErrorMessage] = useState();
 
     const tokenName = state['setupRelayToken']['tokenName'];
     const tokenSymbol = state['setupRelayToken']['tokenSymbol'];
@@ -1122,8 +1124,8 @@ const Register = (props) => {
             setupRelayToken: {
                 step: 1,
                 tokenAddress: "",
-                tokenSymbol : "",
-                tokenName : "",
+                tokenSymbol: "",
+                tokenName: "",
                 isNewToken: true,
                 isNewConverter: true,
                 completed: false
@@ -1160,7 +1162,7 @@ const Register = (props) => {
                 onClose();
                 throw new Error(error.message);
             }
-            
+
             onClose();
 
             setCompleted(true);
@@ -1195,7 +1197,7 @@ const Register = (props) => {
                 <Column2>
                     Relay Token Address
                 </Column2>
-                <Column2 style={{ fontSize: "10px", marginTop: "2px", overflow: "visible"}}>
+                <Column2 style={{ fontSize: "10px", marginTop: "2px", overflow: "visible" }}>
                     {tokenAddress}
                 </Column2>
             </Row>
@@ -1203,7 +1205,7 @@ const Register = (props) => {
                 <Column2>
                     Converter Address
                 </Column2>
-                <Column2 style={{ fontSize: "10px",marginTop: "2px", overflow: "visible"}}>
+                <Column2 style={{ fontSize: "10px", marginTop: "2px", overflow: "visible" }}>
                     {converterAddress}
                 </Column2>
             </Row>
@@ -1225,24 +1227,24 @@ const Register = (props) => {
             >
                 <ButtonGroup>
                     <Button onClick={back} color={color}>Back</Button>
-                    { isCompleted ?
-                    <Button onClick={onReset} color={color}>Create Another Pool</Button>
-                    :
-                    <Button onClick={onRegister} color={color}>Register</Button>
+                    {isCompleted ?
+                        <Button onClick={onReset} color={color}>Create Another Pool</Button>
+                        :
+                        <Button onClick={onRegister} color={color}>Register</Button>
                     }
-                    { !isCompleted && (errorMessage) && (
+                    {!isCompleted && (errorMessage) && (
                         <Button onClick={onReset} color={color}>Reset</Button>
                     )
-}
+                    }
                 </ButtonGroup>
             </Row>
-            { errorMessage && (
+            {errorMessage && (
                 <ErrorMessage>
-                    {errorMessage }
+                    {errorMessage}
                 </ErrorMessage>
             )}
-            { isCompleted && (
-                <CompletedMessage/>
+            {isCompleted && (
+                <CompletedMessage />
             )}
 
         </Fragment>
@@ -1299,7 +1301,7 @@ const ErrorMessage = styled(Row)`
     margin-bottom: 0px;
     display: block;
     font-weight: 600;
-    color: ${props => props.color ? props.color : "red" };
+    color: ${props => props.color ? props.color : "red"};
     font-size: 12px;
     text-align: center;
 `;

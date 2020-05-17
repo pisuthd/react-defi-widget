@@ -31,7 +31,7 @@ const Widget = (props) => {
         affiliateFee
     } = props;
 
-    const { showModal } = useModal();
+    const { showModal, showErorMessageModal } = useModal();
 
     const widgetTitle = title || HEADLINES.HEADER[currentPage];
     const widgetSubtitle = subtitle || HEADLINES.TEXT[currentPage];
@@ -68,7 +68,7 @@ const Widget = (props) => {
                 setErrorMessage();
                 // setDisclaimer("Connecting to MetaMask...");
             } else {
-                setErrorMessage(`Error : ${web3ReactContext.error.message}` || "Error : An unknown error occurred.");
+                setErrorMessage(`${web3ReactContext.error.message}` || "Error : An unknown error occurred.");
             }
         } else {
             setErrorMessage();
@@ -105,14 +105,18 @@ const Widget = (props) => {
         }
 
         if (web3ReactContext.networkId) {
+            if ([ 1, 3].indexOf(web3ReactContext.networkId) === -1 ) {
+                showErorMessageModal("Unsupported Network","Please switch to Mainnet or Ropsten network");
+                return;
+            }
             setNetworkId(web3ReactContext.networkId);
         };
-
-
 
     }, [web3ReactContext.networkId, networkId]);
 
     const WRAP_WIDTH = currentPage === PAGES.SWAP ? 600 : 800;
+
+    const isHide = ([  1, 3].indexOf(web3ReactContext.networkId) === -1 );
 
     return (
         <ContainerDimensions>
@@ -141,7 +145,7 @@ const Widget = (props) => {
                             isMobile={width > WRAP_WIDTH}
                             height={height}
                         >
-                            {currentPage === PAGES.SWAP &&
+                            {!isHide && currentPage === PAGES.SWAP &&
                                 (
                                     <SwapPanel
                                         clickCount={clickCount}
@@ -155,7 +159,7 @@ const Widget = (props) => {
                                     />
                                 )}
 
-                            {currentPage === PAGES.POOLS &&
+                            {!isHide && currentPage === PAGES.POOLS &&
                                 (
                                     <LiquidityPoolPanel
                                         web3ReactContext={web3ReactContext}
@@ -282,7 +286,6 @@ const Body = styled.div`
     ${ props => (props.isMobile) && `
         grid-template-columns: repeat(2, 1fr);
     `}
-
     
 `
 
