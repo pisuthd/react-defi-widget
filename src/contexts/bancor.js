@@ -953,7 +953,7 @@ export const useBancor = (web3context) => {
             }
         }
         console.log("before funding...", options, tokenAmount)
-        const fundingTx = await converterContract.fund(tokenAmount, options);
+        const fundingTx = await converterContract.fund(tokenAmount, await constructTxOptions(0.3));
         console.log("funding...");
         txs.push(fundingTx)
         return txs;
@@ -961,7 +961,7 @@ export const useBancor = (web3context) => {
 
     const withdrawLiquidityPool = useCallback(async (poolObject, amountInPercentage) => {
         const signer = web3context.library.getSigner();
-        const options = await constructTxOptions();
+        const options = await constructTxOptions(0.3);
         const relayTokenContract = getContract(poolObject.address, SmartTokenAbi, signer);
         const converterContract = getContract(poolObject.converterAddress, BancorConverterAbi, signer);
         const supplyWei = await relayTokenContract.totalSupply();
