@@ -209,22 +209,48 @@ const SwapPanel = (props) => {
                     console.log(`looking for an exchange rate on the pair ${baseToken.symbol}/${pairToken.symbol} `);
                     setLoadingRate(true);
                     const onClose = showProcessingModal("Fetching rates...", "");
+
                     try {
-                        const path = await generatePath(baseToken.address, pairToken.address, liquidityPools);
-                        console.log("path : ", path);
+                        let rate;
+                        let path;
+                        let fee;
+
+                        /*
+                        skipping SDK as it's a bit slower
+                        if (networkId === 1) {
+                            console.log(new Date().toLocaleString())
+                            const result = await getPathFromSDK(baseToken.address, pairToken.address, "1");
+                            rate = result.rate;
+                            path = result.path.map(item => item.blockchainId);
+                            console.log("path/rate from SDK : ", path, rate);
+                            const baseDecimal = await getTokenDecimal(baseToken.address);
+                            const pairDecimal = await getTokenDecimal(pairToken.address);
+                            const rateResult = await getRate(path, "1", baseDecimal);
+                            fee = rateResult[1];
+                            const finalFee = parseToken(fee, pairDecimal);
+                            fee = finalFee;
+                            console.log(new Date().toLocaleString())
+                        } 
+                        */
+
+                        path = await generatePath(baseToken.address, pairToken.address, liquidityPools);
+                        console.log("path from smart contract : ", path);
                         const baseDecimal = await getTokenDecimal(baseToken.address);
                         const rateResult = await getRate(path, "1", baseDecimal);
-                        const rate = rateResult[0];
-                        const fee = rateResult[1];
+                        rate = rateResult[0];
+                        fee = rateResult[1];
                         const pairDecimal = await getTokenDecimal(pairToken.address);
                         const finalRate = parseToken(rate, pairDecimal);
                         const finalFee = parseToken(fee, pairDecimal);
                         console.log("finalRate / finalFee : ", finalRate, finalFee);
-                        setRate(`${finalRate}`);
-                        setFee(Number((100 * Number(finalFee)) / Number(finalRate)));
+                        rate = finalRate;
+                        fee = finalFee;
+
+                        setRate(`${rate}`);
+                        setFee(Number((100 * Number(fee)) / Number(rate)));
                         setPath(path);
 
-                        updatePairTokenAmount(finalRate);
+                        updatePairTokenAmount(rate);
 
                     } catch (error) {
                         console.log("Find a shortest path error : ", error);
@@ -245,7 +271,6 @@ const SwapPanel = (props) => {
                             })
                         }
                     }
-                    console.log("setUsdRates : ", setUsdRates);
                     setUsdRates(rates);
 
                 })();
@@ -356,18 +381,18 @@ const SwapPanel = (props) => {
                                 <h3>Pay</h3>
                             </HeadingLeft>
                             <HeadingRight>
-                                { (usdRates.length > 0) && (usdRates.map((item,index) => {
-                                    if ((item.symbol === baseToken.symbol) && (baseTokenAmount!==0)) {
+                                {(usdRates.length > 0) && (usdRates.map((item, index) => {
+                                    if ((item.symbol === baseToken.symbol) && (baseTokenAmount !== 0)) {
                                         return (
-                                        <div key={index}>${(Number(baseTokenAmount)*Number(item.usdPrice)).toFixed(2).toLocaleString()}{` `}(1{` `}{baseToken.symbol}{` = $`}{(item.usdPrice).toFixed(2)})</div>
+                                            <div key={index}>${(Number(baseTokenAmount) * Number(item.usdPrice)).toFixed(2).toLocaleString()}{` `}(1{` `}{baseToken.symbol}{` = $`}{(item.usdPrice).toFixed(2)})</div>
                                         )
                                     } else {
                                         return
                                     }
-                                })) 
-                                    
+                                }))
+
                                 }
-                                
+
                             </HeadingRight>
                         </HeadingRow>
 
@@ -413,15 +438,15 @@ const SwapPanel = (props) => {
                                 <h3>Receive</h3>
                             </HeadingLeft>
                             <HeadingRight>
-                                { (usdRates.length > 0) && (usdRates.map((item,index) => {
-                                    if ((item.symbol === pairToken.symbol) && (pairTokenAmount!==0)) {
+                                {(usdRates.length > 0) && (usdRates.map((item, index) => {
+                                    if ((item.symbol === pairToken.symbol) && (pairTokenAmount !== 0)) {
                                         return (
-                                        <div key={index}>${(Number(pairTokenAmount)*Number(item.usdPrice)).toFixed(2).toLocaleString()}{` `}(1{` `}{pairToken.symbol}{` = $`}{(item.usdPrice).toFixed(2)})</div>
+                                            <div key={index}>${(Number(pairTokenAmount) * Number(item.usdPrice)).toFixed(2).toLocaleString()}{` `}(1{` `}{pairToken.symbol}{` = $`}{(item.usdPrice).toFixed(2)})</div>
                                         )
                                     } else {
                                         return
                                     }
-                                }))  }
+                                }))}
                             </HeadingRight>
                         </HeadingRow>
 
