@@ -762,10 +762,23 @@ const InputGroupIcon = styled.div`
     padding: 8px;
 `;
 
+const Button = styled.button`
+    background-color: ${props => props.color && `${props.color}`};
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    padding: 4px 8px 4px 8px;
+    font-size: 14px;
+    margin-right: 4px;
+    border-radius: 4px;
+    ${props => props.disabled && 'opacity: 0.6;'}
+`;
+
 const InputGroupArea = styled.div`
     width:100%;
 
-
+    z-index: -1;
     .slider {
         -webkit-appearance: none;
         width: 100%;
@@ -1083,11 +1096,20 @@ const ActionInputPanel = (props) => {
             {actionPanel === ACTION_PANELS.ADD_LIQUIDITY &&
                 (
                     <Fragment>
-                        <PoolNavigation
-                            width={width}
-                            wrapAt={wrapAt}
-                            isAddLiquidity={true}
-                        />
+                        <ChartLeftPanel>
+                            <div>
+                                <b>Your Staking</b>
+                                <div>
+                                {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`}
+                                </div>
+                            </div>
+                            <div>
+                            <b>Total Supply</b>
+                                <div>
+                                {poolTokenSupply.toFixed(4)}
+                                </div>
+                            </div>
+                        </ChartLeftPanel>
 
                         <LiquidityInputPanel>
                             <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
@@ -1111,10 +1133,7 @@ const ActionInputPanel = (props) => {
                                     )
                                 })}
                                 <div style={{ fontSize: "12px", marginTop: "8px" }}>
-                                    <b>Current Stake / Total Pool Tokens</b>
-                                    <div>
-                                        {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
-                                    </div>
+                                    <Button onClick={() => showErrorMessageModal("Adding Liquidity to the Pool", "You can buy pool tokens with all reserve tokens using the same percentage, you will see how much pool tokens on the left while your current balances on the right.")} color={color}>?</Button>
                                 </div>
                             </div>
                         </LiquidityInputPanel>
@@ -1156,11 +1175,20 @@ const ActionInputPanel = (props) => {
             {actionPanel === ACTION_PANELS.REMOVE_LIQUIDITY &&
                 (
                     <Fragment>
-                        <PoolNavigation
-                            width={width}
-                            wrapAt={wrapAt}
-                            isAddLiquidity={false}
-                        />
+                        <ChartLeftPanel>
+                            <div>
+                                <b>Your Staking</b>
+                                <div>
+                                {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0) && `(-${((poolTokenAmount * Number(inputAmount)) / 1000000).toFixed(4)})`}
+                                </div>
+                            </div>
+                            <div>
+                            <b>Total Supply</b>
+                                <div>
+                                {poolTokenSupply.toFixed(4)}
+                                </div>
+                            </div>
+                        </ChartLeftPanel>
 
                         <LiquidityInputPanel>
                             <InputGroupArea color={color} style={{ fontSize: "14px", marginTop: "10px", padding: "10px 0px 0px 0px" }}>
@@ -1183,10 +1211,7 @@ const ActionInputPanel = (props) => {
                                     )
                                 })}
                                 <div style={{ fontSize: "12px", marginTop: "8px" }}>
-                                    <b>Current Stake / Total Pool Tokens</b>
-                                    <div>
-                                        {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0) && `(-${((poolTokenAmount * Number(inputAmount)) / 1000000).toFixed(4)})`} / {poolTokenSupply.toFixed(4)}
-                                    </div>
+                                    <Button onClick={() => showErrorMessageModal("Removing Liquidity from the Pool", "You can sell pool tokens for all reserve tokens using the same percentage as opposed to funding the pool.")} color={color}>?</Button>
                                 </div>
                             </div>
 
@@ -1271,29 +1296,6 @@ const TokenAmount = styled.div`
     `}
 `;
 
-const PoolNavigation = ({ width, wrapAt, isAddLiquidity }) => {
-    return (
-        <ChartLeftPanel
-            style={{
-                width: width > wrapAt ? "30%" : "20%",
-                fontSize: width > wrapAt ? "12px" : "10px"
-            }}
-        >
-            {isAddLiquidity
-                ?
-                <p>
-                    Buys pool tokens with all reserve tokens using the same percentage.
-                </p>
-                :
-                <p>
-                    Sells pool tokens for all reserve tokens using the same percentage.
-                </p>
-            }
-
-
-        </ChartLeftPanel>
-    )
-}
 
 const PoolListPanel = (props) => {
     const { active, onUpdateCurrentPool, pools } = props;
