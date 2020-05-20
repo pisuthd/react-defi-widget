@@ -1,8 +1,5 @@
 import React, { Component, useEffect, useState } from 'react'
 import {
-    Link
-} from "react-router-dom";
-import {
     Navbar,
     NavbarToggler,
     NavbarBrand,
@@ -32,15 +29,16 @@ const NavBar = (props) => {
 
                 <NavbarBrand>
                     <BrandHeader>
-                        <Link to="/">
+                        <NavLink href="/">
                             React Defi Widget
-                        </Link>
+                        </NavLink>
                     </BrandHeader>
 
                 </NavbarBrand>
                 <NavbarToggler style={{ color: "red" }} onClick={toggle} />
                 <Collapse isOpen={isOpen} navbar>
                     <Nav className="ml-auto" navbar>
+                        {/*
                         <NavItem>
                             <Link to="/">
                                 <NavLink>Token Swap</NavLink>
@@ -50,6 +48,10 @@ const NavBar = (props) => {
                             <Link to="/pools">
                                 <NavLink>Pool Creation/Stake Liquidity</NavLink>
                             </Link>
+                        </NavItem>
+                        */}
+                        <NavItem>
+                            <NavLink href="https://github.com/pisuthd/react-defi-widget" target="_blank">GitHub</NavLink>
                         </NavItem>
                     </Nav>
 
