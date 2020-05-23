@@ -12,7 +12,7 @@ const ContextProviders = ({ children }) => {
     return (
         <ModalContextProvider>
             <BancorContextProvider>
-                    {children}
+                {children}
             </BancorContextProvider>
         </ModalContextProvider>
     )
@@ -20,18 +20,20 @@ const ContextProviders = ({ children }) => {
 
 const ConnectedWidget = (props) => {
 
-    const { 
-        web3ReactContext, 
-        currentPage ,
-        title, 
-        subtitle, 
+    const {
+        web3ReactContext,
+        currentPage,
+        title,
+        subtitle,
         description,
         color,
         baseCurrency,
         pairCurrency,
         affiliateAccount,
         affiliateFee,
-        whitelisted
+        whitelisted,
+        defaultPool,
+        disablePoolCreation
     } = props;
 
     return (
@@ -48,7 +50,9 @@ const ConnectedWidget = (props) => {
                 affiliateAccount={affiliateAccount}
                 affiliateFee={affiliateFee}
                 whitelisted={whitelisted}
-            />  
+                defaultPool={defaultPool}
+                disablePoolCreation={disablePoolCreation}
+            />
         </ContextProviders>
     )
 }
@@ -57,23 +61,25 @@ ConnectedWidget.propTypes = {
     web3ReactContext: PropTypes.object.isRequired,
     currentPage: PropTypes.string,
     title: PropTypes.string,
-    subtitle : PropTypes.string,
-    description : PropTypes.string,
-    color : PropTypes.string,
-    baseCurrency :  PropTypes.string,
-    pairCurrency :  PropTypes.string,
-    affiliateAccount : PropTypes.string,
-    affiliateFee : PropTypes.number,
-    whitelisted: PropTypes.array
+    subtitle: PropTypes.string,
+    description: PropTypes.string,
+    color: PropTypes.string,
+    baseCurrency: PropTypes.string,
+    pairCurrency: PropTypes.string,
+    affiliateAccount: PropTypes.string,
+    affiliateFee: PropTypes.number,
+    whitelisted: PropTypes.array,
+    defaultPool: PropTypes.string,
+    disablePoolCreation: PropTypes.bool
 };
 
 
 export const TokenConversionWidget = (props) => {
 
-    const { 
-        web3ReactContext, 
-        title, 
-        subtitle, 
+    const {
+        web3ReactContext,
+        title,
+        subtitle,
         description,
         color,
         baseCurrency,
@@ -84,31 +90,31 @@ export const TokenConversionWidget = (props) => {
     } = props;
 
     return <ConnectedWidget
-                web3ReactContext={web3ReactContext}
-                currentPage={PAGES.SWAP}
-                title={title}
-                subtitle={subtitle}
-                description={description}
-                color={color}
-                baseCurrency={baseCurrency}
-                pairCurrency={pairCurrency}
-                affiliateAccount={affiliateAccount}
-                affiliateFee={affiliateFee}
-                whitelisted={whitelisted}
-            />
+        web3ReactContext={web3ReactContext}
+        currentPage={PAGES.SWAP}
+        title={title}
+        subtitle={subtitle}
+        description={description}
+        color={color}
+        baseCurrency={baseCurrency}
+        pairCurrency={pairCurrency}
+        affiliateAccount={affiliateAccount}
+        affiliateFee={affiliateFee}
+        whitelisted={whitelisted}
+    />
 }
 
 TokenConversionWidget.propTypes = {
     web3ReactContext: PropTypes.object.isRequired,
     currentPage: PropTypes.string,
     title: PropTypes.string,
-    subtitle : PropTypes.string,
-    description : PropTypes.string,
-    color : PropTypes.string,
-    baseCurrency :  PropTypes.string,
-    pairCurrency :  PropTypes.string,
-    affiliateAccount : PropTypes.string,
-    affiliateFee : PropTypes.number,
+    subtitle: PropTypes.string,
+    description: PropTypes.string,
+    color: PropTypes.string,
+    baseCurrency: PropTypes.string,
+    pairCurrency: PropTypes.string,
+    affiliateAccount: PropTypes.string,
+    affiliateFee: PropTypes.number,
     whitelisted: PropTypes.array
 
 };
@@ -116,20 +122,31 @@ TokenConversionWidget.propTypes = {
 
 export const LiquidityPoolsWidget = (props) => {
 
-    const { web3ReactContext, color } = props;
+    const {
+        web3ReactContext,
+        color,
+        whitelisted,
+        defaultPool,
+        disablePoolCreation
+    } = props;
 
     return <ConnectedWidget
-                web3ReactContext={web3ReactContext}
-                currentPage={PAGES.POOLS}
-                color={color}
-            />
+        web3ReactContext={web3ReactContext}
+        currentPage={PAGES.POOLS}
+        color={color}
+        whitelisted={whitelisted}
+        defaultPool={defaultPool}
+        disablePoolCreation={disablePoolCreation}
+    />
 }
 
 
 LiquidityPoolsWidget.propTypes = {
     web3ReactContext: PropTypes.object.isRequired,
-    color : PropTypes.string
-
+    color: PropTypes.string,
+    whitelisted: PropTypes.array,
+    defaultPool: PropTypes.string,
+    disablePoolCreation: PropTypes.bool
 };
 
 

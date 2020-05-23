@@ -34,7 +34,10 @@ const LiquidityPoolPanel = (props) => {
         width,
         clickCount,
         color,
-        wrapAt
+        wrapAt,
+        whitelisted,
+        defaultPool,
+        disablePoolCreation
     } = props;
 
     const networkId = web3ReactContext.networkId;
@@ -149,8 +152,20 @@ const LiquidityPoolPanel = (props) => {
 
                                 Promise.all(promisesPool).then(
                                     finalResult => {
+                                        let result = finalResult;
                                         console.log("finalResult : ", finalResult);
-                                        setPools(finalResult.filter(item => item.reserves.length !== 1).sort((a, b) => (Number(a.totalSupply) > Number(b.totalSupply)) ? -1 : 1));
+                                        if (whitelisted && whitelisted.length > 0) {
+                                            result = result.filter(item => whitelisted.indexOf(item.name) !== -1);
+                                        }
+                                        // overrides SAI pool
+                                        result = result.map(item => {
+                                            if (item.address === "0xee01b3AB5F6728adc137Be101d99c678938E6E72") {
+                                                item.name = "SAIBNT";
+                                            }
+                                            return item;
+                                        })
+
+                                        setPools(result.filter(item => item.reserves.length !== 1).sort((a, b) => (Number(a.totalSupply) > Number(b.totalSupply)) ? -1 : 1));
                                         setLoadingPools(false);
                                         onClose();
                                     }
@@ -167,7 +182,7 @@ const LiquidityPoolPanel = (props) => {
             }
         })();
 
-    }, [loading, networkId])
+    }, [loading, networkId, whitelisted])
 
     const isLoading = loading;
 
@@ -347,6 +362,7 @@ const LiquidityPoolPanel = (props) => {
                             active={showPoolListModal}
                             onUpdateCurrentPool={onUpdateCurrentPool}
                             pools={pools}
+                            defaultPool={defaultPool}
                         />
 
                         <ChartContainer>
@@ -420,9 +436,9 @@ const LiquidityPoolPanel = (props) => {
                                                         {usdRate
                                                             ?
                                                             <div>
-                                                                <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` $`}{(Number(currentPool.reserves[index][0])*Number(usdRate.usdPrice)).toFixed(2).toLocaleString() }
+                                                                <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` $`}{(Number(currentPool.reserves[index][0]) * Number(usdRate.usdPrice)).toFixed(2).toLocaleString()}
                                                             </div>
-                                                        :
+                                                            :
                                                             <div>
                                                                 <Dot color={COLORS[index] || COLORS[0]} />{` `}{item || ""}{` `}{Number(currentPool.reserves[index][0]).toFixed(6)}
                                                             </div>
@@ -458,6 +474,7 @@ const LiquidityPoolPanel = (props) => {
                             <ActionListPanel
                                 active={showActionListModal}
                                 onActionPanelUpdate={onActionPanelUpdate}
+                                disablePoolCreation={disablePoolCreation}
                             />
 
                             <ActionInputPanel
@@ -613,7 +630,7 @@ const DropdownContainer = styled.div`
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 1;
     margin-left: 40px;
-    height: 145px;
+    height: ${props => props.minimized ? "100px" : "145px"};
     
     padding-left: 10px;
     padding-right: 10px;
@@ -821,11 +838,11 @@ export default LiquidityPoolPanel;
 
 const ActionListPanel = (props) => {
 
-    const { active, onActionPanelUpdate } = props;
+    const { active, onActionPanelUpdate, disablePoolCreation } = props;
 
 
     return (
-        <DropdownContainer active={active}>
+        <DropdownContainer active={active} minimized={disablePoolCreation}>
             <table>
                 <tbody>
                     <tr>
@@ -834,9 +851,14 @@ const ActionListPanel = (props) => {
                     <tr>
                         <td onClick={() => onActionPanelUpdate(ACTION_PANELS.REMOVE_LIQUIDITY)}>Remove Liquidity</td>
                     </tr>
-                    <tr>
-                        <td onClick={() => onActionPanelUpdate(ACTION_PANELS.CREATE_POOL)}>Create a New Pool</td>
-                    </tr>
+                    {!disablePoolCreation &&
+                        (<tr>
+                            <td onClick={() => onActionPanelUpdate(ACTION_PANELS.CREATE_POOL)}>Create a New Pool</td>
+                        </tr>
+
+                        )
+
+                    }
                 </tbody>
             </table>
         </DropdownContainer>
@@ -1100,13 +1122,13 @@ const ActionInputPanel = (props) => {
                             <div>
                                 <b>Your Staking</b>
                                 <div>
-                                {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`}
+                                    {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0 && (Number(maxAffordablePercentage) !== 0)) && `(+${(poolTokenSupply * ((Number(maxAffordablePercentage) * Number(inputAmount)) / 1000000) / 100).toFixed(4)})`}
                                 </div>
                             </div>
                             <div>
-                            <b>Total Supply</b>
+                                <b>Total Supply</b>
                                 <div>
-                                {poolTokenSupply.toFixed(4)}
+                                    {poolTokenSupply.toFixed(4)}
                                 </div>
                             </div>
                         </ChartLeftPanel>
@@ -1179,13 +1201,13 @@ const ActionInputPanel = (props) => {
                             <div>
                                 <b>Your Staking</b>
                                 <div>
-                                {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0) && `(-${((poolTokenAmount * Number(inputAmount)) / 1000000).toFixed(4)})`}
+                                    {poolTokenAmount.toFixed(4)} {(Number(inputAmount) !== 0) && `(-${((poolTokenAmount * Number(inputAmount)) / 1000000).toFixed(4)})`}
                                 </div>
                             </div>
                             <div>
-                            <b>Total Supply</b>
+                                <b>Total Supply</b>
                                 <div>
-                                {poolTokenSupply.toFixed(4)}
+                                    {poolTokenSupply.toFixed(4)}
                                 </div>
                             </div>
                         </ChartLeftPanel>
@@ -1298,22 +1320,26 @@ const TokenAmount = styled.div`
 
 
 const PoolListPanel = (props) => {
-    const { active, onUpdateCurrentPool, pools } = props;
+    const { active, onUpdateCurrentPool, pools, defaultPool } = props;
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filtered, setFiltered] = useState(pools);
 
     useEffect(() => {
         if (pools[0]) {
-            onUpdateCurrentPool(pools[0]);
+
+            if (defaultPool) {
+                const pool = pools.find(item => item.name === defaultPool);
+                onUpdateCurrentPool(pool);
+            } else {
+                onUpdateCurrentPool(pools[0]);
+            }
         }
-    }, [pools]);
+    }, [pools, defaultPool]);
 
     const onChange = (poolObject) => {
         onUpdateCurrentPool(poolObject);
     }
-
-
 
     useEffect(() => {
 

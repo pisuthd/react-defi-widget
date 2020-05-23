@@ -29,7 +29,9 @@ const Widget = (props) => {
         pairCurrency,
         affiliateAccount,
         affiliateFee,
-        whitelisted
+        whitelisted,
+        defaultPool,
+        disablePoolCreation
     } = props;
 
     const { showModal, showErrorMessageModal } = useModal();
@@ -170,6 +172,9 @@ const Widget = (props) => {
                                         updateActionText={updateActionText}
                                         clickCount={clickCount}
                                         color={widgetColor}
+                                        whitelisted={whitelisted}
+                                        defaultPool={defaultPool}
+                                        disablePoolCreation={disablePoolCreation}
                                     />
                                 )}
 
