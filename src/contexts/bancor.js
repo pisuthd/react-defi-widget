@@ -925,6 +925,7 @@ export const useBancor = (web3context) => {
             const symbolName = poolObject.symbols[i];
             const buyingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor((percentage * 1000000)))).div(ethers.utils.bigNumberify(1000000 * 100));
             console.log("buyingAmount : ", ethers.utils.formatUnits(buyingAmount, thisReserveDecimal), " for --> ", symbolName);
+            const maxAllowance = await token.balanceOf(web3context.account);
 
             const allowance = await token.allowance(web3context.account, converterContract.address);
             console.log("current allowance : ", ethers.utils.formatUnits(allowance, thisReserveDecimal), " symbol : ", symbolName);
@@ -940,7 +941,7 @@ export const useBancor = (web3context) => {
                     await resetTx.wait();
                     onClose();
                 }
-                const approvalTx = await token.approve(converterContract.address, buyingAmount, await constructTxOptions(0.1));
+                const approvalTx = await token.approve(converterContract.address, maxAllowance, await constructTxOptions(0.1));
                 txs.push(approvalTx);
             }
         }
