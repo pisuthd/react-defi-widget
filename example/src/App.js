@@ -13,10 +13,11 @@ import {
 import MainLayout from "./layouts/main";
 import MainPage from "./views/main";
 import LiquidityPage from "./views/liquidityPool";
+import styled from 'styled-components';
 
-const EXAMPLES = {
-  BASIC: "BASIC",
-  BASIC_LIQUIDITY: "BASIC_LIQUIDITY"
+const WIDGETS = {
+  TOKEN_SWAP: "TOKEN_SWAP",
+  LIQUIDITY: "LIQUIDITY"
 }
 
 const App = () => {
@@ -27,47 +28,34 @@ const App = () => {
     web3context.setFirstValidConnector(['MetaMask'])
   }, [])
 
-  const [currentExample, setExample] = useState(EXAMPLES.BASIC);
+  const [currentWidget, setWidget] = useState(WIDGETS.TOKEN_SWAP);
 
   return (
     <MainLayout>
-      {/*
-        <Switch>
-          <Route exact path="/">
-            <MainPage web3context={web3context} />
-          </Route>
-          <Route exact path="/pools">
-            <LiquidityPage web3context={web3context} />
-          </Route>
-          <Redirect to="/pools" />
-        </Switch>
-        */}
+ 
       <Row>
-        <Col sm="2">
-          <div>
-            <Nav vertical>
+        <Col sm="12">
+          <Menu>
+            <Nav>
               <NavItem>
-                <NavLink disabled href="#">Token Swap</NavLink>
+                <NavLink disabled href="#"><b>SELECT WIDGET :</b></NavLink>
               </NavItem>
               <NavItem>
-                <NavLink href="#" onClick={() => setExample(EXAMPLES.BASIC)}>Basic</NavLink>
+                <StyledNavLink active={currentWidget === WIDGETS.TOKEN_SWAP} href="#" onClick={() => setWidget(WIDGETS.TOKEN_SWAP)}>Token Conversion</StyledNavLink>
               </NavItem>
               <NavItem>
-                <NavLink disabled href="#">Liquidity Pool</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink href="#" onClick={() => setExample(EXAMPLES.BASIC_LIQUIDITY)}>All Pools</NavLink>
+                <StyledNavLink active={currentWidget === WIDGETS.LIQUIDITY} href="#" onClick={() => setWidget(WIDGETS.LIQUIDITY)}>Staking Liquidty/Pool Creation</StyledNavLink>
               </NavItem>
             </Nav>
-          </div>
+          </Menu>
         </Col>
-        <Col sm="10">
+        <Col sm="12">
 
-          {currentExample === EXAMPLES.BASIC &&
+          {currentWidget === WIDGETS.TOKEN_SWAP &&
             <MainPage web3context={web3context} />
           }
 
-          {currentExample === EXAMPLES.BASIC_LIQUIDITY &&
+          {currentWidget === WIDGETS.LIQUIDITY &&
             <LiquidityPage web3context={web3context} />
           }
 
@@ -78,5 +66,22 @@ const App = () => {
   )
 
 }
+
+const Menu = styled.div`
+  height: 60px;
+  justify-content: center;
+`
+
+const StyledNavLink = styled(NavLink)`
+  color: inherit;
+  ${ props => props.active && `
+     font-weight: 700;
+  `}
+
+  :hover {
+    text-decoration: underline;
+    color: inherit;
+  }
+`
 
 export default App;
