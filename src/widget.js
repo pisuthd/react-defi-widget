@@ -9,7 +9,6 @@ import BancorContextProvider from "./contexts/bancor";
 import ModalContextProvider from "./contexts/modal";
 
 const ContextProviders = ({ children }) => {
-
     return (
         <ModalContextProvider>
             <BancorContextProvider>
@@ -17,8 +16,6 @@ const ContextProviders = ({ children }) => {
             </BancorContextProvider>
         </ModalContextProvider>
     )
-
-    
 }
 
 const ConnectedWidget = (props) => {
@@ -33,7 +30,8 @@ const ConnectedWidget = (props) => {
         baseCurrency,
         pairCurrency,
         affiliateAccount,
-        affiliateFee
+        affiliateFee,
+        whitelisted
     } = props;
 
     return (
@@ -49,6 +47,7 @@ const ConnectedWidget = (props) => {
                 pairCurrency={pairCurrency}
                 affiliateAccount={affiliateAccount}
                 affiliateFee={affiliateFee}
+                whitelisted={whitelisted}
             />  
         </ContextProviders>
     )
@@ -65,6 +64,7 @@ ConnectedWidget.propTypes = {
     pairCurrency :  PropTypes.string,
     affiliateAccount : PropTypes.string,
     affiliateFee : PropTypes.number,
+    whitelisted: PropTypes.array
 };
 
 
@@ -79,7 +79,8 @@ export const TokenConversionWidget = (props) => {
         baseCurrency,
         pairCurrency,
         affiliateAccount,
-        affiliateFee
+        affiliateFee,
+        whitelisted
     } = props;
 
     return <ConnectedWidget
@@ -93,6 +94,7 @@ export const TokenConversionWidget = (props) => {
                 pairCurrency={pairCurrency}
                 affiliateAccount={affiliateAccount}
                 affiliateFee={affiliateFee}
+                whitelisted={whitelisted}
             />
 }
 
@@ -107,6 +109,7 @@ TokenConversionWidget.propTypes = {
     pairCurrency :  PropTypes.string,
     affiliateAccount : PropTypes.string,
     affiliateFee : PropTypes.number,
+    whitelisted: PropTypes.array
 
 };
 

@@ -28,7 +28,8 @@ const Widget = (props) => {
         baseCurrency,
         pairCurrency,
         affiliateAccount,
-        affiliateFee
+        affiliateFee,
+        whitelisted
     } = props;
 
     const { showModal, showErrorMessageModal } = useModal();
@@ -156,6 +157,7 @@ const Widget = (props) => {
                                         affiliateAccount={affiliateAccount}
                                         affiliateFee={affiliateFee}
                                         width={width}
+                                        whitelisted={whitelisted}
                                     />
                                 )}
 

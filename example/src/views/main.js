@@ -43,6 +43,9 @@ const MainPage = (props) => {
     // const affiliateAccount = "0x8fD00f170FDf3772C5ebdCD90bF257316c69BA45";
     // const affiliateFee = 1.5; // 2.5% Maximum is 3%
 
+    // Provides whitelisted tokens to be traded in the widget
+    // const whitelisted = ["ETH", "BNT", "KNC", "ENJ"]
+
     return (
         <Fragment>
             <Row>
@@ -58,6 +61,7 @@ const MainPage = (props) => {
                             pairCurrency={widgetPairCurrency}
                             // affiliateAccount={affiliateAccount}
                             // affiliateFee={affiliateFee}
+                            // whitelisted={whitelisted}
                         />
 
                     </StyledJumbotron>

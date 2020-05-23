@@ -26,7 +26,8 @@ const SwapPanel = (props) => {
         pairCurrency,
         affiliateAccount,
         affiliateFee,
-        width
+        width,
+        whitelisted
     } = props;
     const { showProcessingModal, showErrorMessageModal, showConfirmModal, tick } = useModal();
     const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
@@ -91,7 +92,14 @@ const SwapPanel = (props) => {
                 try {
                     const available = await getConvertibleTokens();
                     console.log("available : ", available);
-                    setTokens(available);
+
+                    if (!whitelisted) {
+                        setTokens(available);
+                    } else {
+                        const filtered = available.filter(item => whitelisted.indexOf(item.symbol) !== -1 );
+                        setTokens(filtered)
+                    }
+
                     const defaultBaseSymbol = baseCurrency ? baseCurrency : "ETH";
                     const defaultPairSymbol = pairCurrency ? pairCurrency : "BNT";
                     const defaultBaseToken = available.find(item => item.symbol === defaultBaseSymbol);
@@ -113,7 +121,7 @@ const SwapPanel = (props) => {
             })();
         }
 
-    }, [loading, networkId])
+    }, [loading, networkId, whitelisted])
 
     useEffect(() => {
 
