@@ -36,7 +36,7 @@ npm install --save react-defi-widget
 
 ### Token Conversion Widget
 
-Basic Usage
+Basic Usage :
 
 ```jsx
 import React, { Component, Fragment } from 'react'
@@ -61,7 +61,7 @@ const MainPage = (props) => {
 }
 ```
 
-Advance Usage
+Advance Usage :
 
 ```jsx
 import React, { Component, Fragment } from 'react'
@@ -88,15 +88,18 @@ const MainPage = (props) => {
           pairCurrency={"ETH"}
           affiliateAccount={"0x8fD00f170FDf3772C5ebdCD90bF257316c69BA45"}
           affiliateFee={3}
+          whitelisted={["ETH", "BNT", "KNC", "ENJ"]} // You might need to check all available tokens first
         />
     </Fragment>
   )
 }
 ```
 
-### Pool Creation Widget
+### Liquidity Pool Explorer / Pool Creation Widget
 
-Pool Creation widget is on early development that won't be much custom attributes except for the color. However the widget offers a vast opportunity for your website visitors to stake liquidity and create the new pool in the permissionless manner.
+The widget offers a vast opportunity for your website visitors to stake liquidity and create the new pool in the permissionless manner.
+
+Shows all available liquidity pools :
 
 ```jsx
 import React, { Component, Fragment } from 'react'
@@ -116,6 +119,35 @@ const MainPage = (props) => {
         <LiquidityPoolsWidget
           web3ReactContext={web3context}
           color={color}
+        />
+    </Fragment>
+  )
+}
+```
+
+Filter specific pools :
+
+```jsx
+import React, { Component, Fragment } from 'react'
+import { useWeb3Context } from 'web3-react';
+import { LiquidityPoolsWidget } from 'react-defi-widget'
+
+const MainPage = (props) => {
+
+  const context = useWeb3Context();
+
+  useEffect(() => {
+        context.setFirstValidConnector(['MetaMask']) // Or on your choice
+  }, [])
+
+  return (
+    <Fragment>
+        <LiquidityPoolsWidget
+          web3ReactContext={web3context}
+          color={color}
+          defaultPool={"ENJBNT"}
+          whitelisted={["ETHBNT", "ENJBNT", "DAIBNT"]}
+          disablePoolCreation={true}
         />
     </Fragment>
   )
@@ -142,6 +174,8 @@ npm start
 
 ## Properties
 
+### Token Conversion Widget
+
 |   |type|required|default value|description|
 |---|--- |---     |---          |---        |
 |**web3ReactContext**|PropTypes.object|YES| |The web3-react context object that the widget will goes to connect|
@@ -153,6 +187,20 @@ npm start
 |**pairCurrency**|PropTypes.string|NO|BNT|Default pair currency in a symbol format|
 |**affiliateAccount**|PropTypes.string|NO|None|The recipient account that collects the fee from the transaction|
 |**affiliateFee**|PropTypes.number|NO|0|The fee rate, for example 2.5 if the fee is set to 2.5%|
+|**whitelisted**|PropTypes.array|NO||Provides whitelisted tokens to be traded |
+
+### Liquidity Pool Widget
+
+|   |type|required|default value|description|
+|---|--- |---     |---          |---        |
+|**web3ReactContext**|PropTypes.object|YES| |The web3-react context object that the widget will goes to connect|
+|**title**|PropTypes.string|NO||Title of the widget|
+|**subtitle**|PropTypes.string|NO||Subtitle of the widget|
+|**description**|PropTypes.string|NO||Long description at the bottom of the widget|
+|**color**|PropTypes.string|NO|#0275d8|Color of the widget|
+|**whitelisted**|PropTypes.array|NO||Provides whitelisted liquidity pools|
+|**defaultPool**|PropTypes.string|NO||Default pool |
+|**disablePoolCreation**|PropTypes.bool|NO|false|Remove pool creation menu from the widget |
 
 ## License
 
