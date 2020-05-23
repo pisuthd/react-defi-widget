@@ -117,25 +117,24 @@ const SwapPanel = (props) => {
 
     useEffect(() => {
 
-        if (baseToken && !loading) {
-            (async () => {
-                await updateBalance(baseToken);
-            })();
-
-        }
+        const interval = setInterval(() => {
+            if (baseToken && !loading ) {
+                updateBalance(baseToken);
+            }
+        }, 3000);
+        return () => clearInterval(interval);
     }, [baseToken, loading])
 
     const updateBalance = useCallback(async (base) => {
         setLoadingBalance(true);
         try {
             if (base.symbol === "ETH") {
-                console.log("Check native ETH...");
                 const result = await getETHBalance();
-                console.log(result.toString());
+                // console.log(result.toString());
                 setSourceBalance(`${toFixed(result, 8)}`);
             } else {
                 const result = await getTokenBalance(base.address);
-                console.log(result.toString());
+                // console.log(result.toString());
                 setSourceBalance(`${toFixed(result, 8)}`);
             }
         } catch (error) {
@@ -181,9 +180,7 @@ const SwapPanel = (props) => {
                 showErrorMessageModal("Error", error.message)
                 console.log("onConvert error : ", error)
             }
-            setTimeout(async () => {
-                await updateBalance(baseToken);
-            }, 3000)
+
         }
     }, [baseTokenAmount, baseToken, pairToken, path, web3ReactContext, resetRate])
 
