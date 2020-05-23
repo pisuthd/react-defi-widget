@@ -14,14 +14,6 @@ import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 import { useModal } from "./modal";
 import { parseString } from "../utils/conversion";
 
-
-export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB", "USDC"]
-export const ROPSTEN_TOKENS = ["BNT", "ETH", "XXX", "YYY"]
-
-
-// Not sure whether BNB stills ERC-20, removal of low-volume tokens
-export const EXCLUDE_TOKENS = ["BNB", "AIX", "ATS", "BCS", "MNTP", "TBX", "TRST", "WAND", "HOT", "WLK", "ABX", "ESZ", "ZINC", "J8T", "LDC", "ONG", "RVT", "STAC", "BETR", "UP", "AUC", "DAN", "DTRC", "FKX", "FTX", "GES", "MAD", "MORPH", "MRG", "POA20", "REPUX", "SCL", "SIG", "TNS", "X8X", "XBP", "XNK", "PAT", "BBO", "SHP", "FLIXX", "CMCT", "AGRI", "EVO", "LOCI", "PEG:USD", "REAL", "SPD", "TIX", "COT", "EFOOD", "EMCO", "SXL", "RST100", "PRTL", "ELET", "SYB7", "PKG", "MGT", "sUSD", "GRIG", "ACD", "CBIX7", "DZAR", "JRT", "XIO", "UPT", "STX", "USD", "OMNIS", "TBC", "sXAU", "IGA", "eXAU", "COMM", "cUSD", "AUTO", "FTH", "pBTC", "EST", "BFZ", "ANK"];
-
 const BancorContext = createContext();
 
 const useBancorContext = () => {

@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect, Fragment } from 'react';
 import styled from "styled-components";
 import PropTypes from 'prop-types';
 
-import { useBancor, INITIAL_TOKENS, ROPSTEN_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
+import { useBancor  } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress, getRopstenTokenAddress } from "../../../../utils/token";
 import { getAddress, parseFee } from "../../../../utils/account";
 import { HEADLINES, PAGES, SLIPPAGE_RATE, TRANSACTION_TYPE } from "../../../../constants";
