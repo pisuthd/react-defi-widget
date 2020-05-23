@@ -14,14 +14,6 @@ import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 import { useModal } from "./modal";
 import { parseString } from "../utils/conversion";
 
-
-export const INITIAL_TOKENS = ["BNT", "ETH", "DAI", "ENJ", "BAT", "KNC", "MANA", "POWR", "MKR", "ANT", "GNO", "OMG", "SNT", "RDN", "SAN", "USDB", "USDC"]
-export const ROPSTEN_TOKENS = ["BNT", "ETH", "XXX", "YYY"]
-
-
-// Not sure whether BNB stills ERC-20, removal of low-volume tokens
-export const EXCLUDE_TOKENS = ["BNB", "AIX", "ATS", "BCS", "MNTP", "TBX", "TRST", "WAND", "HOT", "WLK", "ABX", "ESZ", "ZINC", "J8T", "LDC", "ONG", "RVT", "STAC", "BETR", "UP", "AUC", "DAN", "DTRC", "FKX", "FTX", "GES", "MAD", "MORPH", "MRG", "POA20", "REPUX", "SCL", "SIG", "TNS", "X8X", "XBP", "XNK", "PAT", "BBO", "SHP", "FLIXX", "CMCT", "AGRI", "EVO", "LOCI", "PEG:USD", "REAL", "SPD", "TIX", "COT", "EFOOD", "EMCO", "SXL", "RST100", "PRTL", "ELET", "SYB7", "PKG", "MGT", "sUSD", "GRIG", "ACD", "CBIX7", "DZAR", "JRT", "XIO", "UPT", "STX", "USD", "OMNIS", "TBC", "sXAU", "IGA", "eXAU", "COMM", "cUSD", "AUTO", "FTH", "pBTC", "EST", "BFZ", "ANK"];
-
 const BancorContext = createContext();
 
 const useBancorContext = () => {
@@ -933,6 +925,7 @@ export const useBancor = (web3context) => {
             const symbolName = poolObject.symbols[i];
             const buyingAmount = thisReserveBalance.mul(ethers.utils.bigNumberify(Math.floor((percentage * 1000000)))).div(ethers.utils.bigNumberify(1000000 * 100));
             console.log("buyingAmount : ", ethers.utils.formatUnits(buyingAmount, thisReserveDecimal), " for --> ", symbolName);
+            const maxAllowance = await token.balanceOf(web3context.account);
 
             const allowance = await token.allowance(web3context.account, converterContract.address);
             console.log("current allowance : ", ethers.utils.formatUnits(allowance, thisReserveDecimal), " symbol : ", symbolName);
@@ -948,7 +941,7 @@ export const useBancor = (web3context) => {
                     await resetTx.wait();
                     onClose();
                 }
-                const approvalTx = await token.approve(converterContract.address, buyingAmount, await constructTxOptions(0.1));
+                const approvalTx = await token.approve(converterContract.address, maxAllowance, await constructTxOptions(0.1));
                 txs.push(approvalTx);
             }
         }

@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect, Fragment } from 'react';
 import styled from "styled-components";
 import PropTypes from 'prop-types';
 
-import { useBancor, INITIAL_TOKENS, ROPSTEN_TOKENS, EXCLUDE_TOKENS } from "../../../../contexts/bancor";
+import { useBancor  } from "../../../../contexts/bancor";
 import { getIcon, getDefaultTokenAddress, getRopstenTokenAddress } from "../../../../utils/token";
 import { getAddress, parseFee } from "../../../../utils/account";
 import { HEADLINES, PAGES, SLIPPAGE_RATE, TRANSACTION_TYPE } from "../../../../constants";
@@ -26,7 +26,8 @@ const SwapPanel = (props) => {
         pairCurrency,
         affiliateAccount,
         affiliateFee,
-        width
+        width,
+        whitelisted
     } = props;
     const { showProcessingModal, showErrorMessageModal, showConfirmModal, tick } = useModal();
     const defaultAffiliateAccount = affiliateAccount ? getAddress(affiliateAccount) : "0x0000000000000000000000000000000000000000";
@@ -91,7 +92,14 @@ const SwapPanel = (props) => {
                 try {
                     const available = await getConvertibleTokens();
                     console.log("available : ", available);
-                    setTokens(available);
+
+                    if (!whitelisted) {
+                        setTokens(available);
+                    } else {
+                        const filtered = available.filter(item => whitelisted.indexOf(item.symbol) !== -1 );
+                        setTokens(filtered)
+                    }
+
                     const defaultBaseSymbol = baseCurrency ? baseCurrency : "ETH";
                     const defaultPairSymbol = pairCurrency ? pairCurrency : "BNT";
                     const defaultBaseToken = available.find(item => item.symbol === defaultBaseSymbol);
@@ -113,29 +121,28 @@ const SwapPanel = (props) => {
             })();
         }
 
-    }, [loading, networkId])
+    }, [loading, networkId, whitelisted])
 
     useEffect(() => {
 
-        if (baseToken && !loading) {
-            (async () => {
-                await updateBalance(baseToken);
-            })();
-
-        }
+        const interval = setInterval(() => {
+            if (baseToken && !loading ) {
+                updateBalance(baseToken);
+            }
+        }, 3000);
+        return () => clearInterval(interval);
     }, [baseToken, loading])
 
     const updateBalance = useCallback(async (base) => {
         setLoadingBalance(true);
         try {
             if (base.symbol === "ETH") {
-                console.log("Check native ETH...");
                 const result = await getETHBalance();
-                console.log(result.toString());
+                // console.log(result.toString());
                 setSourceBalance(`${toFixed(result, 8)}`);
             } else {
                 const result = await getTokenBalance(base.address);
-                console.log(result.toString());
+                // console.log(result.toString());
                 setSourceBalance(`${toFixed(result, 8)}`);
             }
         } catch (error) {
@@ -181,9 +188,7 @@ const SwapPanel = (props) => {
                 showErrorMessageModal("Error", error.message)
                 console.log("onConvert error : ", error)
             }
-            setTimeout(async () => {
-                await updateBalance(baseToken);
-            }, 3000)
+
         }
     }, [baseTokenAmount, baseToken, pairToken, path, web3ReactContext, resetRate])
 

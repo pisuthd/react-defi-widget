@@ -25,6 +25,10 @@ const LiquidityPool = (props) => {
 
     const color = "orange";
 
+    // Provides whitelisted pools
+    // const defaultPool = "ENJBNT";
+    // const whitelisted = ["ETHBNT", "ENJBNT", "DAIBNT"];
+
     return (
         <Fragment>
             <Row>
@@ -33,6 +37,9 @@ const LiquidityPool = (props) => {
                         <LiquidityPoolsWidget
                             web3ReactContext={web3context}
                             color={color}
+                            // whitelisted={whitelisted}
+                            // defaultPool={defaultPool}
+                            // disablePoolCreation={true}
                         />
                     </OrangeGradientJumbotron>
                 </Col>
