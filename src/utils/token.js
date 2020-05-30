@@ -71,7 +71,7 @@ import nmrLogo from "../../assets/tokens/nmr.png";
 import metLogo from "../../assets/tokens/met.png";
 import mlnLogo from "../../assets/tokens/mln.png";
 import keyLogo from "../../assets/tokens/key.png";
-
+import rplLogo from "../../assets/tokens/rpl.png";
 
 export const getIcon = (symbol) => {
     switch (symbol) {
@@ -87,6 +87,8 @@ export const getIcon = (symbol) => {
             return enjLogo;
         case 'KNC':
             return kncLogo;
+        case 'RPL':
+            return rplLogo;
         case 'OMG':
             return omgLogo;
         case 'MANA':
