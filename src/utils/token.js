@@ -72,6 +72,12 @@ import metLogo from "../../assets/tokens/met.png";
 import mlnLogo from "../../assets/tokens/mln.png";
 import keyLogo from "../../assets/tokens/key.png";
 import rplLogo from "../../assets/tokens/rpl.png";
+import bnbLogo from "../../assets/tokens/bnb.png";
+import electLogo from "../../assets/tokens/elect.png";
+import flixxLogo from "../../assets/tokens/flixx.png";
+import realLogo from "../../assets/tokens/real.png";
+import mrphLogo from "../../assets/tokens/mrph.png";
+import mntpLogo from "../../assets/tokens/mntp.png";
 
 export const getIcon = (symbol) => {
     switch (symbol) {
@@ -101,6 +107,18 @@ export const getIcon = (symbol) => {
             return antLogo;
         case 'GNO':
             return gnoLogo;
+        case 'BNB':
+            return bnbLogo;
+        case 'ELECT':
+            return electLogo;
+        case 'FLIXX':
+            return flixxLogo;
+        case 'REAL':
+            return realLogo;
+        case 'MRPH':
+            return mrphLogo;
+        case 'MNTP':
+            return mntpLogo;
         case 'DGD':
             return dgdLogo;
         case 'DGD':
