@@ -17,12 +17,12 @@ export const truncateString = (str, num) => {
         return str
     }
     // Return str truncated with '...' concatenated to the end of str.
-    return str.slice(0, num+2) + '...' + str.slice(Math.abs(num) * -1)
+    return str.slice(0, num + 2) + '...' + str.slice(Math.abs(num) * -1)
 }
 
 export const toFixed = (num, fixed) => {
 
-    if ((1/fixed) >= Number(num)) {
+    if ((1 / fixed) >= Number(num)) {
         return Number(num).toFixed(fixed);
     }
     var re = new RegExp('^-?\\d+(?:\.\\d{0,' + (fixed || -1) + '})?');
@@ -31,4 +31,13 @@ export const toFixed = (num, fixed) => {
 
 export const parseString = (str) => {
     return str.replace(/[^a-z0-9+]+/gi, '');
+}
+
+export const hexIsLight = (color) => {
+    const hex = color.replace('#', '');
+    const c_r = parseInt(hex.substr(0, 2), 16);
+    const c_g = parseInt(hex.substr(2, 2), 16);
+    const c_b = parseInt(hex.substr(4, 2), 16);
+    const brightness = ((c_r * 299) + (c_g * 587) + (c_b * 114)) / 1000;
+    return brightness > 155;
 }

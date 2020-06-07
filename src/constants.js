@@ -9,7 +9,7 @@ export const COLORS = {
     dark: "#000",
     turqois1: "#35cce6",
     turqois2: "#a3eaf7",
-    primary: "#090446",
+    primary: "#0275d8",
     success: "#4CAF50",
     secondary: "#E8EAF6",
     white: "#fff",
