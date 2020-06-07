@@ -40,16 +40,16 @@ const NavBar = (props) => {
                     <Nav className="ml-auto" navbar>
                         {/*
                         <NavItem>
-                            <Link to="/">
-                                <NavLink>Token Swap</NavLink>
-                            </Link>
+                            <NavLink>Token Swap</NavLink>
                         </NavItem>
                         <NavItem>
-                            <Link to="/pools">
-                                <NavLink>Pool Creation/Stake Liquidity</NavLink>
-                            </Link>
+                            <NavLink>Stake Liquidity</NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink>Pool Creation</NavLink>
                         </NavItem>
                         */}
+                        
                         <NavItem>
                             <NavLink href="https://github.com/pisuthd/react-defi-widget" target="_blank">GitHub</NavLink>
                         </NavItem>

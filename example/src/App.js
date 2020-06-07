@@ -1,22 +1,21 @@
 import React, { Component, useEffect, useState } from 'react'
-
 import { useWeb3Context } from 'web3-react';
-import classnames from 'classnames';
 import {
-  Row,
-  Col,
-  Nav,
-  NavItem,
-  NavLink,
-  TabContent,
-  TabPane
+  Row, Col
 } from "reactstrap";
-
-import MainLayout from "./layouts/main";
-import MainPage from "./views/main";
-import LiquidityPage from "./views/liquidityPool";
 import styled from 'styled-components';
+import MainLayout from "./layouts/main";
+import { Header } from "./components/common";
 
+import TokenSwap from "./views/tokenSwap";
+import StakeLiquidity from "./views/stakeLiquidity";
+
+const Wrapper = styled.div`
+  p {
+    font-size: 14px;
+    line-height: 20px;
+  }
+`;
 
 const App = () => {
 
@@ -26,57 +25,29 @@ const App = () => {
     web3context.setFirstValidConnector(['MetaMask'])
   }, [])
 
-  const [activeTab, setActiveTab] = useState('1');
-
-  const toggle = tab => {
-    if (activeTab !== tab) setActiveTab(tab);
-  }
-
   return (
     <MainLayout>
-
-      <Row>
-        <Col sm="12">
-          <Nav tabs>
-            <NavItem>
-              <NavLink
-                className={classnames({ active: activeTab === '1' })}
-                onClick={() => { toggle('1'); }}
-                style={{ cursor: "pointer" }}
-              >
-                Token Conversion Widget
-            </NavLink>
-            </NavItem>
-            <NavItem>
-              <NavLink
-                className={classnames({ active: activeTab === '2' })}
-                onClick={() => { toggle('2'); }}
-                style={{ cursor: "pointer" }}
-              >
-                Staking Liquidty/Pool Creation Widget
-          </NavLink>
-            </NavItem>
-          </Nav>
-          <TabContent activeTab={activeTab} style={{ paddingTop: "20px" }}>
-            <TabPane tabId="1">
-              <Row>
-                <Col sm="12">
-                  <MainPage web3context={web3context} />
-                </Col>
-              </Row>
-            </TabPane>
-            <TabPane tabId="2">
-              <Row>
-                <Col sm="12">
-                  <LiquidityPage web3context={web3context} />
-                </Col>
-              </Row>
-            </TabPane>
-          </TabContent>
-        </Col>
-        
-      </Row>
-
+      <Wrapper>
+        <Row>
+          <Col sm="4">
+            <Header>Token Swap</Header>
+            <p>Convert token to another throught liquidity providers that can setup an affiliate to take the commission cut. </p>
+            <TokenSwap 
+              web3context={web3context}
+            />
+          </Col>
+          <Col sm="4">
+            <Header>Staking Liquidity</Header>
+            <p>Add and remove liquidity on the pool, stakers will get a trading fee from each transaction occur.</p>
+            <StakeLiquidity
+              web3context={web3context}
+            />
+          </Col>
+          <Col sm="4">
+            <Header>Pool Creation</Header>
+          </Col>
+        </Row>
+      </Wrapper>
     </MainLayout>
   )
 
