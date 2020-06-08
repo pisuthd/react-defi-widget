@@ -8,6 +8,11 @@ import Layout from "./layout";
 import { getIcon } from "../../utils/token";
 import { hexIsLight } from "../../utils/conversion";
 
+const ACTION = {
+    ADD_LIQUIDITY : "Add Liquidity",
+    REMOVE_LIQUIDITY : "Remove Liquidity"
+}
+
 const StakeLiquidity = ({
     web3ReactContext,
     color = COLORS.primary,
@@ -15,6 +20,9 @@ const StakeLiquidity = ({
 }) => {
 
     const { loading, tokens, setCurrentPool } = useLiquidityPool(web3ReactContext)
+
+    const [ dropdownActive, setDropdownActive ] = useState(false);
+    const [ actionType, setActionType ] = useState(ACTION.ADD_LIQUIDITY)
 
     useMemo(() => {
         setCurrentPool(poolSymbol);
@@ -63,13 +71,47 @@ const StakeLiquidity = ({
                             </Summary>
                             </SummaryContainer>
                             <ButtonContainer>
+                                {/*
                                 <Button
                                     color={color}
                                     isBackgroundLight={isBackgroundLight}
                                     disabled={loading}
                                 >
-                                    Convert
-                            </Button>
+                                    Add Liquidity
+                                </Button>
+                                */}
+                                <ButtonGroup
+                                    width={width}
+                                    color={color}
+                                    isBackgroundLight={isBackgroundLight}
+                                >
+                                    <button
+                                        onClick={() => setDropdownActive(!dropdownActive)}
+                                    >&#9660;</button>
+                                    <button>{actionType}</button>
+
+                                    <Dropdown active={dropdownActive}>
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <td><a onClick={() => {
+                                                        setActionType(ACTION.ADD_LIQUIDITY)
+                                                        setDropdownActive(false)
+
+                                                    }}>Add Liquidity</a></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><a onClick={() => {
+                                                        setActionType(ACTION.REMOVE_LIQUIDITY)
+                                                        setDropdownActive(false)
+                                                    }}>Remove Liquidity</a></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </Dropdown>
+                                </ButtonGroup>
+
+
                             </ButtonContainer>
                         </Wrapper>
                     </Fragment>
@@ -106,6 +148,96 @@ const Wrapper = styled.div`
     }
 `;
 
+const Dropdown = styled.div`
+    display: ${({ active }) => active ? "block" : "none"};
+    position: absolute;
+    background-color: #f9f9f9;
+    margin-left: 0px;
+    margin-top: 50px;
+    font-size: 14px;
+    width: 150px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    height: 75px;
+
+    table {
+        margin-left: 5px;
+        margin-right: 5px;
+        width: 100%;
+    }
+
+    tr {
+        :not(:last-child) {
+            border-bottom: 1px solid #ddd;
+        }
+
+         
+    }
+
+    th, td {
+        padding: 10px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    a {
+        cursor: pointer;
+
+    }
+
+`;
+
+const Button = styled.button`
+    background-color: ${({ color }) => color};
+    border: 0;
+    margin-left: auto;
+    margin-right: auto;
+    height: 50px;
+    max-width: 300px;
+    font-size: 18px;
+    width: 100%;
+    opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
+    color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
+`;
+
+
+const ButtonGroup = styled.div`
+    margin-left: auto;
+    margin-right: auto;
+     
+    button {
+        background-color: ${({ color }) => color};
+        border: 0;
+        height: 50px;
+        font-size: ${({width}) => width > 400 ? "18px": "14px"};
+        color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
+        opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
+
+        padding: 10px 24px;
+        cursor: pointer;
+        float: left;
+
+        :not(:last-child) {
+            border-right: none;
+        }
+
+        
+        :hover {
+            opacity: 0.95;
+        }
+
+        :after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+    }
+    
+
+
+`;
+
 const TokensContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -123,7 +255,7 @@ const TokensContainer = styled.div`
             flex-wrap: ${totalTokens > 2 ? "wrap" : "nowrap"};
             div {
                 width: ${totalTokens > 2 ? "45%" : "100%"};
-                margin-right: 20px;
+                margin-right: ${totalTokens > 2 ? "20px" : "10px"};
             }
     `}
 
@@ -207,6 +339,7 @@ const ButtonContainer = styled.div`
     display: flex;
     padding-left: 40px;
     padding-right: 60px;
+    position: relative; 
 `;
 
 
@@ -252,18 +385,6 @@ const SummaryContainer = styled.div`
 
 `;
 
-const Button = styled.button`
-    background-color: ${({ color }) => color};
-    border: 0;
-    margin-left: auto;
-    margin-right: auto;
-    height: 50px;
-    max-width: 300px;
-    font-size: 18px;
-    width: 100%;
-    opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
-    color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
-`;
 
 const InputGroupArea = styled.div`
     
