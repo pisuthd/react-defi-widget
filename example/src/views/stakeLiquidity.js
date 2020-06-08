@@ -22,7 +22,7 @@ const ROPSTEN = [
 ]
 
 const WidgetContainer = styled.div`
-height: 500px;
+    height: 600px;
 `;
 
 const StakingLiquidity = ({ web3context }) => {
