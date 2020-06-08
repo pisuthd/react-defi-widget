@@ -226,6 +226,9 @@ const Button = styled.button`
     width: 100%;
     opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
     color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
+    :hover {
+        opacity: 0.95;
+    }
 `;
 
 const InputGroupIcon = styled.div`
