@@ -9,24 +9,38 @@ import { getIcon } from "../../utils/token";
 import { hexIsLight } from "../../utils/conversion";
 
 const ACTION = {
-    ADD_LIQUIDITY : "Add Liquidity",
-    REMOVE_LIQUIDITY : "Remove Liquidity"
+    ADD_LIQUIDITY: "Add Liquidity",
+    REMOVE_LIQUIDITY: "Remove Liquidity"
 }
 
 const StakeLiquidity = ({
     web3ReactContext,
+    networkId = 1,
     color = COLORS.primary,
     poolSymbol
 }) => {
 
     const { loading, tokens, setCurrentPool } = useLiquidityPool(web3ReactContext)
 
-    const [ dropdownActive, setDropdownActive ] = useState(false);
-    const [ actionType, setActionType ] = useState(ACTION.ADD_LIQUIDITY)
+
+
+    const [dropdownActive, setDropdownActive] = useState(false);
+    const [actionType, setActionType] = useState(ACTION.ADD_LIQUIDITY)
 
     useMemo(() => {
         setCurrentPool(poolSymbol);
     }, [poolSymbol])
+
+    const networkName = (id) => {
+        if (id === 1) {
+            return "Mainnet"
+        }
+        else if (id === 3) {
+            return "Ropsten"
+        } else {
+            return "Unknown"
+        }
+    }
 
     const isBackgroundLight = hexIsLight(color);
 
@@ -61,6 +75,13 @@ const StakeLiquidity = ({
                                             </InputGroupArea>
                                         </InputGroup>
                                     </TokenContainer>)}
+                                {web3ReactContext.networkId && (networkId !== web3ReactContext.networkId) && 
+                                    <div className="text-center">
+                                        <p style={{ color: "red" }}>You're not connected to {networkName(networkId)}</p>
+                                    </div>
+                                }
+
+
                             </TokensContainer>
                             <SummaryContainer>
                                 <div>Summary{width} Height : {height}</div>
@@ -209,7 +230,7 @@ const ButtonGroup = styled.div`
         background-color: ${({ color }) => color};
         border: 0;
         height: 50px;
-        font-size: ${({width}) => width > 400 ? "18px": "14px"};
+        font-size: ${({ width }) => width > 400 ? "18px" : "14px"};
         color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
         opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
 

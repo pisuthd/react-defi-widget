@@ -89,6 +89,7 @@ const StakingLiquidity = ({ web3context }) => {
                     color={"#0275d8"}
                     poolSymbol={pool}
                     gasLimit={gasLimit}
+                    networkId={network}
                 />
             </WidgetContainer>
         </Wrapper>

@@ -1,24 +1,80 @@
-import React, { Component, useCallback, Fragment, useState, useEffect } from 'react';
+import React, { Component, useCallback, Fragment, useState, useEffect, useMemo } from 'react';
 import ContainerDimensions from 'react-container-dimensions'
-import useConvert from "../../hooks/convert"
+import useConvert, { getUsdRate, getPathFromSDK } from "../../hooks/convert"
+import useInterval from "../../hooks/interval";
+import { useModal } from "../../contexts/modal";
 import Layout from "./layout";
 import { hexIsLight } from "../../utils/conversion";
 import { COLORS } from "../../constants";
 import styled from 'styled-components';
 import { getIcon } from "../../utils/token";
+import { toFixed } from "../../utils/conversion";
+import SearchIcon from "../../../assets/search.svg";
+// import loadingIcon from "../../../assets/loading.gif"
 
 
 const TokenSwap = ({
     web3ReactContext,
     color = COLORS.primary,
-    baseToken = "ETH",
-    pairToken = "BNT"
+    defaultBaseToken = "ETH",
+    defaultPairToken = "BNT"
 }) => {
 
-    const { tokens, loading } = useConvert(web3ReactContext);
+    const { 
+        tokens, 
+        loading, 
+        getETHBalance, 
+        getTokenBalance,
+        parseToken,
+        getTokenDecimal,
+        getRate
+    } = useConvert(web3ReactContext);
+
+    const { showProcessingModal } = useModal();
 
     const [isBaseTokenModalOpen, setBaseTokenModal] = useState(false);
     const [isPairTokenModalOpen, setPairTokenModal] = useState(false);
+    // const [loadingSummary, setLoadingSummary] = useState(false);
+
+    const [baseBalance, setBaseBalance] = useState(0);
+
+    const [baseToken, setBaseToken] = useState(baseToken);
+    const [pairToken, setPairToken] = useState(pairToken);
+    const [initialRate, setInitialRate] = useState(1);
+    const [rate, setRate] = useState(1);
+    const [path, setPath] = useState();
+    const [baseTokenAmount, setBaseTokenAmount] = useState(0);
+    const [pairTokenAmount, setPairTokenAmount] = useState(0);
+    const [baseRates, setBaseRates] = useState(1);
+    const [pairRates, setPairRates] = useState(1);
+
+    useEffect(() => {
+        (async () => {
+            if (baseToken) {
+                const result = await getUsdRate(baseToken);
+                setBaseRates(result);
+            }
+
+        })()
+    }, [baseToken])
+
+    useEffect(() => {
+        (async () => {
+            if (pairToken) {
+                const result = await getUsdRate(pairToken);
+                setPairRates(result);
+            }
+
+        })()
+    }, [pairToken])
+
+    useEffect(() => {
+        setBaseToken(defaultBaseToken)
+    }, [defaultBaseToken])
+
+    useEffect(() => {
+        setPairToken(defaultPairToken)
+    }, [defaultPairToken])
 
     const toggleBaseModal = useCallback(() => {
         setBaseTokenModal(!isBaseTokenModalOpen);
@@ -27,16 +83,168 @@ const TokenSwap = ({
     const togglePairModal = useCallback(() => {
         setPairTokenModal(!isPairTokenModalOpen);
     }, [isPairTokenModalOpen]);
-    /*
+
+    const onBaseTokenChange = useCallback(({ symbol }) => {
+        if (symbol === pairToken) {
+            setBaseToken(pairToken)
+            setPairToken(baseToken)
+            setBaseTokenModal(false)
+            return;
+        }
+
+        setBaseToken(symbol)
+        setBaseTokenModal(false)
+
+    }, [pairToken, baseToken])
+
+    const onPairTokenChange = useCallback(({ symbol }) => {
+
+        if (symbol === baseToken) {
+            setBaseToken(pairToken)
+            setPairToken(baseToken)
+            setPairTokenModal(false)
+            return;
+        }
+
+        setPairToken(symbol)
+        setPairTokenModal(false)
+
+
+    }, [baseToken, pairToken])
+
+    const updateBalance = useCallback(async () => {
+        if (baseToken && tokens.length > 0) {
+            /*
+            name: "Ether Token"
+            symbol: "ETH"
+            address: "0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315"
+            */
+
+            if (baseToken === "ETH") {
+                const result = await getETHBalance();
+                setBaseBalance(result)
+                return;
+            }
+
+            const token = tokens.find(item => item.symbol === baseToken)
+            const result = await getTokenBalance(token.address);
+            setBaseBalance(result)
+        }
+
+    }, [tokens, baseToken])
+
+    const updateRate = useCallback(async () => {
+
+        if (baseToken && pairToken && tokens.length > 0) {
+            const source = tokens.find(item => item.symbol === baseToken)
+            const destination = tokens.find(item => item.symbol === pairToken)
+
+            if (baseTokenAmount > 0 && baseTokenAmount > 1) {
+                // const result = await getPathFromSDK(source.address, destination.address, `${baseTokenAmount}`);
+                const results = await Promise.all([getPathFromSDK(source.address, destination.address, `${baseTokenAmount}`), getPathFromSDK(source.address, destination.address, "1")]);
+                const result = results[0];
+                const rate = result.rate;
+                const path = result.path.map(item => item.blockchainId);
+                const amount = (baseTokenAmount > 1) ? baseTokenAmount : 1;
+                setPath(path);
+                setRate(rate / amount)
+                const initialRateResult = results[1];
+                const initialRate = initialRateResult.rate;
+                setInitialRate(initialRate)
+                // console.log("rate / path / initialRate : ", rate / amount, path, initialRate)
+
+            } else {
+                const result = await getPathFromSDK(source.address, destination.address, `1`);
+                const rate = result.rate;
+                const path = result.path.map(item => item.blockchainId);
+                const amount = (baseTokenAmount > 1) ? baseTokenAmount : 1;
+                setPath(path);
+                setRate(rate / amount)
+                // console.log("rate / path : ", rate / amount, path)
+            }
+
+
+            /*
+            setTimeout(() => {
+                setLoadingSummary(false);
+            }, 5000)
+            */
+        }
+
+    }, [tokens, baseToken, pairToken, baseTokenAmount])
+
     useEffect(() => {
-        const interval = setInterval(() => {
-            console.log('This will run every second!');
-        }, 3000);
-        return () => clearInterval(interval);
-    }, []);
-    */
+        if (baseToken && pairToken && tokens.length > 0) {
+            // console.log("look for initial rate...");
+            const onClose = showProcessingModal("Fetching rates...", "");
+            const source = tokens.find(item => item.symbol === baseToken)
+            const destination = tokens.find(item => item.symbol === pairToken)
+            getPathFromSDK(source.address, destination.address, "1").then(
+                result => {
+                    const rate = result.rate;
+                    
+                    const path = result.path.map(item => item.blockchainId);
+                    console.log("path --> ", path)
+                    setInitialRate(rate);
+                    onClose();
+                    updatePairTokenAmount(rate);
+                    updateFee(source.address, destination.address, path);
+
+                }
+            )
+        }
+
+    }, [baseToken, pairToken, tokens])
+
+    useInterval(updateBalance, 3000)
+    useInterval(updateRate, 3000);
+
     const isBackgroundLight = hexIsLight(color);
 
+    const handleChange = useCallback((e) => {
+        e.preventDefault();
+
+        const regexp = /^[0-9]*(\.[0-9]{0,8})?$/;
+
+        if (e.target.id === 'sourceInput') {
+            const value = regexp.test(e.target.value) ? (e.target.value) : baseTokenAmount;
+            setBaseTokenAmount(value);
+            const result = toFixed((Number(value) * Number(initialRate)), 6);
+            setPairTokenAmount(Number(result));
+        } else {
+            const value = regexp.test(e.target.value) ? (e.target.value) : pairTokenAmount;
+            setPairTokenAmount(value);
+            const result = toFixed((Number(value) * Number(initialRate)), 6);
+            setBaseTokenAmount(Number(result));
+        }
+
+        // setLoadingSummary(true);
+    }, [baseTokenAmount, pairTokenAmount, initialRate])
+
+    const updateFee = useCallback(async (baseTokenAddress, pairTokenAddress, path) => {
+        const baseDecimal = await getTokenDecimal(baseTokenAddress);
+        const pairDecimal = await getTokenDecimal(pairTokenAddress);
+        const rateResult = await getRate(path, "1", baseDecimal);
+        const finalFee = parseToken(rateResult[1], pairDecimal);
+        console.log("finalFee --> ", finalFee)
+    }, [web3ReactContext])
+
+    const updatePairTokenAmount = useCallback((rate) => {
+        const result = toFixed((Number(baseTokenAmount) * Number(rate)), 6);
+        setPairTokenAmount(result);
+    }, [baseTokenAmount])
+
+    const slippageRate = useMemo(() => {
+        try {
+            return (Number((rate - initialRate) * 100 / initialRate)).toFixed(2);
+        } catch (error) {
+            return 0
+        }
+    }, [rate, initialRate])
+
+    const finalAmount = useMemo(() => {
+        return toFixed(Number(rate) * Number(baseTokenAmount), 6)
+    }, [rate, baseTokenAmount])
 
     return (
         <Layout>
@@ -62,19 +270,20 @@ const TokenSwap = ({
                                         <span onClick={() => toggleBaseModal()}>
                                             {baseToken && `${baseToken}`}&#9660;
                                         </span>
-                                        {/*
                                         <DropdownPanel
                                             tokens={tokens || []}
-                                            onChange={onBaseChange}
-                                            getIcon={getIcon}
+                                            onChange={onBaseTokenChange}
                                         />
-                                        */}
-
                                     </InputGroupDropdown>
                                     <InputGroupArea>
-                                        <input value={0} id="sourceInput" onChange={{}} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,6})?$" />
+                                        <input value={baseTokenAmount} id="sourceInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,6})?$" />
                                     </InputGroupArea>
                                 </InputGroup>
+                                <Account
+                                    width={width}
+                                >
+                                    <div>BALANCE : {toFixed(baseBalance, 9)}{` `}{baseToken}</div>
+                                </Account>
                             </TokenContainer>
                             <TokenContainer>
                                 <h4>Receive</h4>
@@ -89,27 +298,75 @@ const TokenSwap = ({
                                         <span onClick={() => togglePairModal()}>
                                             {pairToken && `${pairToken}`}&#9660;
                                         </span>
-                                        {/*
                                         <DropdownPanel
                                             tokens={tokens || []}
-                                            onChange={onBaseChange}
-                                            getIcon={getIcon}
+                                            onChange={onPairTokenChange}
                                         />
-                                        */}
-
                                     </InputGroupDropdown>
                                     <InputGroupArea>
-                                        <input value={0} id="sourceInput" onChange={{}} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,6})?$" />
+                                        <input value={pairTokenAmount} id="destinationInput" onChange={handleChange} placeholder="0.00" type="number" min="0" step="0.01" pattern="^\d+(?:\.\d{1,6})?$" />
                                     </InputGroupArea>
                                 </InputGroup>
+                                <Account
+                                    width={width}
+                                >
+                                    <div>{`1 ${baseToken} = ${Number(initialRate).toFixed(6)} ${pairToken}`}</div>
+                                </Account>
                             </TokenContainer>
                         </TokensContainer>
                         <SummaryContainer>
-                            <div>Summary {width} Height : {height}</div>
+                            <div>
+                                SUMMARY
+                                {/*
+                                { loadingSummary && <img src={loadingIcon} width="14px" height="14px" style={{marginBottom: 3}} />}
+                                */}
+                            </div>
                             <Summary
                                 width={width}
                             >
-                                hello
+                                {/*
+                                <Row>
+                                    <Column>
+                                        <b>Amount</b>
+                                    </Column>
+                                    <Column>
+                                        {baseTokenAmount}{` `}{baseToken}
+                                    </Column>
+                                </Row>
+                                */}
+                                <Row>
+                                    <Column>
+                                        <b>Trading fees:</b>
+                                        <div>
+                                            {"0.00"}%
+                                        </div>
+                                    </Column>
+                                    <Column>
+                                        <b>Slippage rates:</b>
+                                        <div>
+                                            {(baseTokenAmount === 0) && (rate === 1) ?
+                                                <span>{"0.00"}</span>
+                                                :
+                                                <span>{slippageRate > 0 && "+"}{slippageRate}</span>
+                                            }
+                                        %
+                                        </div>
+                                    </Column>
+                                </Row>
+                                <Row>
+                                    <Column>
+                                        <b>Final amount:</b>
+                                        <div>
+                                            {}{`${finalAmount}`}{pairToken}
+                                        </div>
+                                    </Column>
+                                    <Column>
+                                        <b>In USD:</b>
+                                        <div>
+                                            ${toFixed(Number(pairRates) * Number(finalAmount), 2)}
+                                        </div>
+                                    </Column>
+                                </Row>
                             </Summary>
                         </SummaryContainer>
                         <ButtonContainer>
@@ -130,6 +387,140 @@ const TokenSwap = ({
 }
 
 export default TokenSwap;
+
+const DropdownPanel = ({ tokens, onChange }) => {
+    const [filtered, setFiltered] = useState(tokens);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    useEffect(() => {
+        if (tokens.length > 0) {
+            if (searchTerm === "") {
+                setFiltered(tokens);
+            } else {
+                setFiltered(tokens.filter((item) => item.symbol.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1))
+            }
+        }
+    }, [tokens, searchTerm])
+
+    const handleSearchTerm = useCallback(async (e) => {
+        e.preventDefault();
+        setSearchTerm(e.target.value);
+    }, [tokens])
+
+    if (tokens.length === 0) {
+        return (
+            <Dropdown>Loading...</Dropdown>
+        )
+    }
+
+    return (
+        <Dropdown>
+            <table>
+                <tbody>
+                    <SearchPanel>
+                        <td width="25%">
+                            <img src={SearchIcon} width="28px" />
+                        </td>
+                        <td>
+                            <input value={searchTerm} onChange={handleSearchTerm} placeholder="Enter Symbol" type="text" />
+                        </td>
+                    </SearchPanel>
+                    {filtered.map((item, index) => {
+                        return (
+                            <tr onClick={() => onChange(item)} key={index}>
+                                <td width="25%">
+                                    <TokenLogo src={getIcon(item.symbol)} alt={item.symbol} />
+                                </td>
+                                <td>
+                                    {item.symbol}
+                                </td>
+                            </tr>
+                        )
+                    })}
+                </tbody>
+            </table>
+        </Dropdown>
+    )
+}
+
+
+const SearchPanel = styled.tr`
+    td {
+        font-size: 14px;
+
+        :first-child {
+            text-align: center;
+        }
+
+        :last-child {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            input {
+                border: 0;
+                display: block;
+                width: 100%;
+                padding: 8px;
+                text-align:left;
+                outline: 1px solid #eee;
+            }
+        }
+    }
+`;
+
+
+
+const Account = styled.div`
+    display: flex;
+    ${({ width }) => width >= 400 && `
+        margin-top: 5px;
+    `}
+     
+    font-size: ${({ width }) => width >= 400 ? "12px" : "10px"};
+    font-weight: 500;
+
+    div {
+        flex: 50%;
+    }
+
+`;
+
+const Dropdown = styled.div`
+    display: block;
+    position: absolute;
+    display: none;
+    background-color: #f9f9f9;
+    min-width: 220px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    height: 250px;
+    overflow-y: scroll;
+    padding-left: 10px;
+    padding-right: 10px;
+        
+    a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        :hover {
+            background-color: #f1f1f1
+        }
+
+    }
+
+    table {
+        width: 100%;
+    }
+    
+    th, td {
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+
+
+`;
+
 
 const TokensContainer = styled.div`
     h4 {
@@ -162,21 +553,19 @@ const TokensContainer = styled.div`
 const ButtonContainer = styled.div`
     padding-top: 20px;
     display: flex;
-    padding-left: 40px;
-    padding-right: 60px;
+    padding-left: 0px;
+    padding-right: 10px;
 `;
 
 const SummaryContainer = styled.div`
     padding-top: 20px;
-    display: flex;
-    padding-left: 40px;
-    padding-right: 60px;
-    flex-direction: column;
+    padding-left: 0px;
+    padding-right: 10px;
 
     div {
         margin-left: auto;
         margin-right: auto;
-        max-width: 300px;
+        max-width: 380px;
     }
 
 `;
@@ -190,24 +579,41 @@ const TokenContainer = styled.div`
     }
 `;
 
+const Row = styled.div`
+    display: flex;
+    :first-child {
+        padding-top: 5px;
+    }
+`;
+
+const Column = styled.div`
+    flex: 50%;
+    
+    :first-child {
+        padding-right: 5px;
+        flex: 50%;
+    }
+
+`;
+
 const Summary = styled.div`
     border: 1px solid #ddd;
-    height: 100px;
-
+    justify-content: center;
     width: 100%;
     
-    ${({width}) => width > 400 
-    ?
-    `
+    ${({ width }) => width > 400
+        ?
+        `
         padding: 10px;
+        padding-top: 20px;
+        padding-bottom: 20px;
         font-size: 16px;
-        height: 150px;
     `
-    :
-    `
-        
+        :
+        `
         padding: 10px;
-        padding-top: 5px;
+        padding-top: 15px;
+        padding-bottom: 15px;
         font-size: 14px;
     `
     }
@@ -221,7 +627,7 @@ const Button = styled.button`
     margin-left: auto;
     margin-right: auto;
     height: 50px;
-    max-width: 300px;
+    max-width: 380px;
     font-size: 18px;
     width: 100%;
     opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
@@ -277,45 +683,14 @@ const InputGroupDropdown = styled.div`
     cursor: pointer;
     
 
-    .dropdown-content {
+    div {
         display: none;
-        position: absolute;
-        background-color: #f9f9f9;
-        min-width: 220px;
-        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-        z-index: 1;
-        height: 250px;
-        overflow-y: scroll;
-        padding-left: 10px;
-        padding-right: 10px;
         
-
-        a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            :hover {
-                background-color: #f1f1f1
-            }
-
-        }
-
-        table {
-            width: 100%;
-        }
-    
-        th, td {
-            padding-top: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
     }
 
     ${props => props.active && (
         `
-        .dropdown-content {
+        div {
             display: block;
         }
         `
