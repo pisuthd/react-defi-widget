@@ -69,6 +69,7 @@
     "dist"
   ],
   "dependencies": {
+    "bancor-sdk": "^0.2.2",
     "ethers": "^4.0.45",
     "react-container-dimensions": "^1.4.1",
     "react-minimal-pie-chart": "^7.1.0",
