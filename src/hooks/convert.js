@@ -3,13 +3,18 @@ import React, { createContext, useContext, useReducer, useState, useMemo, useCal
 import { useAddressBook } from "./addressBook";
 import { ERC20TokenAbi } from "../contracts/bancor/ERC20Token";
 import { BancorConverterRegistryAbi } from "../contracts/bancor/BancorConverterRegistry";
+import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 import { getContract, getContractRegistryAddress } from "../utils/bancor";
+import { ethers } from "ethers";
+import { fetchData } from "../utils/api";
+import { CACHE_URL } from "../constants";
 
+const BancorSDK = require('bancor-sdk').SDK;
 
 
 export const useConvert = (web3context) => {
 
-    const [ tokens, setTokens ] = useState([]);
+    const [tokens, setTokens] = useState([]);
 
     const {
         initialized,
@@ -31,6 +36,20 @@ export const useConvert = (web3context) => {
     } = useAddressBook(web3context);
     const { networkId } = web3context;
 
+
+    const getETHBalance = useCallback(async () => {
+        const signer = web3context.library.getSigner();
+        const balance = await signer.provider.getBalance(web3context.account);
+        return ethers.utils.formatEther(balance);
+    }, [web3context])
+
+    const getTokenBalance = useCallback(async (tokenAddress) => {
+        const signer = web3context.library.getSigner();
+        const contract = getContract(tokenAddress, ERC20TokenAbi, signer);
+        const balance = await contract.balanceOf(web3context.account);
+        const decimal = await contract.decimals();
+        return ethers.utils.formatUnits(balance.toString(), decimal);
+    }, [web3context])
 
     const getTokenName = useCallback(async (address) => {
         const signer = web3context.library.getSigner();
@@ -93,7 +112,7 @@ export const useConvert = (web3context) => {
         return convertibleTokens;
     }, [bancorContractBancorConverterRegistry, web3context])
 
-    useMemo( async () => {
+    useMemo(async () => {
         if (initialized && (networkId === 1 || networkId === 3)) {
             const tokens = await getConvertibleTokens();
             setTokens(tokens)
@@ -102,11 +121,72 @@ export const useConvert = (web3context) => {
         }
     }, [initialized, networkId, bancorContractBancorConverterRegistry])
 
+    const parseToken = useCallback((amount, decimal) => {
+        return ethers.utils.formatUnits(amount, decimal) || "0.0";
+    }, [])
+
+    const getTokenDecimal = useCallback(async (tokenAddress) => {
+        const signer = web3context.library.getSigner();
+        console.log("tokenAddress --> ", tokenAddress)
+        const contract = getContract(tokenAddress, ERC20TokenAbi, signer);
+        const decimal = await contract.decimals();
+        return decimal;
+    }, [web3context])
+
+    const getRate = useCallback(async (path, amount, decimal = 18) => {
+        const signer = web3context.library.getSigner();
+        const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
+        console.log("path / amount / decimal", path, amount, decimal)
+        const ret = await networkContract.getReturnByPath(path, ethers.utils.parseUnits(amount, decimal));
+        return [ret[0], ret[1]];
+    }, [web3context, bancorContractBancorNetwork])
+
     return {
         tokens: tokens,
-        loading: !initialized
+        loading: !initialized,
+        getETHBalance,
+        getTokenBalance,
+        parseToken,
+        getTokenDecimal,
+        getRate
     }
 }
 
 export default useConvert;
 
+export const getUsdRate = async (tokenSymbol) => {
+    try {
+        const { price } = await fetchData(`${CACHE_URL}/tokens/${tokenSymbol}`);
+        return price;
+    } catch (error) {
+        return;
+    }
+}
+
+export const getPathFromSDK = async (baseTokenAddress, pairTokenAddress, inputAmount) => {
+
+    try {
+        const settings = {
+            ethereumNodeEndpoint: "https://mainnet.infura.io/v3/3aa2960d9ce549d6a539421c0a94fe52",
+        };
+
+        const sourceToken = {
+            blockchainType: 'ethereum',
+            blockchainId: baseTokenAddress
+        };
+        const targetToken = {
+            blockchainType: 'ethereum',
+            blockchainId: pairTokenAddress
+        };
+
+        let bancorSDK = await BancorSDK.create(settings);
+
+        const result = await bancorSDK.pricing.getPathAndRate(sourceToken, targetToken, inputAmount);
+        await BancorSDK.destroy(bancorSDK);
+        return result;
+    } catch (error) {
+        console.error(error)
+        return
+    }
+
+}
