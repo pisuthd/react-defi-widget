@@ -2,12 +2,14 @@ import React, { Fragment, useEffect } from 'react';
 import ContainerDimensions from 'react-container-dimensions'
 import styled from "styled-components"
 import { useTheme } from "../../hooks/theme"
-
+import { useModal } from "../../contexts/modal"
+import Modal from "./components/modals"
 
 
 const Layout = ({ children }) => {
 
-    const { backgroundColor, showModal, fontSize } = useTheme();
+    const { backgroundColor, fontSize } = useTheme();
+    const { showModal } = useModal();
 
     return (
         <ContainerDimensions>
@@ -22,6 +24,12 @@ const Layout = ({ children }) => {
                     >
                         {children}
                     </Container>
+                    {showModal && (
+                        <Modal
+                            width={width}
+                            height={height}
+                        />
+                    )}
                 </Fragment>
             }
         </ContainerDimensions>
@@ -33,7 +41,7 @@ export default Layout;
 const Container = styled.div`
     background: ${({ backgroundColor }) => backgroundColor && `${backgroundColor}`};
     border-radius: 5px;
-    padding: ${({ width }) => width  >= 400 ? "20px" : "10px"};
+    padding: ${({ width }) => width >= 400 ? "20px" : "10px"};
     color: rgba(0, 0, 0, 0.7);
     ${({ height, width }) => (height && width) &&
         `

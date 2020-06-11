@@ -4,15 +4,18 @@ import PropTypes from 'prop-types';
 
 import AddressBookProvider, { useAddressBook } from "./hooks/addressBook"
 import ThemeProvider from "./hooks/theme";
+import ModalProvider from "./contexts/modal";
 import StakingLiquidity from "./components/widgets/stakingLiquidity"
 import TokenSwap from "./components/widgets/tokenSwap"
 
 const ContextProviders = ({ children }) => {
-    
+
     return (
         <ThemeProvider>
             <AddressBookProvider>
-                {children}
+                <ModalProvider>
+                    {children}
+                </ModalProvider>
             </AddressBookProvider>
         </ThemeProvider>
     )
@@ -36,12 +39,13 @@ ConnectedWidget.PropTypes = {
 
 export const StakingLiquidityWidget = (props) => {
 
-    const { web3ReactContext, poolSymbol, gasLimit, color } = props;
+    const { web3ReactContext, poolSymbol, gasLimit, color, networkId } = props;
 
     return (
         <ConnectedWidget>
             <StakingLiquidity
                 web3ReactContext={web3ReactContext}
+                networkId={networkId}
                 color={color}
                 poolSymbol={poolSymbol}
                 gasLimit={gasLimit}
@@ -53,7 +57,8 @@ export const StakingLiquidityWidget = (props) => {
 StakingLiquidityWidget.propTypes = {
     web3ReactContext: PropTypes.object.isRequired,
     color: PropTypes.string,
-    poolSymbol: PropTypes.string.isRequired, 
+    networkId: PropTypes.number,
+    poolSymbol: PropTypes.string.isRequired,
     gasLimit: PropTypes.string
 }
 
@@ -66,8 +71,8 @@ export const TokenSwapWidget = (props) => {
             <TokenSwap
                 web3ReactContext={web3ReactContext}
                 color={color}
-                baseToken={baseToken}
-                pairToken={pairToken}
+                defaultBaseToken={baseToken}
+                defaultPairToken={pairToken}
                 gasLimit={gasLimit}
             />
         </ConnectedWidget>
