@@ -22,7 +22,7 @@ export default {
       sourcemap: true
     }
   ],
-  external: [ 'styled-components', 'react-container-dimensions','ethers'],
+  external: [ 'styled-components', 'react-container-dimensions','ethers', "bancor-sdk"  ],
   plugins: [
     external(),
     postcss({
