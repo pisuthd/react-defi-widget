@@ -111,7 +111,6 @@ export const useLiquidityPool = (web3context) => {
     useMemo(async () => {
 
         if (initialized && currentPool && (networkId === 1 || networkId === 3)) {
-
             
             if (networkId === 1) {
                 // load pool's data from the cache
@@ -133,11 +132,13 @@ export const useLiquidityPool = (web3context) => {
                     console.log("Load pool's data from cache failed, failback to load from the smart contract.", error)
                 }
             }
-
+            
             setLoading(true);
             const pools = await listLiquidityPools();
             const symbols = await Promise.all(pools.map(item => getPoolName(item.smartTokenAddress)));
             const index = symbols.indexOf(currentPool);
+            const pool = pools[index];
+
             if (!pool) {
                 setPoolData({
                     smartTokenAddress: "",
@@ -147,7 +148,7 @@ export const useLiquidityPool = (web3context) => {
                 setTokens([]);
                 return;
             }
-            const pool = pools[index];
+
             const fee = await getConversionFee(pool.converterAddress);
             const totalSupply = await getPoolTotalSupply(pool.smartTokenAddress);
             /*
@@ -180,7 +181,8 @@ export const useLiquidityPool = (web3context) => {
     return {
         tokens,
         loading: (!initialized || loading),
-        setCurrentPool
+        setCurrentPool,
+        poolData
     }
 }
 
