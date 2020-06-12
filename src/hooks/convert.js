@@ -2,6 +2,8 @@ import React, { createContext, useContext, useReducer, useState, useMemo, useCal
 
 import { useAddressBook } from "./addressBook";
 import { ERC20TokenAbi } from "../contracts/bancor/ERC20Token";
+import { SmartTokenAbi } from "../contracts/bancor/SmartToken";
+import { BancorConverterAbi } from "../contracts/bancor/BancorConverter";
 import { BancorConverterRegistryAbi } from "../contracts/bancor/BancorConverterRegistry";
 import { BancorNetworkAbi } from "../contracts/bancor/BancorNetwork";
 import { getContract, getContractRegistryAddress } from "../utils/bancor";
@@ -127,19 +129,30 @@ export const useConvert = (web3context) => {
 
     const getTokenDecimal = useCallback(async (tokenAddress) => {
         const signer = web3context.library.getSigner();
-        console.log("tokenAddress --> ", tokenAddress)
         const contract = getContract(tokenAddress, ERC20TokenAbi, signer);
         const decimal = await contract.decimals();
         return decimal;
     }, [web3context])
 
-    const getRate = useCallback(async (path, amount, decimal = 18) => {
-        const signer = web3context.library.getSigner();
-        const networkContract = getContract(bancorContractBancorNetwork, BancorNetworkAbi, signer);
-        console.log("path / amount / decimal", path, amount, decimal)
-        const ret = await networkContract.getReturnByPath(path, ethers.utils.parseUnits(amount, decimal));
-        return [ret[0], ret[1]];
-    }, [web3context, bancorContractBancorNetwork])
+    const getConversionFee = useCallback(async (smartTokenAddress) => {
+        try {
+            const signer = web3context.library.getSigner();
+            const smartTokenContract = getContract(smartTokenAddress, BancorConverterAbi, signer);
+            const converterAddress = await smartTokenContract.owner();
+            const contract = getContract(converterAddress, BancorConverterAbi, signer);
+            const fee = await contract.conversionFee();
+            return Number(fee.toString()) / 10000;
+        } catch (error) {
+            return 0;
+        }
+
+    }, [web3context]);
+
+    const getFee = useCallback(async (path) => {
+        console.log("path --> ", path)
+        const results = await Promise.all(path.map(item => getConversionFee(item)))
+        return results.reduce((prev, item) => prev += item, 0)
+    }, [web3context])
 
     return {
         tokens: tokens,
@@ -148,7 +161,7 @@ export const useConvert = (web3context) => {
         getTokenBalance,
         parseToken,
         getTokenDecimal,
-        getRate
+        getFee
     }
 }
 
