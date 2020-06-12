@@ -10,6 +10,7 @@ import styled from 'styled-components';
 import { getIcon } from "../../utils/token";
 import { toFixed } from "../../utils/conversion";
 import SearchIcon from "../../../assets/search.svg";
+import { SummaryHeadline, Summary, SummaryContainer, Row, Column } from "./components/ui/common";
 // import loadingIcon from "../../../assets/loading.gif"
 
 
@@ -27,7 +28,7 @@ const TokenSwap = ({
         getTokenBalance,
         parseToken,
         getTokenDecimal,
-        getRate
+        getFee
     } = useConvert(web3ReactContext);
 
     const { showProcessingModal } = useModal();
@@ -47,6 +48,7 @@ const TokenSwap = ({
     const [pairTokenAmount, setPairTokenAmount] = useState(0);
     const [baseRates, setBaseRates] = useState(1);
     const [pairRates, setPairRates] = useState(1);
+    const [fee, setFee] = useState(0);
 
     useEffect(() => {
         (async () => {
@@ -185,10 +187,11 @@ const TokenSwap = ({
                     
                     const path = result.path.map(item => item.blockchainId);
                     console.log("path --> ", path)
+                    // ["0xc0829421C1d260BD3cB3E0F06cfE2D52db2cE315", "0xb1CD6e4153B2a390Cf00A6556b0fC1458C4A5533", "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C"]
                     setInitialRate(rate);
                     onClose();
                     updatePairTokenAmount(rate);
-                    updateFee(source.address, destination.address, path);
+                    updateFee(  path);
 
                 }
             )
@@ -221,12 +224,9 @@ const TokenSwap = ({
         // setLoadingSummary(true);
     }, [baseTokenAmount, pairTokenAmount, initialRate])
 
-    const updateFee = useCallback(async (baseTokenAddress, pairTokenAddress, path) => {
-        const baseDecimal = await getTokenDecimal(baseTokenAddress);
-        const pairDecimal = await getTokenDecimal(pairTokenAddress);
-        const rateResult = await getRate(path, "1", baseDecimal);
-        const finalFee = parseToken(rateResult[1], pairDecimal);
-        console.log("finalFee --> ", finalFee)
+    const updateFee = useCallback(async ( path) => {
+        const result = await getFee(path );
+        setFee(result);
     }, [web3ReactContext])
 
     const updatePairTokenAmount = useCallback((rate) => {
@@ -315,12 +315,14 @@ const TokenSwap = ({
                             </TokenContainer>
                         </TokensContainer>
                         <SummaryContainer>
-                            <div>
+                            <SummaryHeadline
+                                width={width}
+                            >
                                 SUMMARY
                                 {/*
                                 { loadingSummary && <img src={loadingIcon} width="14px" height="14px" style={{marginBottom: 3}} />}
                                 */}
-                            </div>
+                            </SummaryHeadline>
                             <Summary
                                 width={width}
                             >
@@ -336,20 +338,20 @@ const TokenSwap = ({
                                 */}
                                 <Row>
                                     <Column>
-                                        <b>Trading fees:</b>
-                                        <div>
-                                            {"0.00"}%
-                                        </div>
-                                    </Column>
-                                    <Column>
                                         <b>Slippage rates:</b>
                                         <div>
-                                            {(baseTokenAmount === 0) && (rate === 1) ?
+                                            {(baseTokenAmount === 0) || (rate === 1) ?
                                                 <span>{"0.00"}</span>
                                                 :
                                                 <span>{slippageRate > 0 && "+"}{slippageRate}</span>
                                             }
                                         %
+                                        </div>
+                                    </Column>
+                                    <Column>
+                                        <b>Conversion fees:</b>
+                                        <div>
+                                            {toFixed(fee, 1)}%
                                         </div>
                                     </Column>
                                 </Row>
@@ -557,18 +559,6 @@ const ButtonContainer = styled.div`
     padding-right: 10px;
 `;
 
-const SummaryContainer = styled.div`
-    padding-top: 20px;
-    padding-left: 0px;
-    padding-right: 10px;
-
-    div {
-        margin-left: auto;
-        margin-right: auto;
-        max-width: 380px;
-    }
-
-`;
 
 const TokenContainer = styled.div`
     padding-right: 20px;
@@ -579,47 +569,6 @@ const TokenContainer = styled.div`
     }
 `;
 
-const Row = styled.div`
-    display: flex;
-    :first-child {
-        padding-top: 5px;
-    }
-`;
-
-const Column = styled.div`
-    flex: 50%;
-    
-    :first-child {
-        padding-right: 5px;
-        flex: 50%;
-    }
-
-`;
-
-const Summary = styled.div`
-    border: 1px solid #ddd;
-    justify-content: center;
-    width: 100%;
-    
-    ${({ width }) => width > 400
-        ?
-        `
-        padding: 10px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        font-size: 16px;
-    `
-        :
-        `
-        padding: 10px;
-        padding-top: 15px;
-        padding-bottom: 15px;
-        font-size: 14px;
-    `
-    }
-
-    
-`;
 
 const Button = styled.button`
     background-color: ${({ color }) => color};

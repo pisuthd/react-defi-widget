@@ -7,6 +7,7 @@ import { COLORS } from "../../constants";
 import Layout from "./layout";
 import { getIcon } from "../../utils/token";
 import { hexIsLight } from "../../utils/conversion";
+import { SummaryHeadline, Summary, SummaryContainer, Row, Column } from "./components/ui/common";
 
 const ACTION = {
     ADD_LIQUIDITY: "Add Liquidity",
@@ -20,10 +21,7 @@ const StakeLiquidity = ({
     poolSymbol
 }) => {
 
-    const { loading, tokens, setCurrentPool } = useLiquidityPool(web3ReactContext)
-
-
-
+    const { loading, tokens, setCurrentPool, poolData } = useLiquidityPool(web3ReactContext)
     const [dropdownActive, setDropdownActive] = useState(false);
     const [actionType, setActionType] = useState(ACTION.ADD_LIQUIDITY)
 
@@ -41,10 +39,23 @@ const StakeLiquidity = ({
             return "Unknown"
         }
     }
+    /*
+    const totalLiquidity = useMemo(() => {
+        const total = tokens.reduce((prev, item) => {
+            if (item.balanceInUsd) {
+                prev += item.balanceInUsd;
+            }
+            return prev;
+        }, 0)
+        return total;
+    }, [tokens])
+    */
+
+  
+
+    console.log("tokens : ", tokens, loading)
 
     const isBackgroundLight = hexIsLight(color);
-
-    console.log("tokens -- >", tokens)
 
     return (
         <Layout>
@@ -56,6 +67,7 @@ const StakeLiquidity = ({
                             height={height}
                         >
                             <h4>{poolSymbol}</h4>
+                            <p>This pool's version is outdated</p>
                             <TokensContainer
                                 width={width}
                                 height={height}
@@ -75,7 +87,7 @@ const StakeLiquidity = ({
                                             </InputGroupArea>
                                         </InputGroup>
                                     </TokenContainer>)}
-                                {web3ReactContext.networkId && (networkId !== web3ReactContext.networkId) && 
+                                {web3ReactContext.networkId && (networkId !== web3ReactContext.networkId) &&
                                     <div className="text-center">
                                         <p style={{ color: "red" }}>You're not connected to {networkName(networkId)}</p>
                                     </div>
@@ -84,13 +96,80 @@ const StakeLiquidity = ({
 
                             </TokensContainer>
                             <SummaryContainer>
-                                <div>Summary{width} Height : {height}</div>
+                                <SummaryHeadline
+                                    width={width}
+                                >
+                                    POOL INFORMATION
+                                </SummaryHeadline>
                                 <Summary
                                     width={width}
                                 >
-                                    hello
-                            </Summary>
+                                    <Row>
+                                        <Column
+                                            style={{ flex: "70%" }}
+                                        >
+                                            <b>My stake / Total supply</b>
+                                            <div>
+                                                {0}{` `}/{` `}{poolData.totalSupply ? Number(poolData.totalSupply).toLocaleString() : "0"}{` `}{poolSymbol}
+                                            </div>
+                                        </Column>
+                                        <Column
+                                            style={{ flex: "30%" }}
+                                        >
+                                            <b>Fees</b>
+                                            <div>
+                                                {poolData.fee}%
+                                            </div>
+                                        </Column>
+                                    </Row>
+                                    {/*
+                                    <Row>
+                                        <Column>
+                                            <b>Total liquidity</b>
+                                            <div>
+                                                ${totalLiquidity.toLocaleString()}
+                                            </div>
+                                        </Column>
+                                        <Column>
+                                            <b>Conversion fees</b>
+                                            <div>
+                                                {poolData.fee}%
+                                            </div>
+
+                                        </Column>
+                                    </Row>
+                                    */}
+                                    {tokens.map((item, index) => {
+                                        return (
+                                            <Row key={index}>
+                                                <Column
+                                                    style={{ flex: "70%" }}
+                                                >
+                                                    <b>{item.symbol}</b><br />
+                                                    <b>Total locked</b>
+                                                    <div>
+                                                        {Number(item.balance).toLocaleString()}{` `}{item.symbol}
+                                                    </div>
+                                                </Column>
+                                                <Column
+                                                    style={{ flex: "30%" }}
+                                                >
+                                                    <br />
+                                                    <b>Ratios</b>
+                                                    <div>
+                                                        {item.ratio}
+                                                    </div>
+                                                </Column>
+                                            </Row>
+                                        )
+                                    })
+
+                                    }
+                                </Summary>
+
                             </SummaryContainer>
+
+
                             <ButtonContainer>
                                 {/*
                                 <Button
@@ -174,12 +253,12 @@ const Dropdown = styled.div`
     position: absolute;
     background-color: #f9f9f9;
     margin-left: 0px;
-    margin-top: 50px;
-    font-size: 14px;
+    margin-top: 0px;
+    font-size: 15px;
     width: 150px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     z-index: 1;
-    height: 75px;
+    height: 80px;
 
     table {
         margin-left: 5px;
@@ -188,6 +267,7 @@ const Dropdown = styled.div`
     }
 
     tr {
+        height: 40px;
         :not(:last-child) {
             border-bottom: 1px solid #ddd;
         }
@@ -208,23 +288,10 @@ const Dropdown = styled.div`
 
 `;
 
-const Button = styled.button`
-    background-color: ${({ color }) => color};
-    border: 0;
-    margin-left: auto;
-    margin-right: auto;
-    height: 50px;
-    max-width: 300px;
-    font-size: 18px;
+/*
+const ButtonGroupOLD = styled.div`
+ 
     width: 100%;
-    opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
-    color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
-`;
-
-
-const ButtonGroup = styled.div`
-    margin-left: auto;
-    margin-right: auto;
      
     button {
         background-color: ${({ color }) => color};
@@ -237,6 +304,8 @@ const ButtonGroup = styled.div`
         padding: 10px 24px;
         cursor: pointer;
         float: left;
+
+        width: 50%;
 
         :not(:last-child) {
             border-right: none;
@@ -254,8 +323,34 @@ const ButtonGroup = styled.div`
         }
 
     }
-    
 
+
+`;
+*/
+
+const ButtonGroup = styled.div`
+    width: 100%;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+
+    button {
+        background-color: ${({ color }) => color};
+        border: 0;
+        height: 50px;
+        font-size: ${({ width }) => width > 400 ? "18px" : "16px"};
+        color: ${({ isBackgroundLight }) => isBackgroundLight ? "black" : "white"};
+        opacity: ${({ disabled }) => disabled ? "0.6" : "1"};
+        padding: 10px 24px;
+        cursor: pointer;
+        :hover {
+            opacity: 0.95;
+        }
+        width: 80%;
+        :first-child {
+            width: 20%;
+        }
+    }
 
 `;
 
@@ -358,53 +453,11 @@ const InputGroupDropdown = styled.div`
 const ButtonContainer = styled.div`
     padding-top: 20px;
     display: flex;
-    padding-left: 40px;
-    padding-right: 60px;
-    position: relative; 
+    align-items: center;
+    padding-left: 0px;
+    padding-right: 10px;
 `;
 
-
-const Summary = styled.div`
-    border: 1px solid #ddd;
-    height: 100px;
-
-    width: 100%;
-    
-    
-    
-    ${({ width }) => width > 400
-        ?
-        `
-        padding: 10px;
-        font-size: 16px;
-        height: 150px;
-    `
-        :
-        `
-        
-        padding: 10px;
-        padding-top: 5px;
-        font-size: 14px;
-    `
-    }
-
-    
-`;
-
-const SummaryContainer = styled.div`
-    padding-top: 20px;
-    display: flex;
-    padding-left: 40px;
-    padding-right: 60px;
-    flex-direction: column;
-
-    div {
-        margin-left: auto;
-        margin-right: auto;
-        max-width: 300px;
-    }
-
-`;
 
 
 const InputGroupArea = styled.div`
