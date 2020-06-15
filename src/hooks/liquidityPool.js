@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useState, useMemo, useCallback, useEffect } from "react";
 import { fetchData } from "../utils/api";
 import { useAddressBook } from "./addressBook";
+import { useConvert } from "./convert";
 import { BancorConverterAbi } from "../contracts/bancor/BancorConverter";
 import { SmartTokenAbi, SmartTokenControllerAbi } from "../contracts/bancor/SmartToken";
 import { BancorConverterRegistryAbi } from "../contracts/bancor/BancorConverterRegistry";
@@ -24,6 +25,7 @@ export const useLiquidityPool = (web3context) => {
         initialized,
         bancorContractBancorConverterRegistry
     } = useAddressBook(web3context);
+    const { getETHBalance, getTokenBalance } = useConvert(web3context);
     const { networkId } = web3context;
 
     const listLiquidityPools = useCallback(async () => {
@@ -60,6 +62,21 @@ export const useLiquidityPool = (web3context) => {
         }
 
     }, [web3context])
+
+    const getPoolVersion = useCallback(async (converterAddress) => {
+        const signer = web3context.library.getSigner();
+        const tokenContract = getContract(converterAddress, BancorConverterAbi, signer);
+        let result = {};
+        try {
+            const version = await tokenContract.version();
+            result["version"] = version;
+            const type = await tokenContract.converterType();
+            result["type"] = type;
+        } catch (error) {
+            console.log("getPoolVersion error : ", error);
+        }
+        return result;
+    }, [web3context]) 
 
     const getReserves = useCallback(async (converterAddress) => {
         const signer = web3context.library.getSigner();
@@ -120,12 +137,14 @@ export const useLiquidityPool = (web3context) => {
                     const smartTokenAddress = data.contracts.find(item => item.name === "smartToken")['address'];
                     setTokens(data.reserves);
                     const totalSupply = await getPoolTotalSupply(smartTokenAddress)
+                    const version = await getPoolVersion(converterAddress);
 
                     setPoolData({
                         smartTokenAddress: smartTokenAddress,
                         converterAddress: converterAddress,
                         fee : data.fee,
-                        totalSupply: totalSupply
+                        totalSupply: totalSupply,
+                        ...version
                     })      
                     return;
                 } catch (error) {
@@ -162,8 +181,10 @@ export const useLiquidityPool = (web3context) => {
             volume: 757312.8566619952
             volumeInUsd: 457653.49718994915
             */
+            const version = await getPoolVersion(pool.converterAddress);
             setPoolData({
                 ...pool,
+                ...version,
                 fee: fee,
                 totalSupply: totalSupply
             })
@@ -182,7 +203,9 @@ export const useLiquidityPool = (web3context) => {
         tokens,
         loading: (!initialized || loading),
         setCurrentPool,
-        poolData
+        poolData,
+        getETHBalance,
+        getTokenBalance
     }
 }
 
