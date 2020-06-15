@@ -206,7 +206,6 @@ const LiquidityPoolPanel = (props) => {
     useEffect(() => {
         // Checks a pool information
         if (currentPool) {
-            console.log("Checks : ", currentPool);
 
             (async () => {
 
