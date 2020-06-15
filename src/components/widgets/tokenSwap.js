@@ -10,9 +10,9 @@ import styled from 'styled-components';
 import { getIcon } from "../../utils/token";
 import { toFixed } from "../../utils/conversion";
 import SearchIcon from "../../../assets/search.svg";
+import { InsufficientAmount } from "./components/ui/alert"
 import { SummaryHeadline, Summary, SummaryContainer, Row, Column } from "./components/ui/common";
 // import loadingIcon from "../../../assets/loading.gif"
-
 
 const TokenSwap = ({
     web3ReactContext,
@@ -284,6 +284,8 @@ const TokenSwap = ({
                                 >
                                     <div>BALANCE : {toFixed(baseBalance, 9)}{` `}{baseToken}</div>
                                 </Account>
+                                { Number(baseTokenAmount) > Number(baseBalance) && 
+                                <InsufficientAmount/>}
                             </TokenContainer>
                             <TokenContainer>
                                 <h4>Receive</h4>
