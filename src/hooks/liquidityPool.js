@@ -76,7 +76,7 @@ export const useLiquidityPool = (web3context) => {
             console.log("getPoolVersion error : ", error);
         }
         return result;
-    }, [web3context]) 
+    }, [web3context])
 
     const getReserves = useCallback(async (converterAddress) => {
         const signer = web3context.library.getSigner();
@@ -90,6 +90,26 @@ export const useLiquidityPool = (web3context) => {
         }
         const reserves = await Promise.all(indexs.map(item => contract.connectorTokens(item)))
         const result = await Promise.all(reserves.map(address => {
+ 
+            if (address === "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
+                return new Promise((resolve, reject) => {
+                    contract.getConnectorBalance(address).then(
+                        balance => {
+                            contract.connectors(address).then(
+                                reserveData => {
+                                    resolve({
+                                        address: address,
+                                        symbol: "ETH",
+                                        balance: ethers.utils.formatEther(balance.toString()).toString(),
+                                        ratio: (reserveData[1] / 1000000)
+                                    })
+                                }
+                            )
+                        }
+                    )
+                })
+            }
+
             const tokenContract = getContract(address, ERC20TokenAbi, signer);
             return new Promise((resolve, reject) => {
                 contract.getConnectorBalance(address).then(
@@ -99,10 +119,10 @@ export const useLiquidityPool = (web3context) => {
                                 contract.connectors(address).then(
                                     reserveData => {
                                         resolve({
-                                            address : address,
+                                            address: address,
                                             symbol: symbol,
                                             balance: ethers.utils.formatEther(balance.toString()).toString(),
-                                            ratio : (reserveData[1] / 1000000)
+                                            ratio: (reserveData[1] / 1000000)
                                         })
                                     }
                                 )
@@ -112,6 +132,7 @@ export const useLiquidityPool = (web3context) => {
                     }
                 )
             })
+
 
         }))
         return result;
@@ -128,7 +149,7 @@ export const useLiquidityPool = (web3context) => {
     useMemo(async () => {
 
         if (initialized && currentPool && (networkId === 1 || networkId === 3)) {
-            
+            /*
             if (networkId === 1) {
                 // load pool's data from the cache
                 try {
@@ -151,7 +172,8 @@ export const useLiquidityPool = (web3context) => {
                     console.log("Load pool's data from cache failed, failback to load from the smart contract.", error)
                 }
             }
-            
+            */
+
             setLoading(true);
             const pools = await listLiquidityPools();
             const symbols = await Promise.all(pools.map(item => getPoolName(item.smartTokenAddress)));
