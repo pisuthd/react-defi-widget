@@ -11,7 +11,7 @@ import { ethers } from "ethers";
 import { fetchData } from "../utils/api";
 import { CACHE_URL } from "../constants";
 
-const BancorSDK = require('bancor-sdk').SDK;
+const BancorSDK = require('@bancor/sdk').SDK;
 
 
 export const useConvert = (web3context) => {
@@ -116,7 +116,15 @@ export const useConvert = (web3context) => {
 
     useMemo(async () => {
         if (initialized && (networkId === 1 || networkId === 3)) {
-            const tokens = await getConvertibleTokens();
+            let tokens = await getConvertibleTokens();
+            if (networkId === 1) {
+                tokens = tokens.filter(item => (item.name !== "Ether Token" && item.address !== "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"));
+                tokens.push({
+                    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+                    name: "Bancor Ether",
+                    symbol: "ETH"
+                })  
+            }
             setTokens(tokens)
         } else {
             setTokens([])
