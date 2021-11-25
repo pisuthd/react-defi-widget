@@ -1,3 +1,5 @@
+# This repo is unmaintained!
+
 # React DeFi Widget
 
 > Ethereum Defi widget for React apps
